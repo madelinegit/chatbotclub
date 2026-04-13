@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(pip install:*)",
-      "Bash(python -c ':*)"
+      "Bash(python -c ':*)",
+      "WebFetch(domain:docs.railway.com)",
+      "WebFetch(domain:station.railway.com)"
     ]
   }
 }

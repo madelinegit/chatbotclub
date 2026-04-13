@@ -20,6 +20,7 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+
 app.include_router(chat_router)
 app.include_router(auth_router)
 app.include_router(payment_router)
