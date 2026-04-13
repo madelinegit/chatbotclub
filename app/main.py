@@ -18,6 +18,17 @@ def health():
     return JSONResponse({"status": "ok"})
 
 
+@app.get("/debug")
+def debug(request: Request):
+    return JSONResponse({
+        "url": str(request.url),
+        "base_url": str(request.base_url),
+        "headers": dict(request.headers),
+        "client": str(request.client),
+        "scheme": request.url.scheme,
+    })
+
+
 @app.get("/", response_class=HTMLResponse)
 def landing_page(request: Request):
     return templates.TemplateResponse(request, "landing.html", {})
