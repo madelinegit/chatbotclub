@@ -3,11 +3,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.requests import Request
-from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-app = FastAPI(title="Maya AI")
-
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+app = FastAPI(title="Maya AI", redirect_slashes=False)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -22,9 +19,8 @@ def health():
 def debug(request: Request):
     return JSONResponse({
         "url": str(request.url),
-        "base_url": str(request.base_url),
-        "headers": dict(request.headers),
         "scheme": request.url.scheme,
+        "headers": dict(request.headers),
     })
 
 
