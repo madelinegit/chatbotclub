@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from starlette.requests import Request
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api.chat_routes import router as chat_router
 from app.api.auth_routes import router as auth_router
@@ -13,6 +14,8 @@ from app.api.blog_routes import router as blog_router
 from app.db.database import init_db
 
 app = FastAPI(title="Maya AI")
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
