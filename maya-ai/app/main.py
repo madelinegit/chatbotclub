@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.requests import Request
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -30,7 +30,15 @@ app.include_router(blog_router)
 
 @app.on_event("startup")
 async def startup():
-    init_db()
+    try:
+        init_db()
+    except Exception as e:
+        print(f"DB INIT ERROR: {e}")
+
+
+@app.get("/health")
+def health():
+    return JSONResponse({"status": "ok"})
 
 
 @app.get("/", response_class=HTMLResponse)

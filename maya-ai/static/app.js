@@ -140,7 +140,7 @@ function appendMessage(role, content) {
 
   let bubbleContent
   if (isMaya && content.startsWith('[IMAGE]') && content.includes('[/IMAGE]')) {
-    const url = content.replace('[IMAGE]', '').replace('[/IMAGE]', '').trim()
+    const url = escapeHtml(content.replace('[IMAGE]', '').replace('[/IMAGE]', '').trim())
     bubbleContent = `<div class="message__image"><img src="${url}" alt="Maya" loading="lazy"></div>`
   } else {
     bubbleContent = `<div class="message__bubble">${escapeHtml(content)}</div>`

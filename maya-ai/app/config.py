@@ -21,7 +21,7 @@ CCBILL_SUBACCOUNT   = os.getenv("CCBILL_SUBACCOUNT")
 CCBILL_SECRET_KEY   = os.getenv("CCBILL_SECRET_KEY")
 
 # App
-DATABASE_PATH       = os.getenv("DATABASE_PATH", "data/maya.db")
+DATABASE_URL        = os.getenv("DATABASE_URL")
 PERSONA_FILE        = os.getenv("PERSONA_FILE", "persona/maya.txt")
 SECRET_KEY          = os.getenv("SECRET_KEY", "change-me-in-production")
 

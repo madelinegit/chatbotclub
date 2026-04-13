@@ -67,11 +67,13 @@ def reject(post_id: int, secret: str = Query(...)):
 @router.post("/posts/{post_id}/post-now")
 def post_now(post_id: int, secret: str = Query(...)):
     _check(secret)
+    import psycopg2.extras
     from app.db.database import get_connection
     conn = get_connection()
-    row  = conn.execute(
-        "SELECT * FROM social_posts WHERE id = ?", (post_id,)
-    ).fetchone()
+    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("SELECT * FROM social_posts WHERE id = %s", (post_id,))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
 
     if not row:
@@ -105,25 +107,24 @@ def generate_post_now(secret: str = Query(...)):
 @router.get("/stats")
 def get_stats(secret: str = Query(...)):
     _check(secret)
+    import psycopg2.extras
     from app.db.database import get_connection
     conn = get_connection()
+    cur  = conn.cursor()
 
-    pending_posts = conn.execute(
-        "SELECT COUNT(*) FROM social_posts WHERE status='pending'"
-    ).fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM social_posts WHERE status='pending'")
+    pending_posts = cur.fetchone()[0]
 
-    posted_today = conn.execute(
-        "SELECT COUNT(*) FROM social_posts WHERE status='posted' AND date(posted_at)=date('now')"
-    ).fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM social_posts WHERE status='posted' AND posted_at::date = CURRENT_DATE")
+    posted_today = cur.fetchone()[0]
 
-    total_users = conn.execute(
-        "SELECT COUNT(*) FROM users"
-    ).fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM users")
+    total_users = cur.fetchone()[0]
 
-    messages_today = conn.execute(
-        "SELECT COUNT(*) FROM messages WHERE date(created_at)=date('now') AND role='user'"
-    ).fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM messages WHERE created_at::date = CURRENT_DATE AND role='user'")
+    messages_today = cur.fetchone()[0]
 
+    cur.close()
     conn.close()
     return {
         "pending_posts":  pending_posts,
@@ -148,16 +149,20 @@ def set_dev(user_id: str, secret: str = Query(...), enabled: bool = Query(True))
 @router.get("/users")
 def list_users(secret: str = Query(...)):
     _check(secret)
+    import psycopg2.extras
     from app.db.database import get_connection
     conn = get_connection()
-    rows = conn.execute("""
+    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("""
         SELECT u.id, u.email, u.created_at, u.age_verified, u.is_dev,
                COALESCE(c.balance, 0) as credits,
                (SELECT COUNT(*) FROM messages m WHERE m.user_id = u.id AND m.role='user') as message_count
         FROM users u
         LEFT JOIN credits c ON c.user_id = u.id
         ORDER BY u.created_at DESC
-    """).fetchall()
+    """)
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
     return {"users": [dict(r) for r in rows]}
 

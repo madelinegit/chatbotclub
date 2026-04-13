@@ -92,8 +92,6 @@ def generate_reply(user_id: str, message: str) -> str:
         print(f"CHAT API ERROR: {e}")
         return "something went wrong on my end. give me a sec."
 
-    print("MODELSLAB RAW:", data)
-
     if "error" in data:
         print("MODEL ERROR:", data)
         return "having some trouble right now. try again in a minute."

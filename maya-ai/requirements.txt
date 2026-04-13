@@ -7,3 +7,4 @@ pydantic[email]
 supabase
 tweepy
 python-multipart
+psycopg2-binary

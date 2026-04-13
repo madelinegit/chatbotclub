@@ -1,106 +1,126 @@
+import psycopg2.extras
 from app.db.database import get_connection
+
+
+def _cursor(conn):
+    return conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 
 # ── Messages ──────────────────────────────────────────────────────────────────
 
 def save_message(user_id: str, role: str, content: str) -> None:
     conn = get_connection()
-    conn.execute(
-        "INSERT INTO messages (user_id, role, content) VALUES (?, ?, ?)",
+    cur  = _cursor(conn)
+    cur.execute(
+        "INSERT INTO messages (user_id, role, content) VALUES (%s, %s, %s)",
         (user_id, role, content),
     )
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def get_recent_messages(user_id: str, limit: int = 10) -> list:
     conn = get_connection()
-    rows = conn.execute(
+    cur  = _cursor(conn)
+    cur.execute(
         """
         SELECT role, content FROM messages
-        WHERE user_id = ?
+        WHERE user_id = %s
         ORDER BY created_at DESC
-        LIMIT ?
+        LIMIT %s
         """,
         (user_id, limit),
-    ).fetchall()
+    )
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
-    return list(reversed([dict(row) for row in rows]))
+    return list(reversed([dict(r) for r in rows]))
 
 
 def get_all_messages(user_id: str) -> list:
-    """Return full chat history for profile/history page."""
     conn = get_connection()
-    rows = conn.execute(
-        "SELECT role, content, created_at FROM messages WHERE user_id = ? ORDER BY created_at ASC",
+    cur  = _cursor(conn)
+    cur.execute(
+        "SELECT role, content, created_at FROM messages WHERE user_id = %s ORDER BY created_at ASC",
         (user_id,),
-    ).fetchall()
+    )
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
-    return [dict(row) for row in rows]
+    return [dict(r) for r in rows]
 
 
 # ── Users ─────────────────────────────────────────────────────────────────────
 
 def create_user(user_id: str, email: str) -> None:
     conn = get_connection()
-    conn.execute(
-        "INSERT OR IGNORE INTO users (id, email) VALUES (?, ?)",
+    cur  = _cursor(conn)
+    cur.execute(
+        "INSERT INTO users (id, email) VALUES (%s, %s) ON CONFLICT DO NOTHING",
         (user_id, email),
     )
-    conn.execute(
-        "INSERT OR IGNORE INTO credits (user_id, balance) VALUES (?, 0)",
+    cur.execute(
+        "INSERT INTO credits (user_id, balance) VALUES (%s, 0) ON CONFLICT DO NOTHING",
         (user_id,),
     )
-    conn.execute(
-        "INSERT OR IGNORE INTO user_profiles (user_id) VALUES (?)",
+    cur.execute(
+        "INSERT INTO user_profiles (user_id) VALUES (%s) ON CONFLICT DO NOTHING",
         (user_id,),
     )
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def get_user_by_id(user_id: str) -> dict | None:
     conn = get_connection()
-    row = conn.execute(
-        "SELECT * FROM users WHERE id = ?", (user_id,)
-    ).fetchone()
+    cur  = _cursor(conn)
+    cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
     return dict(row) if row else None
 
 
 def set_age_verified(user_id: str) -> None:
     conn = get_connection()
-    conn.execute(
-        "UPDATE users SET age_verified = 1 WHERE id = ?", (user_id,)
-    )
+    cur  = _cursor(conn)
+    cur.execute("UPDATE users SET age_verified = 1 WHERE id = %s", (user_id,))
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def is_age_verified(user_id: str) -> bool:
     conn = get_connection()
-    row = conn.execute(
-        "SELECT age_verified FROM users WHERE id = ?", (user_id,)
-    ).fetchone()
+    cur  = _cursor(conn)
+    cur.execute("SELECT age_verified FROM users WHERE id = %s", (user_id,))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
     return bool(row["age_verified"]) if row else False
 
 
 def is_dev_user(user_id: str) -> bool:
     conn = get_connection()
-    row = conn.execute(
-        "SELECT is_dev FROM users WHERE id = ?", (user_id,)
-    ).fetchone()
+    cur  = _cursor(conn)
+    cur.execute("SELECT is_dev FROM users WHERE id = %s", (user_id,))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
     return bool(row["is_dev"]) if row else False
 
 
 def set_dev_user(user_id: str, enabled: bool = True) -> None:
     conn = get_connection()
-    conn.execute(
-        "UPDATE users SET is_dev = ? WHERE id = ?", (1 if enabled else 0, user_id)
+    cur  = _cursor(conn)
+    cur.execute(
+        "UPDATE users SET is_dev = %s WHERE id = %s",
+        (1 if enabled else 0, user_id),
     )
     conn.commit()
+    cur.close()
     conn.close()
 
 
@@ -108,28 +128,31 @@ def set_dev_user(user_id: str, enabled: bool = True) -> None:
 
 def get_profile(user_id: str) -> dict | None:
     conn = get_connection()
-    row = conn.execute(
-        "SELECT * FROM user_profiles WHERE user_id = ?", (user_id,)
-    ).fetchone()
+    cur  = _cursor(conn)
+    cur.execute("SELECT * FROM user_profiles WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
     return dict(row) if row else None
 
 
 def update_profile(user_id: str, display_name: str = None, bio: str = None, avatar_url: str = None) -> None:
     conn = get_connection()
-    conn.execute(
+    cur  = _cursor(conn)
+    cur.execute(
         """
         INSERT INTO user_profiles (user_id, display_name, bio, avatar_url, updated_at)
-        VALUES (?, ?, ?, ?, datetime('now'))
-        ON CONFLICT(user_id) DO UPDATE SET
-            display_name = COALESCE(excluded.display_name, display_name),
-            bio          = COALESCE(excluded.bio, bio),
-            avatar_url   = COALESCE(excluded.avatar_url, avatar_url),
-            updated_at   = datetime('now')
+        VALUES (%s, %s, %s, %s, NOW())
+        ON CONFLICT (user_id) DO UPDATE SET
+            display_name = COALESCE(EXCLUDED.display_name, user_profiles.display_name),
+            bio          = COALESCE(EXCLUDED.bio,          user_profiles.bio),
+            avatar_url   = COALESCE(EXCLUDED.avatar_url,   user_profiles.avatar_url),
+            updated_at   = NOW()
         """,
         (user_id, display_name, bio, avatar_url),
     )
     conn.commit()
+    cur.close()
     conn.close()
 
 
@@ -137,45 +160,45 @@ def update_profile(user_id: str, display_name: str = None, bio: str = None, avat
 
 def get_credit_balance(user_id: str) -> int:
     conn = get_connection()
-    row = conn.execute(
-        "SELECT balance FROM credits WHERE user_id = ?", (user_id,)
-    ).fetchone()
+    cur  = _cursor(conn)
+    cur.execute("SELECT balance FROM credits WHERE user_id = %s", (user_id,))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
     return row["balance"] if row else 0
 
 
 def add_credits(user_id: str, amount: int) -> None:
     conn = get_connection()
-    conn.execute(
-        """
-        UPDATE credits SET balance = balance + ?, updated_at = datetime('now')
-        WHERE user_id = ?
-        """,
+    cur  = _cursor(conn)
+    cur.execute(
+        "UPDATE credits SET balance = balance + %s, updated_at = NOW() WHERE user_id = %s",
         (amount, user_id),
     )
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def deduct_credit(user_id: str) -> bool:
-    """Deduct 1 credit. Returns False if balance is 0."""
+    """Deduct 1 credit atomically. Returns False if balance is 0."""
     conn = get_connection()
-    row = conn.execute(
-        "SELECT balance FROM credits WHERE user_id = ?", (user_id,)
-    ).fetchone()
-
+    cur  = _cursor(conn)
+    cur.execute(
+        "SELECT balance FROM credits WHERE user_id = %s FOR UPDATE",
+        (user_id,),
+    )
+    row = cur.fetchone()
     if not row or row["balance"] < 1:
+        cur.close()
         conn.close()
         return False
-
-    conn.execute(
-        """
-        UPDATE credits SET balance = balance - 1, updated_at = datetime('now')
-        WHERE user_id = ?
-        """,
+    cur.execute(
+        "UPDATE credits SET balance = balance - 1, updated_at = NOW() WHERE user_id = %s",
         (user_id,),
     )
     conn.commit()
+    cur.close()
     conn.close()
     return True
 
@@ -184,75 +207,91 @@ def deduct_credit(user_id: str) -> bool:
 
 def log_transaction(user_id: str, amount_cents: int, credits_added: int, processor_ref: str = None) -> None:
     conn = get_connection()
-    conn.execute(
+    cur  = _cursor(conn)
+    cur.execute(
         """
         INSERT INTO transactions (user_id, amount_cents, credits_added, processor_ref)
-        VALUES (?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s)
         """,
         (user_id, amount_cents, credits_added, processor_ref),
     )
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def get_transactions(user_id: str) -> list:
     conn = get_connection()
-    rows = conn.execute(
-        "SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC",
+    cur  = _cursor(conn)
+    cur.execute(
+        "SELECT * FROM transactions WHERE user_id = %s ORDER BY created_at DESC",
         (user_id,),
-    ).fetchall()
+    )
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
-    return [dict(row) for row in rows]
+    return [dict(r) for r in rows]
 
 
 # ── Blog Posts ────────────────────────────────────────────────────────────────
 
 def get_published_blog_posts() -> list:
     conn = get_connection()
-    rows = conn.execute(
+    cur  = _cursor(conn)
+    cur.execute(
         "SELECT id, title, slug, excerpt, cover_image_url, credit_cost, published_at FROM blog_posts WHERE status = 'published' ORDER BY published_at DESC"
-    ).fetchall()
+    )
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
-    return [dict(row) for row in rows]
+    return [dict(r) for r in rows]
 
 
 def get_blog_post_by_slug(slug: str) -> dict | None:
     conn = get_connection()
-    row = conn.execute(
-        "SELECT * FROM blog_posts WHERE slug = ?", (slug,)
-    ).fetchone()
+    cur  = _cursor(conn)
+    cur.execute("SELECT * FROM blog_posts WHERE slug = %s", (slug,))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
     return dict(row) if row else None
 
 
 def get_blog_post_by_id(post_id: int) -> dict | None:
     conn = get_connection()
-    row = conn.execute(
-        "SELECT * FROM blog_posts WHERE id = ?", (post_id,)
-    ).fetchone()
+    cur  = _cursor(conn)
+    cur.execute("SELECT * FROM blog_posts WHERE id = %s", (post_id,))
+    row = cur.fetchone()
+    cur.close()
     conn.close()
     return dict(row) if row else None
 
 
 def get_all_blog_posts() -> list:
     conn = get_connection()
-    rows = conn.execute(
-        "SELECT * FROM blog_posts ORDER BY created_at DESC"
-    ).fetchall()
+    cur  = _cursor(conn)
+    cur.execute("SELECT * FROM blog_posts ORDER BY created_at DESC")
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
-    return [dict(row) for row in rows]
+    return [dict(r) for r in rows]
 
 
 def create_blog_post(title: str, slug: str, excerpt: str, content: str,
                      cover_image_url: str = None, credit_cost: int = 5) -> int:
     conn = get_connection()
-    cursor = conn.execute(
-        """INSERT INTO blog_posts (title, slug, excerpt, content, cover_image_url, credit_cost)
-           VALUES (?, ?, ?, ?, ?, ?)""",
+    cur  = _cursor(conn)
+    cur.execute(
+        """
+        INSERT INTO blog_posts (title, slug, excerpt, content, cover_image_url, credit_cost)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING id
+        """,
         (title, slug, excerpt, content, cover_image_url, credit_cost),
     )
-    post_id = cursor.lastrowid
+    post_id = cur.fetchone()["id"]
     conn.commit()
+    cur.close()
     conn.close()
     return post_id
 
@@ -261,68 +300,82 @@ def update_blog_post(post_id: int, title: str = None, slug: str = None,
                      excerpt: str = None, content: str = None,
                      cover_image_url: str = None, credit_cost: int = None) -> None:
     conn = get_connection()
-    # Build dynamic SET clause for only provided fields
+    cur  = _cursor(conn)
     fields, values = [], []
-    if title           is not None: fields.append("title = ?");           values.append(title)
-    if slug            is not None: fields.append("slug = ?");            values.append(slug)
-    if excerpt         is not None: fields.append("excerpt = ?");         values.append(excerpt)
-    if content         is not None: fields.append("content = ?");         values.append(content)
-    if cover_image_url is not None: fields.append("cover_image_url = ?"); values.append(cover_image_url)
-    if credit_cost     is not None: fields.append("credit_cost = ?");     values.append(credit_cost)
+    if title           is not None: fields.append("title = %s");           values.append(title)
+    if slug            is not None: fields.append("slug = %s");            values.append(slug)
+    if excerpt         is not None: fields.append("excerpt = %s");         values.append(excerpt)
+    if content         is not None: fields.append("content = %s");         values.append(content)
+    if cover_image_url is not None: fields.append("cover_image_url = %s"); values.append(cover_image_url)
+    if credit_cost     is not None: fields.append("credit_cost = %s");     values.append(credit_cost)
     if not fields:
+        cur.close()
         conn.close()
         return
-    fields.append("updated_at = datetime('now')")
+    fields.append("updated_at = NOW()")
     values.append(post_id)
-    conn.execute(f"UPDATE blog_posts SET {', '.join(fields)} WHERE id = ?", values)
+    cur.execute(f"UPDATE blog_posts SET {', '.join(fields)} WHERE id = %s", values)
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def publish_blog_post(post_id: int) -> None:
     conn = get_connection()
-    conn.execute(
-        "UPDATE blog_posts SET status = 'published', published_at = datetime('now'), updated_at = datetime('now') WHERE id = ?",
+    cur  = _cursor(conn)
+    cur.execute(
+        "UPDATE blog_posts SET status = 'published', published_at = NOW(), updated_at = NOW() WHERE id = %s",
         (post_id,),
     )
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def unpublish_blog_post(post_id: int) -> None:
     conn = get_connection()
-    conn.execute(
-        "UPDATE blog_posts SET status = 'draft', updated_at = datetime('now') WHERE id = ?",
+    cur  = _cursor(conn)
+    cur.execute(
+        "UPDATE blog_posts SET status = 'draft', updated_at = NOW() WHERE id = %s",
         (post_id,),
     )
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def delete_blog_post(post_id: int) -> None:
     conn = get_connection()
-    conn.execute("DELETE FROM blog_unlocks WHERE post_id = ?", (post_id,))
-    conn.execute("DELETE FROM blog_posts WHERE id = ?", (post_id,))
+    cur  = _cursor(conn)
+    cur.execute("DELETE FROM blog_unlocks WHERE post_id = %s", (post_id,))
+    cur.execute("DELETE FROM blog_posts WHERE id = %s", (post_id,))
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def has_unlocked_blog_post(user_id: str, post_id: int) -> bool:
     conn = get_connection()
-    row = conn.execute(
-        "SELECT 1 FROM blog_unlocks WHERE user_id = ? AND post_id = ?", (user_id, post_id)
-    ).fetchone()
+    cur  = _cursor(conn)
+    cur.execute(
+        "SELECT 1 FROM blog_unlocks WHERE user_id = %s AND post_id = %s",
+        (user_id, post_id),
+    )
+    row = cur.fetchone()
+    cur.close()
     conn.close()
     return row is not None
 
 
 def unlock_blog_post(user_id: str, post_id: int) -> None:
     conn = get_connection()
-    conn.execute(
-        "INSERT OR IGNORE INTO blog_unlocks (user_id, post_id) VALUES (?, ?)",
+    cur  = _cursor(conn)
+    cur.execute(
+        "INSERT INTO blog_unlocks (user_id, post_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
         (user_id, post_id),
     )
     conn.commit()
+    cur.close()
     conn.close()
 
 
@@ -330,73 +383,76 @@ def unlock_blog_post(user_id: str, post_id: int) -> None:
 
 def create_social_post(caption: str, image_url: str = None, image_prompt: str = None, scheduled_at: str = None) -> int:
     conn = get_connection()
-    cursor = conn.execute(
+    cur  = _cursor(conn)
+    cur.execute(
         """
         INSERT INTO social_posts (caption, image_url, image_prompt, scheduled_at)
-        VALUES (?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s)
+        RETURNING id
         """,
         (caption, image_url, image_prompt, scheduled_at),
     )
-    post_id = cursor.lastrowid
+    post_id = cur.fetchone()["id"]
     conn.commit()
+    cur.close()
     conn.close()
     return post_id
 
 
 def get_pending_posts() -> list:
     conn = get_connection()
-    rows = conn.execute(
-        "SELECT * FROM social_posts WHERE status = 'pending' ORDER BY created_at DESC"
-    ).fetchall()
+    cur  = _cursor(conn)
+    cur.execute("SELECT * FROM social_posts WHERE status = 'pending' ORDER BY created_at DESC")
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
-    return [dict(row) for row in rows]
+    return [dict(r) for r in rows]
 
 
 def get_all_posts(limit: int = 50) -> list:
     conn = get_connection()
-    rows = conn.execute(
-        "SELECT * FROM social_posts ORDER BY created_at DESC LIMIT ?", (limit,)
-    ).fetchall()
+    cur  = _cursor(conn)
+    cur.execute("SELECT * FROM social_posts ORDER BY created_at DESC LIMIT %s", (limit,))
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
-    return [dict(row) for row in rows]
+    return [dict(r) for r in rows]
 
 
 def approve_post(post_id: int) -> None:
     conn = get_connection()
-    conn.execute(
-        "UPDATE social_posts SET status = 'approved' WHERE id = ?", (post_id,)
-    )
+    cur  = _cursor(conn)
+    cur.execute("UPDATE social_posts SET status = 'approved' WHERE id = %s", (post_id,))
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def reject_post(post_id: int) -> None:
     conn = get_connection()
-    conn.execute(
-        "UPDATE social_posts SET status = 'rejected' WHERE id = ?", (post_id,)
-    )
+    cur  = _cursor(conn)
+    cur.execute("UPDATE social_posts SET status = 'rejected' WHERE id = %s", (post_id,))
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def mark_post_posted(post_id: int, platform_post_id: str) -> None:
     conn = get_connection()
-    conn.execute(
-        """
-        UPDATE social_posts
-        SET status = 'posted', post_id = ?, posted_at = datetime('now')
-        WHERE id = ?
-        """,
+    cur  = _cursor(conn)
+    cur.execute(
+        "UPDATE social_posts SET status = 'posted', post_id = %s, posted_at = NOW() WHERE id = %s",
         (platform_post_id, post_id),
     )
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def mark_post_failed(post_id: int) -> None:
     conn = get_connection()
-    conn.execute(
-        "UPDATE social_posts SET status = 'failed' WHERE id = ?", (post_id,)
-    )
+    cur  = _cursor(conn)
+    cur.execute("UPDATE social_posts SET status = 'failed' WHERE id = %s", (post_id,))
     conn.commit()
+    cur.close()
     conn.close()

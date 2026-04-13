@@ -2,6 +2,7 @@
 CCBill payment service.
 Placeholder until CCBill account is approved.
 """
+import hashlib
 from app.config import CCBILL_ACCOUNT_NUM, CCBILL_SUBACCOUNT, CCBILL_SECRET_KEY
 from app.db.crud import add_credits, log_transaction
 
@@ -48,8 +49,24 @@ def get_credit_costs() -> dict:
     }
 
 
+def _verify_ccbill_signature(payload: dict) -> bool:
+    """Verify CCBill webhook HMAC-MD5 signature."""
+    if not CCBILL_SECRET_KEY:
+        return False
+    received = payload.get("clientAccnum", "") + \
+               payload.get("clientSubacc", "") + \
+               payload.get("timestamp", "") + \
+               CCBILL_SECRET_KEY
+    expected = hashlib.md5(received.encode()).hexdigest()
+    return payload.get("digest", "") == expected
+
+
 def handle_ccbill_webhook(payload: dict) -> bool:
     """Process an incoming CCBill webhook POST on successful charge."""
+    if not _verify_ccbill_signature(payload):
+        print("CCBILL: invalid signature — rejected")
+        return False
+
     user_id       = payload.get("X-user-id")
     processor_ref = payload.get("subscriptionId")
     billed_amount = payload.get("billedAmount", "0")

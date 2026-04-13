@@ -1,5 +1,19 @@
+import time
 import requests
 from app.config import MODELSLAB_API_KEY, MODELSLAB_IMAGE_URL, MODELSLAB_IMAGE_MODEL
+
+
+def _poll_for_image(url: str, max_wait: int = 45) -> str | None:
+    """Poll a future_links URL every 5 seconds until the image is ready."""
+    for _ in range(max_wait // 5):
+        time.sleep(5)
+        try:
+            r = requests.head(url, timeout=10)
+            if r.status_code == 200:
+                return url
+        except Exception:
+            pass
+    return None
 
 
 def generate_image(prompt: str) -> str | None:
@@ -17,22 +31,21 @@ def generate_image(prompt: str) -> str | None:
         "safety_checker":       "no",
     }
 
-    headers = {"Content-Type": "application/json"}
-
     try:
-        r = requests.post(MODELSLAB_IMAGE_URL, json=payload, headers=headers, timeout=60)
+        r = requests.post(MODELSLAB_IMAGE_URL, json=payload,
+                          headers={"Content-Type": "application/json"}, timeout=60)
         r.raise_for_status()
         data = r.json()
     except Exception as e:
         print(f"IMAGE API ERROR: {e}")
         return None
 
-    print("IMAGE API RAW:", data)
-
     if data.get("status") == "success":
         return data["output"][0]
 
     if data.get("status") == "processing":
-        return data.get("future_links", [None])[0]
+        future_url = data.get("future_links", [None])[0]
+        if future_url:
+            return _poll_for_image(future_url)
 
     return None
