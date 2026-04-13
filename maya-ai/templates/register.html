@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya — Create Account</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="auth-layout">
+  <div class="auth-card">
+
+    <div class="auth-card__logo">Maya</div>
+    <div class="auth-card__tagline">create your account</div>
+
+    <div id="error-msg" class="alert alert--error hidden" style="margin-bottom:16px;"></div>
+    <div id="success-msg" class="alert alert--success hidden" style="margin-bottom:16px;"></div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="at least 8 characters" autocomplete="new-password">
+    </div>
+
+    <div class="form-group" style="margin-bottom:24px;">
+      <label for="confirm">Confirm Password</label>
+      <input type="password" id="confirm" placeholder="••••••••" autocomplete="new-password"
+             onkeydown="if(event.key==='Enter') register()">
+    </div>
+
+    
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;padding:14px;background:var(--bg-elevated);border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
+      <input type="checkbox" id="no-chargeback" style="margin-top:3px;flex-shrink:0;accent-color:var(--accent-primary);">
+      <label for="no-chargeback" style="font-size:0.8rem;color:var(--text-secondary);line-height:1.6;text-transform:none;letter-spacing:0;">
+        I agree that all credit purchases are final and non-refundable. I will not file a chargeback for any transaction on this platform. I understand I can contact support to resolve any billing issues directly.
+        <a href="/pricing" target="_blank" style="color:var(--accent-primary);">See full pricing &amp; purchase agreement.</a>
+      </label>
+    </div>
+
+    <button class="btn btn-primary w-full btn-lg" onclick="register()" id="register-btn">
+      Create Account
+    </button>
+
+    <div class="auth-divider">or</div>
+
+    <div style="text-align:center;font-size:0.85rem;color:var(--text-muted);">
+      Already have an account?
+      <a href="/login" style="color:var(--accent-primary);margin-left:4px;">Sign in</a>
+    </div>
+
+    <div style="margin-top:20px;text-align:center;font-size:0.75rem;color:var(--text-muted);line-height:1.6;">
+      By creating an account you confirm you are 18 or older and agree to our
+      <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.
+    </div>
+
+  </div>
+</div>
+
+<script>
+  async function register() {
+    const email    = document.getElementById('email').value.trim()
+    const password = document.getElementById('password').value
+    const confirm  = document.getElementById('confirm').value
+    const btn      = document.getElementById('register-btn')
+
+    clearMessages()
+
+    const noChargeback = document.getElementById('no-chargeback')
+    if (!email || !password || !confirm) {
+      showError('Please fill in all fields.')
+      return
+    }
+    if (!noChargeback.checked) {
+      showError('Please agree to the purchase agreement to continue.')
+      return
+    }
+
+    if (password.length < 8) {
+      showError('Password must be at least 8 characters.')
+      return
+    }
+
+    if (password !== confirm) {
+      showError('Passwords do not match.')
+      return
+    }
+
+    btn.disabled = true
+    btn.textContent = 'Creating account…'
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        showError(data.detail || 'Registration failed.')
+        return
+      }
+
+      if (data.verify_email) {
+        showSuccess(data.detail)
+        return
+      }
+
+      localStorage.setItem('maya_token', data.access_token)
+      localStorage.setItem('maya_user_id', data.user_id)
+      window.location.href = '/chat'
+
+    } catch (err) {
+      showError('Something went wrong. Try again.')
+    } finally {
+      btn.disabled = false
+      btn.textContent = 'Create Account'
+    }
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('error-msg')
+    box.textContent = msg
+    box.classList.remove('hidden')
+  }
+
+  function showSuccess(msg) {
+    const box = document.getElementById('success-msg')
+    box.textContent = msg
+    box.classList.remove('hidden')
+  }
+
+  function clearMessages() {
+    document.getElementById('error-msg').classList.add('hidden')
+    document.getElementById('success-msg').classList.add('hidden')
+  }
+
+  // Redirect if already logged in
+  if (localStorage.getItem('maya_token')) {
+    window.location.href = '/chat'
+  }
+</script>
+
+</body>
+</html>

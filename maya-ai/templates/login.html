@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya — Sign In</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="auth-layout">
+  <div class="auth-card">
+
+    <div class="auth-card__logo">Maya</div>
+    <div class="auth-card__tagline">sign in to continue</div>
+
+    <div id="error-msg" class="alert alert--error hidden" style="margin-bottom:16px;"></div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
+    </div>
+
+    <div class="form-group" style="margin-bottom:24px;">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') login()">
+    </div>
+
+    <button class="btn btn-primary w-full btn-lg" onclick="login()" id="login-btn">
+      Sign In
+    </button>
+
+    <div class="auth-divider">or</div>
+
+    <div style="text-align:center;font-size:0.85rem;color:var(--text-muted);">
+      Don't have an account?
+      <a href="/register" style="color:var(--accent-primary);margin-left:4px;">Create one</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  async function login() {
+    const email    = document.getElementById('email').value.trim()
+    const password = document.getElementById('password').value
+    const btn      = document.getElementById('login-btn')
+    const errBox   = document.getElementById('error-msg')
+
+    errBox.classList.add('hidden')
+
+    if (!email || !password) {
+      showError('Please fill in both fields.')
+      return
+    }
+
+    btn.disabled = true
+    btn.textContent = 'Signing in…'
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        showError(data.detail || 'Login failed.')
+        return
+      }
+
+      localStorage.setItem('maya_token', data.access_token)
+      localStorage.setItem('maya_user_id', data.user_id)
+      window.location.href = '/chat'
+
+    } catch (err) {
+      showError('Something went wrong. Try again.')
+    } finally {
+      btn.disabled = false
+      btn.textContent = 'Sign In'
+    }
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('error-msg')
+    box.textContent = msg
+    box.classList.remove('hidden')
+  }
+
+  // Redirect if already logged in
+  if (localStorage.getItem('maya_token')) {
+    window.location.href = '/chat'
+  }
+</script>
+
+</body>
+</html>

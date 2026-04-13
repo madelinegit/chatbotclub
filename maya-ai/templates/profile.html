@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya — Your Profile</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav__logo">Maya</a>
+  <ul class="nav__links">
+    <li><a href="/chat">Chat</a></li>
+    <li><button class="btn btn-subtle btn-sm" onclick="logout()">Log out</button></li>
+  </ul>
+</nav>
+
+<div class="container--narrow" style="padding-top:var(--space-7);padding-bottom:var(--space-7);">
+
+  <!-- Profile Header -->
+  <div style="display:flex;align-items:center;gap:var(--space-5);margin-bottom:var(--space-6);">
+    <div style="position:relative;">
+      <div id="avatar-preview" style="width:80px;height:80px;border-radius:999px;overflow:hidden;
+           border:2px solid rgba(201,149,106,0.4);background:var(--bg-elevated);
+           display:flex;align-items:center;justify-content:center;
+           font-size:2rem;color:var(--text-accent);">?</div>
+      <label for="avatar-input" style="position:absolute;bottom:0;right:0;
+             background:var(--accent-primary);border-radius:999px;width:24px;height:24px;
+             display:flex;align-items:center;justify-content:center;cursor:pointer;
+             font-size:0.7rem;color:#0a0a0b;font-weight:700;">✎</label>
+      <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="previewAvatar(event)">
+    </div>
+    <div>
+      <h1 id="display-name-heading" style="font-size:1.8rem;margin-bottom:4px;">Your Profile</h1>
+      <p id="email-display" class="text-muted" style="font-size:0.85rem;"></p>
+    </div>
+  </div>
+
+  <!-- Credits Card -->
+  <div class="card card--glow" style="margin-bottom:var(--space-5);display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Credit Balance</div>
+      <div style="font-family:var(--font-mono);font-size:1.6rem;color:var(--accent-primary);" id="credit-balance">—</div>
+    </div>
+    <button class="btn btn-primary" onclick="window.location.href='/chat'">+ Get Credits</button>
+  </div>
+
+  <!-- Profile Form -->
+  <div class="card" style="margin-bottom:var(--space-5);">
+    <h3 style="margin-bottom:var(--space-4);">About You</h3>
+    <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:var(--space-4);">
+      Maya reads this before every conversation. Tell her your name, what you're into,
+      how you want her to treat you. The more you share, the better she knows you.
+    </p>
+
+    <div id="save-success" class="alert alert--success hidden" style="margin-bottom:16px;">Profile saved.</div>
+    <div id="save-error" class="alert alert--error hidden" style="margin-bottom:16px;"></div>
+
+    <div class="form-group" style="margin-bottom:var(--space-4);">
+      <label for="display-name">What should Maya call you?</label>
+      <input type="text" id="display-name" placeholder="your name or nickname" maxlength="50">
+    </div>
+
+    <div class="form-group" style="margin-bottom:var(--space-5);">
+      <label for="bio">Tell Maya about yourself</label>
+      <textarea id="bio" rows="5" maxlength="1000"
+        placeholder="What are you into? How do you want her to talk to you? What should she know about you? Be as specific as you want — she'll remember it."></textarea>
+      <div style="text-align:right;font-size:0.75rem;color:var(--text-muted);margin-top:4px;">
+        <span id="bio-count">0</span>/1000
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveProfile()" id="save-btn">Save Profile</button>
+  </div>
+
+  <!-- Chat History -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);">
+      <h3>Chat History</h3>
+      <span class="text-muted" style="font-size:0.8rem;" id="message-count"></span>
+    </div>
+    <div id="history-list" style="display:flex;flex-direction:column;gap:var(--space-2);max-height:400px;overflow-y:auto;">
+      <div class="text-muted" style="font-size:0.85rem;">Loading...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const token = localStorage.getItem('maya_token')
+  if (!token) { window.location.href = '/login' }
+
+  function logout() {
+    localStorage.removeItem('maya_token')
+    localStorage.removeItem('maya_user_id')
+    window.location.href = '/login'
+  }
+
+  // Bio character counter
+  document.getElementById('bio').addEventListener('input', function() {
+    document.getElementById('bio-count').textContent = this.value.length
+  })
+
+  // Avatar preview
+  function previewAvatar(event) {
+    const file = event.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = e => {
+      const preview = document.getElementById('avatar-preview')
+      preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Load profile
+  async function loadProfile() {
+    const res  = await fetch('/api/profile/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (res.status === 401) { logout(); return }
+    const data = await res.json()
+
+    document.getElementById('email-display').textContent   = data.email || ''
+    document.getElementById('credit-balance').textContent  = data.credits ?? 0
+    document.getElementById('display-name').value          = data.display_name || ''
+    document.getElementById('bio').value                   = data.bio || ''
+    document.getElementById('bio-count').textContent       = (data.bio || '').length
+
+    if (data.display_name) {
+      document.getElementById('display-name-heading').textContent = data.display_name
+    }
+
+    if (data.avatar_url) {
+      document.getElementById('avatar-preview').innerHTML =
+        `<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;">`
+    }
+  }
+
+  // Save profile
+  async function saveProfile() {
+    const btn = document.getElementById('save-btn')
+    btn.disabled = true
+    btn.textContent = 'Saving...'
+
+    document.getElementById('save-success').classList.add('hidden')
+    document.getElementById('save-error').classList.add('hidden')
+
+    const formData = new FormData()
+    formData.append('display_name', document.getElementById('display-name').value)
+    formData.append('bio', document.getElementById('bio').value)
+
+    const avatarInput = document.getElementById('avatar-input')
+    if (avatarInput.files[0]) {
+      formData.append('avatar', avatarInput.files[0])
+    }
+
+    try {
+      const res = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      })
+
+      if (res.ok) {
+        document.getElementById('save-success').classList.remove('hidden')
+        const name = document.getElementById('display-name').value
+        if (name) document.getElementById('display-name-heading').textContent = name
+      } else {
+        const data = await res.json()
+        document.getElementById('save-error').textContent = data.detail || 'Save failed.'
+        document.getElementById('save-error').classList.remove('hidden')
+      }
+    } catch (err) {
+      document.getElementById('save-error').textContent = 'Connection error.'
+      document.getElementById('save-error').classList.remove('hidden')
+    } finally {
+      btn.disabled = false
+      btn.textContent = 'Save Profile'
+    }
+  }
+
+  // Load chat history
+  async function loadHistory() {
+    const res  = await fetch('/api/profile/history', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const data = await res.json()
+    const list = document.getElementById('history-list')
+    const msgs = data.messages || []
+
+    document.getElementById('message-count').textContent = `${msgs.length} messages`
+
+    if (msgs.length === 0) {
+      list.innerHTML = '<div class="text-muted" style="font-size:0.85rem;">No messages yet.</div>'
+      return
+    }
+
+    list.innerHTML = msgs.slice(-50).map(m => `
+      <div style="display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--border-subtle);">
+        <span style="font-size:0.72rem;font-family:var(--font-mono);color:var(--text-muted);
+                     min-width:40px;padding-top:2px;">${m.role === 'user' ? 'You' : 'Maya'}</span>
+        <span style="font-size:0.85rem;color:${m.role === 'user' ? 'var(--text-primary)' : 'var(--text-accent)'};">
+          ${escapeHtml(m.content)}
+        </span>
+      </div>
+    `).join('')
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  }
+
+  loadProfile()
+  loadHistory()
+</script>
+
+</body>
+</html>

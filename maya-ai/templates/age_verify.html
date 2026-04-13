@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya — Age Verification</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="auth-layout">
+  <div class="auth-card" style="text-align:center;max-width:480px;">
+
+    <div class="auth-card__logo">Maya</div>
+    <div style="margin-bottom:var(--space-5);">
+      <div style="font-size:3rem;margin-bottom:var(--space-3);">🔞</div>
+      <h2 style="font-size:1.4rem;margin-bottom:var(--space-2);">Adults Only</h2>
+      <p style="color:var(--text-secondary);font-size:0.9rem;line-height:1.7;">
+        This platform contains adult content and explicit conversations.
+        You must be <strong style="color:var(--text-primary);">18 years of age or older</strong>
+        to continue. By proceeding you confirm you meet this requirement
+        and agree to our <a href="/terms">Terms of Service</a>.
+      </p>
+    </div>
+
+    <div id="error-msg" class="alert alert--error hidden" style="margin-bottom:16px;"></div>
+
+    <button class="btn btn-primary w-full btn-lg" onclick="confirmAge()" style="margin-bottom:12px;">
+      I am 18 or older — Enter
+    </button>
+
+    <a href="https://www.google.com" class="btn btn-subtle w-full">
+      I am under 18 — Exit
+    </a>
+
+    <p style="margin-top:var(--space-4);font-size:0.72rem;color:var(--text-muted);line-height:1.7;">
+      By clicking "Enter" you confirm you are at least 18 years old and agree to our
+      <a href="/terms" target="_blank">Terms of Service</a>,
+      <a href="/privacy" target="_blank">Privacy Policy</a>, and
+      <a href="/pricing" target="_blank">Purchase Agreement</a>.
+      All credit purchases are final and non-refundable.
+      False age confirmation may violate applicable laws.
+    </p>
+
+  </div>
+</div>
+
+<script>
+  // If already verified, go straight to chat
+  const token = localStorage.getItem('maya_token')
+  if (!token) { window.location.href = '/login' }
+
+  async function confirmAge() {
+    try {
+      const res = await fetch('/api/profile/verify-age', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        window.location.href = '/chat'
+      } else {
+        document.getElementById('error-msg').textContent = 'Something went wrong. Try again.'
+        document.getElementById('error-msg').classList.remove('hidden')
+      }
+    } catch (err) {
+      document.getElementById('error-msg').textContent = 'Connection error. Try again.'
+      document.getElementById('error-msg').classList.remove('hidden')
+    }
+  }
+</script>
+</body>
+</html>

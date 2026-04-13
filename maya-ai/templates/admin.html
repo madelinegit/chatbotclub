@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya — Admin</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav__logo">Maya</a>
+  <span style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-muted);">admin</span>
+</nav>
+
+<div class="container" style="padding-top:var(--space-6);padding-bottom:var(--space-8);max-width:860px;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5);">
+    <h1 style="font-size:1.8rem;">Post Queue</h1>
+    <div style="display:flex;gap:var(--space-3);">
+      <button class="btn btn-subtle btn-sm" onclick="loadPosts('pending')" id="tab-pending">Pending</button>
+      <button class="btn btn-subtle btn-sm" onclick="loadPosts('all')" id="tab-all">All Posts</button>
+      <button class="btn btn-primary btn-sm" onclick="generateNow()">+ Generate Now</button>
+    </div>
+  </div>
+
+  <div id="status-msg" class="alert hidden" style="margin-bottom:var(--space-4);"></div>
+  <div id="posts-container" style="display:flex;flex-direction:column;gap:var(--space-3);">
+    <div class="text-muted" style="font-size:0.85rem;">Loading...</div>
+  </div>
+
+</div>
+
+<script>
+  const SECRET = "{{ secret }}"
+
+  const STATUS_COLORS = {
+    pending:  'var(--accent-primary)',
+    approved: 'var(--accent-success)',
+    rejected: 'var(--accent-danger)',
+    posted:   '#6ac97a',
+    failed:   'var(--accent-danger)',
+  }
+
+  async function loadPosts(filter = 'pending') {
+    document.getElementById('tab-pending').style.borderColor = filter === 'pending' ? 'var(--accent-primary)' : ''
+    document.getElementById('tab-all').style.borderColor     = filter === 'all'     ? 'var(--accent-primary)' : ''
+
+    const res  = await fetch(`/admin/posts?secret=${SECRET}&status=${filter}`)
+    const data = await res.json()
+    renderPosts(data.posts || [])
+  }
+
+  function renderPosts(posts) {
+    const container = document.getElementById('posts-container')
+    if (!posts.length) {
+      container.innerHTML = '<div class="text-muted" style="font-size:0.85rem;padding:var(--space-5) 0;">No posts here.</div>'
+      return
+    }
+
+    container.innerHTML = posts.map(p => `
+      <div class="card" style="position:relative;" id="post-${p.id}">
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4);">
+
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-3);">
+              <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-muted);">#${p.id}</span>
+              <span style="font-family:var(--font-mono);font-size:0.7rem;padding:2px 8px;border-radius:999px;
+                           background:rgba(255,255,255,0.05);color:${STATUS_COLORS[p.status] || 'var(--text-muted)'};">
+                ${p.status}
+              </span>
+              <span style="font-size:0.72rem;color:var(--text-muted);">${p.created_at ? p.created_at.slice(0,16) : ''}</span>
+              ${p.posted_at ? `<span style="font-size:0.72rem;color:var(--accent-success);">posted ${p.posted_at.slice(0,16)}</span>` : ''}
+            </div>
+
+            <p style="font-size:0.95rem;color:var(--text-primary);line-height:1.6;margin-bottom:var(--space-3);">
+              ${escapeHtml(p.caption)}
+            </p>
+
+            ${p.image_prompt ? `<p style="font-size:0.75rem;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:var(--space-3);">img: ${escapeHtml(p.image_prompt)}</p>` : ''}
+          </div>
+
+          ${p.image_url ? `
+            <div style="width:120px;height:120px;border-radius:var(--radius-md);overflow:hidden;flex-shrink:0;border:1px solid var(--border-subtle);">
+              <img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">
+            </div>
+          ` : `
+            <div style="width:120px;height:120px;border-radius:var(--radius-md);background:var(--bg-elevated);
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--border-subtle);">
+              <span style="font-size:0.72rem;color:var(--text-muted);">text only</span>
+            </div>
+          `}
+        </div>
+
+        ${p.status === 'pending' ? `
+          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-3);padding-top:var(--space-3);border-top:1px solid var(--border-subtle);">
+            <button class="btn btn-primary btn-sm" onclick="postNow(${p.id})">Post to X now</button>
+            <button class="btn btn-subtle btn-sm" onclick="approvePost(${p.id})">Approve (hold)</button>
+            <button class="btn btn-danger btn-sm" onclick="rejectPost(${p.id})">Reject</button>
+          </div>
+        ` : ''}
+
+        ${p.status === 'approved' ? `
+          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-3);padding-top:var(--space-3);border-top:1px solid var(--border-subtle);">
+            <button class="btn btn-primary btn-sm" onclick="postNow(${p.id})">Post to X now</button>
+            <button class="btn btn-danger btn-sm" onclick="rejectPost(${p.id})">Reject</button>
+          </div>
+        ` : ''}
+
+      </div>
+    `).join('')
+  }
+
+  async function approvePost(id) {
+    await fetch(`/admin/posts/${id}/approve?secret=${SECRET}`, { method: 'POST' })
+    showStatus('Approved — will post on next scheduled window.', 'success')
+    loadPosts('pending')
+  }
+
+  async function rejectPost(id) {
+    await fetch(`/admin/posts/${id}/reject?secret=${SECRET}`, { method: 'POST' })
+    showStatus('Rejected.', 'info')
+    loadPosts('pending')
+  }
+
+  async function postNow(id) {
+    showStatus('Posting to X...', 'info')
+    const res = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}`, { method: 'POST' })
+    if (res.ok) {
+      showStatus('Posted to X successfully!', 'success')
+      loadPosts('all')
+    } else {
+      const data = await res.json()
+      showStatus(`Failed: ${data.detail}`, 'error')
+    }
+  }
+
+  async function generateNow() {
+    showStatus('Generating a new post...', 'info')
+    const res = await fetch(`/admin/generate?secret=${SECRET}`, { method: 'POST' })
+    if (res.ok) {
+      showStatus('Post generated and added to queue.', 'success')
+      loadPosts('pending')
+    } else {
+      showStatus('Generation failed. Check logs.', 'error')
+    }
+  }
+
+  function showStatus(msg, type) {
+    const el = document.getElementById('status-msg')
+    el.textContent = msg
+    el.className   = `alert alert--${type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'}`
+    el.classList.remove('hidden')
+    setTimeout(() => el.classList.add('hidden'), 4000)
+  }
+
+  function escapeHtml(str) {
+    if (!str) return ''
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  }
+
+  loadPosts('pending')
+</script>
+
+</body>
+</html>

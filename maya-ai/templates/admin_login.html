@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f0f10;
+      color: #e0ddd8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: #1a1a1e;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 40px;
+      width: 100%;
+      max-width: 380px;
+    }
+    .logo {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #666;
+      margin-bottom: 24px;
+    }
+    h1 { font-size: 20px; font-weight: 500; margin-bottom: 24px; }
+    input {
+      width: 100%;
+      background: #111113;
+      color: #e0ddd8;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 14px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    input:focus { border-color: rgba(255,255,255,0.25); }
+    button {
+      width: 100%;
+      background: #c9956a;
+      color: #0a0a0b;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      border-radius: 999px;
+      padding: 13px;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    button:hover { background: #d4a87a; }
+    .err {
+      background: rgba(201,106,106,0.1);
+      border: 1px solid rgba(201,106,106,0.3);
+      color: #e89090;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 12px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Maya — Admin</div>
+  <h1>Sign in</h1>
+  <div class="err" id="err"></div>
+  <input type="password" id="secret" placeholder="Admin secret" onkeydown="if(event.key==='Enter')login()">
+  <button onclick="login()">Enter</button>
+</div>
+<script>
+  function login() {
+    const secret = document.getElementById('secret').value.trim()
+    if (!secret) return
+    // Verify by attempting to load the dashboard
+    fetch(`/admin/posts?secret=${encodeURIComponent(secret)}`)
+      .then(r => {
+        if (r.ok) {
+          window.location.href = `/admin/dashboard?secret=${encodeURIComponent(secret)}`
+        } else {
+          const err = document.getElementById('err')
+          err.textContent = 'Wrong secret.'
+          err.style.display = 'block'
+        }
+      })
+  }
+  // If secret already in URL, go straight to dashboard
+  const params = new URLSearchParams(window.location.search)
+  if (params.get('secret')) {
+    window.location.href = `/admin/dashboard?secret=${params.get('secret')}`
+  }
+</script>
+</body>
+</html>

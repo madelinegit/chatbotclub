@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya — Pricing</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav__logo">Maya</a>
+  <ul class="nav__links">
+    <li><a href="/chat">Chat</a></li>
+    <li><a href="/pricing" style="color:var(--text-primary);">Pricing</a></li>
+    <li><a href="/terms">Terms</a></li>
+  </ul>
+</nav>
+
+<div class="container--narrow" style="padding-top:var(--space-7);padding-bottom:var(--space-8);">
+
+  <!-- Hero -->
+  <div style="text-align:center;margin-bottom:var(--space-7);">
+    <h1 style="margin-bottom:var(--space-3);">Simple, honest pricing.</h1>
+    <p style="font-size:1rem;color:var(--text-secondary);max-width:480px;margin:0 auto;">
+      No subscription. No hidden fees. No surprises.
+      Buy credits, spend them when you want.
+      <strong style="color:var(--text-primary);">Every new account starts with 10 free credits.</strong>
+    </p>
+  </div>
+
+  <!-- How credits work -->
+  <div class="card" style="margin-bottom:var(--space-6);">
+    <h3 style="margin-bottom:var(--space-4);">How credits work</h3>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-5);">
+
+      <div style="background:var(--bg-elevated);border-radius:var(--radius-md);padding:var(--space-4);border:1px solid var(--border-subtle);">
+        <div style="font-size:1.6rem;margin-bottom:var(--space-2);">💬</div>
+        <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">Text Message</div>
+        <div style="font-family:var(--font-mono);color:var(--accent-primary);font-size:1.1rem;margin-bottom:4px;">1 credit</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">Send a message, get a reply. One credit, one exchange.</div>
+      </div>
+
+      <div style="background:var(--bg-elevated);border-radius:var(--radius-md);padding:var(--space-4);border:1px solid var(--border-subtle);">
+        <div style="font-size:1.6rem;margin-bottom:var(--space-2);">📸</div>
+        <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">Image Request</div>
+        <div style="font-family:var(--font-mono);color:var(--accent-primary);font-size:1.1rem;margin-bottom:4px;">3 credits</div>
+        <div style="font-size:0.8rem;color:var(--text-muted);">Ask Maya for a photo. Generated fresh, every time.</div>
+      </div>
+
+    </div>
+
+    <div class="alert alert--info" style="font-size:0.85rem;">
+      <strong>Your balance never expires.</strong> Credits you buy stay on your account indefinitely. No monthly reset, no pressure.
+    </div>
+  </div>
+
+  <!-- Credit packs -->
+  <h2 style="margin-bottom:var(--space-4);text-align:center;">Credit Packs</h2>
+
+  <div style="display:flex;flex-direction:column;gap:var(--space-3);margin-bottom:var(--space-6);">
+
+    <!-- Free -->
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;border-color:rgba(106,201,122,0.2);">
+      <div>
+        <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:4px;">
+          <span style="font-weight:600;font-size:1.05rem;">Free Starter</span>
+          <span style="font-size:0.7rem;background:rgba(106,201,122,0.15);color:var(--accent-success);border-radius:999px;padding:2px 8px;font-weight:600;">NEW ACCOUNTS</span>
+        </div>
+        <div style="color:var(--text-muted);font-size:0.85rem;">10 messages to start — no card required</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:var(--font-mono);font-size:1.4rem;color:var(--accent-success);">$0</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">100 credits</div>
+      </div>
+    </div>
+
+    <!-- Starter -->
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-weight:600;font-size:1.05rem;margin-bottom:4px;">Starter</div>
+        <div style="color:var(--text-muted);font-size:0.85rem;">50 messages or ~16 images</div>
+        <div style="color:var(--text-muted);font-size:0.8rem;margin-top:2px;">≈ $0.20 per message</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:var(--font-mono);font-size:1.4rem;color:var(--text-primary);">$9.99</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">50 credits</div>
+      </div>
+    </div>
+
+    <!-- Popular -->
+    <div class="card card--glow" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:4px;">
+          <span style="font-weight:600;font-size:1.05rem;">Popular</span>
+          <span style="font-size:0.7rem;background:rgba(201,149,106,0.15);color:var(--accent-primary);border-radius:999px;padding:2px 8px;font-weight:600;">BEST VALUE</span>
+        </div>
+        <div style="color:var(--text-muted);font-size:0.85rem;">150 messages or ~50 images</div>
+        <div style="color:var(--text-muted);font-size:0.8rem;margin-top:2px;">≈ $0.17 per message</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:var(--font-mono);font-size:1.4rem;color:var(--accent-primary);">$24.99</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">150 credits</div>
+      </div>
+    </div>
+
+    <!-- Premium -->
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-weight:600;font-size:1.05rem;margin-bottom:4px;">Premium</div>
+        <div style="color:var(--text-muted);font-size:0.85rem;">400 messages or ~133 images</div>
+        <div style="color:var(--text-muted);font-size:0.8rem;margin-top:2px;">≈ $0.15 per message</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:var(--font-mono);font-size:1.4rem;color:var(--text-primary);">$59.99</div>
+        <div style="font-size:0.75rem;color:var(--text-muted);">400 credits</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- No chargeback agreement -->
+  <div class="card" style="margin-bottom:var(--space-6);border-color:rgba(201,149,106,0.2);">
+    <h3 style="margin-bottom:var(--space-3);">Purchase Agreement</h3>
+    <p style="font-size:0.88rem;color:var(--text-secondary);line-height:1.8;margin-bottom:var(--space-3);">
+      By completing any purchase on this platform you explicitly agree to the following:
+    </p>
+    <ul style="list-style:none;padding:0;display:flex;flex-direction:column;gap:var(--space-2);">
+      <li style="display:flex;gap:var(--space-3);font-size:0.85rem;color:var(--text-secondary);">
+        <span style="color:var(--accent-primary);flex-shrink:0;">✓</span>
+        <span>You are purchasing digital credits for use on this platform. All sales are final. Credits are non-refundable except where required by applicable law.</span>
+      </li>
+      <li style="display:flex;gap:var(--space-3);font-size:0.85rem;color:var(--text-secondary);">
+        <span style="color:var(--accent-primary);flex-shrink:0;">✓</span>
+        <span>You understand that credits are consumed when you send messages or request images, and that used credits cannot be refunded regardless of your satisfaction with individual responses.</span>
+      </li>
+      <li style="display:flex;gap:var(--space-3);font-size:0.85rem;color:var(--text-secondary);">
+        <span style="color:var(--accent-primary);flex-shrink:0;">✓</span>
+        <span><strong style="color:var(--text-primary);">You expressly agree not to file a chargeback or payment dispute</strong> for any transaction made on this platform. Filing a fraudulent chargeback constitutes a breach of this agreement and may result in permanent account termination and referral for fraud investigation.</span>
+      </li>
+      <li style="display:flex;gap:var(--space-3);font-size:0.85rem;color:var(--text-secondary);">
+        <span style="color:var(--accent-primary);flex-shrink:0;">✓</span>
+        <span>If you have a billing concern, contact us directly before initiating any dispute. We will work to resolve legitimate issues.</span>
+      </li>
+      <li style="display:flex;gap:var(--space-3);font-size:0.85rem;color:var(--text-secondary);">
+        <span style="color:var(--accent-primary);flex-shrink:0;">✓</span>
+        <span>The billing descriptor on your statement will appear as <strong style="color:var(--text-primary);">MAYA-AI</strong> or similar. If you do not recognize a charge, contact us before disputing.</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- FAQ -->
+  <div class="card" style="margin-bottom:var(--space-6);">
+    <h3 style="margin-bottom:var(--space-5);">Common questions</h3>
+
+    <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+
+      <div>
+        <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">Do credits expire?</div>
+        <div style="font-size:0.88rem;color:var(--text-secondary);">No. Your credits stay on your account until you use them. No monthly reset.</div>
+      </div>
+
+      <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-4);">
+        <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">What counts as one message?</div>
+        <div style="font-size:0.88rem;color:var(--text-secondary);">You send a message, Maya replies — that's 1 credit. If Maya sends a follow-up message as part of the same response, that's still 1 credit total. Images cost 3 credits because they require more to generate.</div>
+      </div>
+
+      <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-4);">
+        <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">What if I run out mid-conversation?</div>
+        <div style="font-size:0.88rem;color:var(--text-secondary);">Maya will let you know and you can buy more instantly. Your conversation history is saved — pick up right where you left off.</div>
+      </div>
+
+      <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-4);">
+        <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">I have a billing issue.</div>
+        <div style="font-size:0.88rem;color:var(--text-secondary);">Contact us before filing any dispute with your bank. We resolve legitimate issues directly and quickly. Chargebacks filed without contacting us first are considered fraudulent under our purchase agreement.</div>
+      </div>
+
+      <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-4);">
+        <div style="font-weight:600;color:var(--text-primary);margin-bottom:4px;">Is my payment information secure?</div>
+        <div style="font-size:0.88rem;color:var(--text-secondary);">We don't store your card details. All payments are processed by our payment processor on their secure servers. We only receive a transaction confirmation.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="text-align:center;">
+    <a href="/register" class="btn btn-primary btn-lg">Start with 10 free credits</a>
+    <div style="margin-top:var(--space-3);font-size:0.8rem;color:var(--text-muted);">No card required to get started.</div>
+  </div>
+
+</div>
+
+</body>
+</html>

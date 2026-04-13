@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+data/maya.db
+.DS_Store

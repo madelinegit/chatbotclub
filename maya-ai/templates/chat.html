@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="chat-layout">
+
+  <!-- Header -->
+  <header class="chat-header">
+    <div class="chat-header__identity">
+      <div class="chat-header__avatar">
+        <div class="message__avatar--initials" style="width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:var(--bg-elevated);font-size:1rem;color:var(--text-accent);">M</div>
+      </div>
+      <div>
+        <div class="chat-header__name">Maya</div>
+        <div class="chat-header__status">online</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="credits-badge" id="credits-display">
+        <span>credits</span>
+        <span class="credits-badge__value" id="credits-value">—</span>
+      </div>
+      <button class="btn btn-subtle btn-sm" onclick="openPaywall()">+ Get Credits</button>
+      <a href="/pricing" class="btn btn-subtle btn-sm">Pricing</a>
+      <a href="/profile" class="btn btn-subtle btn-sm">Profile</a>
+      <button class="btn btn-subtle btn-sm" onclick="logout()">Log out</button>
+    </div>
+  </header>
+
+  <!-- Messages -->
+  <main class="chat-body" id="chat-body">
+    <div class="messages" id="messages">
+      <!-- Maya intro message -->
+      <div class="message message--maya">
+        <div class="message__avatar message__avatar--initials" style="width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:var(--bg-elevated);font-size:0.7rem;color:var(--text-accent);">M</div>
+        <div>
+          <div class="message__bubble">hey. what do you want.</div>
+          <div class="message__time" id="intro-time"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Input -->
+  <footer class="chat-footer">
+    <div class="chat-input-row">
+      <textarea
+        id="msg"
+        class="input-chat"
+        placeholder="say something..."
+        rows="1"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+      <button class="chat-send-btn" onclick="send()" aria-label="Send">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+    <div style="text-align:center;margin-top:8px;">
+      <span class="text-muted" style="font-size:0.72rem;">text = 1 credit &nbsp;·&nbsp; images = 3 credits &nbsp;·&nbsp; 1 credit = 1 message</span>
+    </div>
+  </footer>
+
+</div>
+
+<!-- Paywall Modal -->
+<div class="overlay hidden" id="paywall-overlay">
+  <div class="modal">
+    <div class="modal__title">get credits</div>
+    <div class="modal__sub">each message costs 1 credit. no subscription required.</div>
+    <div class="credit-packs" id="credit-packs">
+      <!-- Populated by JS -->
+    </div>
+    <button class="btn btn-primary w-full" onclick="purchaseSelected()">Continue to Payment</button>
+    <div style="margin-top:12px;text-align:center;font-size:0.75rem;color:var(--text-muted);line-height:1.6;">
+      All purchases are final. By buying credits you agree to our
+      <a href="/pricing" target="_blank" style="color:var(--accent-primary);">purchase agreement</a>
+      and confirm you will not file a chargeback.
+    </div>
+    <div style="margin-top:10px;text-align:center;">
+      <button class="btn btn-subtle btn-sm" onclick="closePaywall()">maybe later</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+<script>
+  // Set intro timestamp
+  document.getElementById('intro-time').textContent = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+</script>
+
+</body>
+</html>

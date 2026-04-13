@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maya Admin — Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f0f10; color: #e0ddd8; }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px; background: #1a1a1e;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .topbar-logo { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: #666; }
+    .topbar-nav { display: flex; gap: 4px; flex-wrap: wrap; }
+    .tab {
+      padding: 6px 14px; border-radius: 6px; font-size: 13px;
+      cursor: pointer; color: #999; background: none; border: none; transition: all 0.15s;
+    }
+    .tab:hover { background: rgba(255,255,255,0.05); color: #e0ddd8; }
+    .tab.active { background: rgba(255,255,255,0.08); color: #e0ddd8; }
+    .topbar-right { display: flex; gap: 10px; align-items: center; }
+    .btn-gen {
+      background: #c9956a; color: #0a0a0b; font-weight: 700; font-size: 12px;
+      border: none; border-radius: 999px; padding: 7px 16px; cursor: pointer;
+    }
+    .btn-gen:hover { background: #d4a87a; }
+
+    .page { display: none; padding: 24px; max-width: 1000px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* Stats row */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .stat { background: #1a1a1e; border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 16px; }
+    .stat-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .stat-value { font-size: 26px; font-weight: 500; color: #c9956a; font-family: monospace; }
+
+    /* Section header */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .section-title { font-size: 15px; font-weight: 500; }
+
+    /* Post cards */
+    .post-list { display: flex; flex-direction: column; gap: 12px; }
+    .post-card {
+      background: #1a1a1e; border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; padding: 16px;
+    }
+    .post-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .post-id { font-family: monospace; font-size: 11px; color: #555; }
+    .status-pill {
+      font-size: 11px; padding: 2px 8px; border-radius: 999px;
+      font-family: monospace;
+    }
+    .s-pending  { background: rgba(201,149,106,0.15); color: #c9956a; }
+    .s-approved { background: rgba(106,201,122,0.12); color: #6ac97a; }
+    .s-posted   { background: rgba(106,201,122,0.12); color: #6ac97a; }
+    .s-rejected { background: rgba(201,106,106,0.12); color: #c96a6a; }
+    .s-failed   { background: rgba(201,106,106,0.12); color: #c96a6a; }
+    .post-time  { font-size: 11px; color: #555; }
+    .post-body  { display: flex; gap: 14px; align-items: flex-start; }
+    .post-text  { flex: 1; font-size: 14px; line-height: 1.6; color: #e0ddd8; }
+    .post-img   { width: 100px; height: 100px; border-radius: 8px; object-fit: cover; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.07); }
+    .post-img-placeholder { width: 100px; height: 100px; border-radius: 8px; background: #111; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #444; border: 1px solid rgba(255,255,255,0.07); }
+    .post-prompt { font-size: 11px; color: #555; font-family: monospace; margin-top: 8px; }
+    .post-actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .btn-post { background: #c9956a; color: #0a0a0b; font-weight: 700; font-size: 12px; border: none; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+    .btn-post:hover { background: #d4a87a; }
+    .btn-approve { background: rgba(106,201,122,0.12); color: #6ac97a; font-size: 12px; border: 1px solid rgba(106,201,122,0.2); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+    .btn-reject { background: rgba(201,106,106,0.08); color: #c96a6a; font-size: 12px; border: 1px solid rgba(201,106,106,0.2); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+
+    /* Users table */
+    .user-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .user-table th { text-align: left; padding: 8px 12px; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .user-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); color: #ccc; }
+    .user-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .credit-val { color: #c9956a; font-family: monospace; }
+    .verified-yes { color: #6ac97a; font-size: 11px; }
+    .verified-no  { color: #c96a6a; font-size: 11px; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1a1a1e; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 12px 18px; font-size: 13px;
+      color: #e0ddd8; z-index: 999; opacity: 0;
+      transition: opacity 0.2s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+
+    .empty { color: #555; font-size: 13px; padding: 24px 0; }
+
+    /* Blog styles */
+    .blog-list { display: flex; flex-direction: column; gap: 12px; }
+    .blog-card {
+      background: #1a1a1e; border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; padding: 16px;
+    }
+    .blog-card.draft { border-color: rgba(201,149,106,0.15); }
+    .blog-card.published { border-color: rgba(106,201,122,0.15); }
+    .blog-title { font-size: 15px; font-weight: 500; color: #e0ddd8; margin-bottom: 4px; }
+    .blog-meta { font-size: 11px; color: #555; font-family: monospace; margin-bottom: 8px; }
+    .blog-excerpt { font-size: 13px; color: #999; line-height: 1.5; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .blog-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; padding: 20px;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal-box {
+      background: #1a1a1e; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 28px; width: 100%; max-width: 680px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-title { font-size: 16px; font-weight: 500; margin-bottom: 20px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .field input, .field textarea, .field select {
+      width: 100%; background: #111113; color: #e0ddd8;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+      padding: 10px 12px; font-size: 13px; outline: none; font-family: inherit;
+    }
+    .field textarea { resize: vertical; min-height: 100px; }
+    .field input:focus, .field textarea:focus { border-color: rgba(255,255,255,0.25); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+    .btn-cancel { background: transparent; color: #999; border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; padding: 8px 18px; font-size: 13px; cursor: pointer; }
+    .btn-save { background: #c9956a; color: #0a0a0b; font-weight: 700; border: none; border-radius: 999px; padding: 8px 20px; font-size: 13px; cursor: pointer; }
+    .btn-save:hover { background: #d4a87a; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Maya Admin</div>
+  <div class="topbar-nav">
+    <button class="tab active" onclick="showPage('posts', this)">Posts</button>
+    <button class="tab" onclick="showPage('blog', this)">Blog</button>
+    <button class="tab" onclick="showPage('users', this)">Users</button>
+    <button class="tab" onclick="showPage('context', this)">Local Context</button>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-gen" onclick="generatePost()">+ Generate Post</button>
+  </div>
+</div>
+
+<!-- POSTS PAGE -->
+<div class="page active" id="page-posts">
+  <div class="stats" id="stats-row">
+    <div class="stat"><div class="stat-label">Pending</div><div class="stat-value" id="stat-pending">—</div></div>
+    <div class="stat"><div class="stat-label">Posted today</div><div class="stat-value" id="stat-posted">—</div></div>
+    <div class="stat"><div class="stat-label">Total users</div><div class="stat-value" id="stat-users">—</div></div>
+    <div class="stat"><div class="stat-label">Messages today</div><div class="stat-value" id="stat-messages">—</div></div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <button class="tab active" id="filter-pending" onclick="loadPosts('pending', this)">Pending</button>
+    <button class="tab" id="filter-all" onclick="loadPosts('all', this)">All</button>
+  </div>
+
+  <div class="post-list" id="post-list"><div class="empty">Loading...</div></div>
+</div>
+
+<!-- BLOG PAGE -->
+<div class="page" id="page-blog">
+  <div class="section-header">
+    <div class="section-title">Journal / Blog Posts</div>
+    <button class="btn-gen" onclick="openBlogModal()">+ New Entry</button>
+  </div>
+  <div class="blog-list" id="blog-list"><div class="empty">Loading...</div></div>
+</div>
+
+<!-- USERS PAGE -->
+<div class="page" id="page-users">
+  <div class="section-header">
+    <div class="section-title">All Users</div>
+  </div>
+  <table class="user-table">
+    <thead>
+      <tr><th>Email</th><th>Credits</th><th>Age verified</th><th>Joined</th><th>Messages</th></tr>
+    </thead>
+    <tbody id="user-table-body"><tr><td colspan="5" style="color:#555;padding:24px 12px;">Loading...</td></tr></tbody>
+  </table>
+</div>
+
+<!-- LOCAL CONTEXT PAGE -->
+<div class="page" id="page-context">
+  <div class="section-header">
+    <div class="section-title">Current Local Context</div>
+    <button class="btn-gen" onclick="loadContext()">Refresh</button>
+  </div>
+  <div id="context-display" style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:20px;font-size:13px;line-height:1.8;color:#ccc;white-space:pre-wrap;font-family:monospace;">Loading...</div>
+  <p style="font-size:12px;color:#555;margin-top:12px;">This is what Maya sees when someone asks about local topics or when generating social posts.</p>
+</div>
+
+<!-- Blog Post Modal -->
+<div class="modal-overlay hidden" id="blog-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">New Journal Entry</div>
+    <input type="hidden" id="edit-post-id">
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="f-title" placeholder="e.g. The night the mountain almost won">
+    </div>
+    <div class="field">
+      <label>Slug (auto-generated if blank)</label>
+      <input type="text" id="f-slug" placeholder="e.g. night-mountain-almost-won">
+    </div>
+    <div class="field">
+      <label>Excerpt (teaser — shown free to everyone)</label>
+      <textarea id="f-excerpt" rows="3" placeholder="A few sentences they'll see before unlocking..."></textarea>
+    </div>
+    <div class="field">
+      <label>Full Content (shown after unlock)</label>
+      <textarea id="f-content" rows="10" placeholder="The full private entry. Plain text — paragraphs separated by blank lines."></textarea>
+    </div>
+    <div class="field">
+      <label>Cover Image URL (optional)</label>
+      <input type="text" id="f-cover" placeholder="https://...">
+    </div>
+    <div class="field">
+      <label>Credit Cost (0 = free)</label>
+      <input type="number" id="f-credits" value="5" min="0" max="999">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeBlogModal()">Cancel</button>
+      <button class="btn-save" id="save-btn" onclick="saveBlogPost()">Save as Draft</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SECRET = new URLSearchParams(window.location.search).get('secret') || ''
+  if (!SECRET) window.location.href = '/admin'
+
+  function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+    document.getElementById('page-' + name).classList.add('active')
+    el.classList.add('active')
+    if (name === 'users')   loadUsers()
+    if (name === 'context') loadContext()
+    if (name === 'blog')    loadBlogPosts()
+  }
+
+  function toast(msg, color) {
+    const t = document.getElementById('toast')
+    t.textContent = msg
+    t.style.borderColor = color === 'green' ? 'rgba(106,201,122,0.3)' : color === 'red' ? 'rgba(201,106,106,0.3)' : 'rgba(255,255,255,0.1)'
+    t.classList.add('show')
+    setTimeout(() => t.classList.remove('show'), 3000)
+  }
+
+  // ── Posts ──────────────────────────────────────────────────────────────────
+
+  async function loadPosts(filter, el) {
+    document.querySelectorAll('#page-posts .tab').forEach(t => t.classList.remove('active'))
+    if (el) el.classList.add('active')
+    const res  = await fetch(`/admin/posts?secret=${SECRET}&status=${filter}`)
+    const data = await res.json()
+    renderPosts(data.posts || [])
+    loadStats()
+  }
+
+  function renderPosts(posts) {
+    const list = document.getElementById('post-list')
+    if (!posts.length) {
+      list.innerHTML = '<div class="empty">No posts here.</div>'
+      return
+    }
+    list.innerHTML = posts.map(p => `
+      <div class="post-card" id="pc-${p.id}">
+        <div class="post-meta">
+          <span class="post-id">#${p.id}</span>
+          <span class="status-pill s-${p.status}">${p.status}</span>
+          <span class="post-time">${(p.created_at || '').slice(0,16)}</span>
+          ${p.posted_at ? `<span class="post-time" style="color:#6ac97a;">↑ ${p.posted_at.slice(0,16)}</span>` : ''}
+        </div>
+        <div class="post-body">
+          <div style="flex:1;">
+            <div class="post-text">${esc(p.caption)}</div>
+            ${p.image_prompt ? `<div class="post-prompt">img: ${esc(p.image_prompt)}</div>` : ''}
+          </div>
+          ${p.image_url
+            ? `<img class="post-img" src="${p.image_url}" loading="lazy">`
+            : `<div class="post-img-placeholder">text only</div>`
+          }
+        </div>
+        ${(p.status === 'pending' || p.status === 'approved') ? `
+          <div class="post-actions">
+            <button class="btn-post" onclick="postNow(${p.id})">Post to X now</button>
+            ${p.status === 'pending' ? `<button class="btn-approve" onclick="approvePost(${p.id})">Approve</button>` : ''}
+            <button class="btn-reject" onclick="rejectPost(${p.id})">Reject</button>
+          </div>
+        ` : ''}
+      </div>
+    `).join('')
+  }
+
+  async function approvePost(id) {
+    await fetch(`/admin/posts/${id}/approve?secret=${SECRET}`, { method: 'POST' })
+    toast('Approved — will auto-post if AUTO_POST=true', 'green')
+    loadPosts('pending')
+  }
+
+  async function rejectPost(id) {
+    await fetch(`/admin/posts/${id}/reject?secret=${SECRET}`, { method: 'POST' })
+    toast('Rejected.', '')
+    loadPosts('pending')
+  }
+
+  async function postNow(id) {
+    toast('Posting to X...', '')
+    const res = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}`, { method: 'POST' })
+    if (res.ok) {
+      toast('Posted to X!', 'green')
+      loadPosts('all')
+    } else {
+      const d = await res.json()
+      toast(`Failed: ${d.detail}`, 'red')
+    }
+  }
+
+  async function generatePost() {
+    toast('Generating post...', '')
+    const res = await fetch(`/admin/generate?secret=${SECRET}`, { method: 'POST' })
+    if (res.ok) {
+      toast('Post queued!', 'green')
+      loadPosts('pending')
+    } else {
+      toast('Generation failed.', 'red')
+    }
+  }
+
+  // ── Stats ──────────────────────────────────────────────────────────────────
+
+  async function loadStats() {
+    const res  = await fetch(`/admin/stats?secret=${SECRET}`)
+    if (!res.ok) return
+    const data = await res.json()
+    document.getElementById('stat-pending').textContent  = data.pending_posts  ?? '—'
+    document.getElementById('stat-posted').textContent   = data.posted_today   ?? '—'
+    document.getElementById('stat-users').textContent    = data.total_users    ?? '—'
+    document.getElementById('stat-messages').textContent = data.messages_today ?? '—'
+  }
+
+  // ── Users ──────────────────────────────────────────────────────────────────
+
+  async function loadUsers() {
+    const res  = await fetch(`/admin/users?secret=${SECRET}`)
+    const data = await res.json()
+    const tbody = document.getElementById('user-table-body')
+    const users = data.users || []
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="color:#555;padding:24px 12px;">No users yet.</td></tr>'
+      return
+    }
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td>${esc(u.email)}</td>
+        <td><span class="credit-val">${u.credits}</span></td>
+        <td>${u.age_verified ? '<span class="verified-yes">✓ verified</span>' : '<span class="verified-no">✗ no</span>'}</td>
+        <td style="font-family:monospace;font-size:12px;">${(u.created_at || '').slice(0,10)}</td>
+        <td style="font-family:monospace;">${u.message_count || 0}</td>
+      </tr>
+    `).join('')
+  }
+
+  // ── Local Context ──────────────────────────────────────────────────────────
+
+  async function loadContext() {
+    document.getElementById('context-display').textContent = 'Fetching...'
+    const res  = await fetch(`/admin/local-context?secret=${SECRET}`)
+    const data = await res.json()
+    document.getElementById('context-display').textContent = data.context || 'No context available.'
+  }
+
+  function esc(str) {
+    if (!str) return ''
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  }
+
+  // ── Blog ───────────────────────────────────────────────────────────────────
+
+  async function loadBlogPosts() {
+    const res  = await fetch(`/admin/blog/posts?secret=${SECRET}`)
+    const data = await res.json()
+    const list = document.getElementById('blog-list')
+    const posts = data.posts || []
+    if (!posts.length) { list.innerHTML = '<div class="empty">No entries yet. Click "+ New Entry" to start.</div>'; return }
+    list.innerHTML = posts.map(p => `
+      <div class="blog-card ${p.status}" id="bc-${p.id}">
+        <div class="blog-title">${esc(p.title)}</div>
+        <div class="blog-meta">
+          #${p.id} &nbsp;·&nbsp;
+          <span style="color:${p.status === 'published' ? '#6ac97a' : '#c9956a'}">${p.status}</span>
+          &nbsp;·&nbsp; ${p.credit_cost === 0 ? 'free' : `${p.credit_cost} credits`}
+          &nbsp;·&nbsp; slug: ${esc(p.slug)}
+          ${p.published_at ? '&nbsp;·&nbsp; published ' + p.published_at.slice(0,10) : ''}
+        </div>
+        <div class="blog-excerpt">${esc(p.excerpt)}</div>
+        <div class="blog-actions">
+          ${p.status === 'draft'
+            ? `<button class="btn-post" onclick="publishBlog(${p.id})">Publish</button>`
+            : `<button class="btn-reject" onclick="unpublishBlog(${p.id})">Unpublish</button>`
+          }
+          <button class="btn-approve" onclick="editBlog(${p.id}, ${JSON.stringify(p).replace(/"/g,'&quot;')})">Edit</button>
+          <a href="/blog/${esc(p.slug)}" target="_blank" style="font-size:12px;color:#999;padding:6px 0;text-decoration:none;">Preview ↗</a>
+          <button class="btn-reject" style="margin-left:auto;" onclick="deleteBlog(${p.id})">Delete</button>
+        </div>
+      </div>
+    `).join('')
+  }
+
+  function openBlogModal(post) {
+    document.getElementById('edit-post-id').value = ''
+    document.getElementById('modal-title').textContent = 'New Journal Entry'
+    document.getElementById('f-title').value    = ''
+    document.getElementById('f-slug').value     = ''
+    document.getElementById('f-excerpt').value  = ''
+    document.getElementById('f-content').value  = ''
+    document.getElementById('f-cover').value    = ''
+    document.getElementById('f-credits').value  = '5'
+    document.getElementById('blog-modal').classList.remove('hidden')
+  }
+
+  function editBlog(id, post) {
+    document.getElementById('edit-post-id').value = id
+    document.getElementById('modal-title').textContent = 'Edit Entry'
+    document.getElementById('f-title').value    = post.title   || ''
+    document.getElementById('f-slug').value     = post.slug    || ''
+    document.getElementById('f-excerpt').value  = post.excerpt || ''
+    document.getElementById('f-content').value  = post.content || ''
+    document.getElementById('f-cover').value    = post.cover_image_url || ''
+    document.getElementById('f-credits').value  = post.credit_cost ?? 5
+    document.getElementById('blog-modal').classList.remove('hidden')
+  }
+
+  function closeBlogModal() {
+    document.getElementById('blog-modal').classList.add('hidden')
+  }
+
+  async function saveBlogPost() {
+    const id      = document.getElementById('edit-post-id').value
+    const body    = {
+      title:           document.getElementById('f-title').value.trim(),
+      slug:            document.getElementById('f-slug').value.trim() || undefined,
+      excerpt:         document.getElementById('f-excerpt').value.trim(),
+      content:         document.getElementById('f-content').value.trim(),
+      cover_image_url: document.getElementById('f-cover').value.trim() || undefined,
+      credit_cost:     parseInt(document.getElementById('f-credits').value) || 0,
+    }
+    if (!body.title || !body.excerpt || !body.content) {
+      toast('Title, excerpt, and content are required.', 'red'); return
+    }
+    const btn = document.getElementById('save-btn')
+    btn.disabled = true; btn.textContent = 'Saving...'
+    const url    = id ? `/admin/blog/posts/${id}?secret=${SECRET}` : `/admin/blog/posts?secret=${SECRET}`
+    const method = id ? 'PUT' : 'POST'
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    btn.disabled = false; btn.textContent = 'Save as Draft'
+    if (res.ok) {
+      toast(id ? 'Entry updated.' : 'Entry created as draft.', 'green')
+      closeBlogModal()
+      loadBlogPosts()
+    } else {
+      const d = await res.json()
+      toast(d.detail || 'Save failed.', 'red')
+    }
+  }
+
+  async function publishBlog(id) {
+    const res = await fetch(`/admin/blog/posts/${id}/publish?secret=${SECRET}`, { method: 'POST' })
+    if (res.ok) { toast('Published!', 'green'); loadBlogPosts() }
+    else { toast('Publish failed.', 'red') }
+  }
+
+  async function unpublishBlog(id) {
+    const res = await fetch(`/admin/blog/posts/${id}/unpublish?secret=${SECRET}`, { method: 'POST' })
+    if (res.ok) { toast('Moved back to draft.', ''); loadBlogPosts() }
+    else { toast('Failed.', 'red') }
+  }
+
+  async function deleteBlog(id) {
+    if (!confirm('Delete this entry permanently?')) return
+    const res = await fetch(`/admin/blog/posts/${id}?secret=${SECRET}`, { method: 'DELETE' })
+    if (res.ok) { toast('Deleted.', ''); loadBlogPosts() }
+    else { toast('Delete failed.', 'red') }
+  }
+
+  // Init
+  loadPosts('pending')
+  loadStats()
+</script>
+</body>
+</html>
