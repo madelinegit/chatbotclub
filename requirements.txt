@@ -3,3 +3,7 @@ uvicorn[standard]
 jinja2
 python-multipart
 python-dotenv
+requests
+supabase
+psycopg2-binary
+tweepy

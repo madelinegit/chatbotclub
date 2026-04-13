@@ -25,16 +25,8 @@ def debug(request: Request):
 
 
 @app.get("/", response_class=HTMLResponse)
-def landing_page():
-    return HTMLResponse("""<!DOCTYPE html>
-<html><head><title>Maya</title></head>
-<body style="background:#0a0a0b;color:#f0ede8;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
-<div style="text-align:center">
-  <h1 style="font-size:4rem;color:#e8c8a0;margin:0">Maya</h1>
-  <p style="color:#9b9790;margin-top:16px">She's waiting.</p>
-  <a href="/register" style="display:inline-block;margin-top:24px;background:#c9956a;color:#0a0a0b;padding:14px 36px;border-radius:999px;text-decoration:none;font-weight:700">Meet Maya</a>
-</div>
-</body></html>""")
+def landing_page(request: Request):
+    return templates.TemplateResponse(request, "landing.html", {})
 
 
 @app.get("/login", response_class=HTMLResponse)
