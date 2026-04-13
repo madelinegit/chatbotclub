@@ -5,9 +5,6 @@
    Page-specific overrides go in their own <style> blocks or files.
    ============================================================ */
 
-/* --- Google Fonts Import --- */
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-
 /* ============================================================
    CSS VARIABLES — change these to retheme the whole app
    ============================================================ */
@@ -43,9 +40,9 @@
   --bubble-border-user: rgba(255,255,255,0.07);
 
   /* Typography */
-  --font-display:   'DM Serif Display', Georgia, serif;
-  --font-body:      'DM Sans', system-ui, sans-serif;
-  --font-mono:      'JetBrains Mono', 'Courier New', monospace;
+  --font-display:   Georgia, 'Times New Roman', serif;
+  --font-body:      system-ui, -apple-system, sans-serif;
+  --font-mono:      'Courier New', monospace;
 
   /* Sizing */
   --radius-sm:      6px;
