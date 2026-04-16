@@ -66,7 +66,7 @@ def reject(post_id: int, secret: str = Query(...)):
 
 
 @router.post("/posts/{post_id}/post-now")
-def post_now(post_id: int, secret: str = Query(...)):
+def post_now(post_id: int, secret: str = Query(...), platform: str = Query("threads")):
     _check(secret)
     import psycopg2.extras
     from app.db.database import get_connection
@@ -81,14 +81,24 @@ def post_now(post_id: int, secret: str = Query(...)):
         raise HTTPException(status_code=404, detail="Post not found.")
 
     approve_post(post_id)
-    success = post_to_threads(
-        post_id=post_id,
-        caption=row["caption"],
-        image_url=row["image_url"],
-    )
+
+    if platform == "instagram":
+        from app.services.instagram_service import post_to_instagram
+        success = post_to_instagram(
+            post_id=post_id,
+            caption=row["caption"],
+            image_url=row["image_url"],
+        )
+    else:
+        success = post_to_threads(
+            post_id=post_id,
+            caption=row["caption"],
+            image_url=row["image_url"],
+        )
+
     if not success:
-        raise HTTPException(status_code=500, detail="Failed to post to X.")
-    return {"status": "posted"}
+        raise HTTPException(status_code=500, detail=f"Failed to post to {platform}.")
+    return {"status": "posted", "platform": platform}
 
 
 @router.post("/generate")

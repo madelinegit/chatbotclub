@@ -297,7 +297,8 @@
         </div>
         ${(p.status === 'pending' || p.status === 'approved') ? `
           <div class="post-actions">
-            <button class="btn-post" onclick="postNow(${p.id})">Post to X now</button>
+            <button class="btn-post" onclick="postNow(${p.id}, 'threads')" style="margin-right:4px;">Post to Threads</button>
+            <button class="btn-post" onclick="postNow(${p.id}, 'instagram')" style="background:#833ab4;">Post to Instagram</button>
             ${p.status === 'pending' ? `<button class="btn-approve" onclick="approvePost(${p.id})">Approve</button>` : ''}
             <button class="btn-reject" onclick="rejectPost(${p.id})">Reject</button>
           </div>
@@ -318,11 +319,11 @@
     loadPosts('pending')
   }
 
-  async function postNow(id) {
-    toast('Posting to X...', '')
-    const res = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}`, { method: 'POST' })
+  async function postNow(id, platform) {
+    toast(`Posting to ${platform}...`, '')
+    const res = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}&platform=${platform}`, { method: 'POST' })
     if (res.ok) {
-      toast('Posted to X!', 'green')
+      toast(`Posted to ${platform}!`, 'green')
       loadPosts('all')
     } else {
       const d = await res.json()
