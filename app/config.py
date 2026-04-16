@@ -41,5 +41,8 @@ POSTS_PER_DAY = int(os.getenv("POSTS_PER_DAY", "4"))
 # Threads
 THREADS_ACCESS_TOKEN  = os.getenv("THREADS_ACCESS_TOKEN")
 
+# Instagram (separate Facebook User Access Token with instagram_content_publish scope)
+INSTAGRAM_ACCESS_TOKEN = os.getenv("INSTAGRAM_ACCESS_TOKEN")
+
 # Cloudinary (free image hosting for text card uploads)
 CLOUDINARY_URL        = os.getenv("CLOUDINARY_URL")
