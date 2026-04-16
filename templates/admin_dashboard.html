@@ -332,13 +332,25 @@
   }
 
   async function generatePost() {
-    toast('Generating post...', '')
-    const res = await fetch(`/admin/generate?secret=${SECRET}`, { method: 'POST' })
-    if (res.ok) {
-      toast('Post queued!', 'green')
-      loadPosts('pending')
-    } else {
-      toast('Generation failed.', 'red')
+    const btn = document.querySelector('.btn-gen')
+    btn.disabled = true
+    btn.textContent = '⏳ Generating...'
+    toast('Generating post — this takes ~10 seconds...', '')
+    try {
+      const res = await fetch(`/admin/generate?secret=${SECRET}`, { method: 'POST' })
+      if (res.ok) {
+        const data = await res.json()
+        toast(`Post queued! "${data.caption.slice(0,60)}..."`, 'green')
+        loadPosts('pending')
+      } else {
+        const d = await res.json()
+        toast(`Generation failed: ${d.detail}`, 'red')
+      }
+    } catch (err) {
+      toast('Generation failed — check logs.', 'red')
+    } finally {
+      btn.disabled = false
+      btn.textContent = '+ Generate Post'
     }
   }
 

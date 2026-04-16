@@ -129,6 +129,14 @@ def generate_post_for_queue(local_context: str = "") -> dict | None:
         image_prompt = post_cfg.get("image_prompt", "")
         image_url    = _generate_image(image_prompt)
 
+    # Always generate a branded text card if no image was produced
+    # so every post has a visual for Instagram
+    if not image_url:
+        from app.services.image_service import upload_text_card
+        image_url = upload_text_card(caption)
+        if image_url:
+            print(f"SOCIAL: generated text card — {image_url}")
+
     post_id = create_social_post(
         caption=caption,
         image_url=image_url,
