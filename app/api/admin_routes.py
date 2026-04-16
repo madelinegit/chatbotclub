@@ -15,7 +15,7 @@ from app.db.crud import (
     create_blog_post, update_blog_post,
     publish_blog_post, unpublish_blog_post, delete_blog_post,
 )
-from app.services.social_service import post_to_x
+from app.services.threads_service import post_to_threads
 
 router       = APIRouter(prefix="/admin")
 templates    = Jinja2Templates(directory="templates")
@@ -80,7 +80,7 @@ def post_now(post_id: int, secret: str = Query(...)):
         raise HTTPException(status_code=404, detail="Post not found.")
 
     approve_post(post_id)
-    success = post_to_x(
+    success = post_to_threads(
         post_id=post_id,
         caption=row["caption"],
         image_url=row["image_url"],

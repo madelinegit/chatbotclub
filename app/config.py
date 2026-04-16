@@ -38,8 +38,5 @@ X_ACCESS_TOKEN_SECRET = os.getenv("X_ACCESS_TOKEN_SECRET")
 # Social
 POSTS_PER_DAY = int(os.getenv("POSTS_PER_DAY", "4"))
 
-# X (Twitter)
-X_CLIENT_ID           = os.getenv("X_CLIENT_ID")
-X_CLIENT_SECRET       = os.getenv("X_CLIENT_SECRET")
-X_CONSUMER_KEY        = os.getenv("X_CONSUMER_KEY")
-X_CONSUMER_SECRET     = os.getenv("X_CONSUMER_SECRET")
+# Threads
+THREADS_ACCESS_TOKEN  = os.getenv("THREADS_ACCESS_TOKEN")
