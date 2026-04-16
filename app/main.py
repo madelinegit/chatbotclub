@@ -60,6 +60,26 @@ def login_page(request: Request):
 def register_page(request: Request):
     return templates.TemplateResponse(request, "register.html", {})
 
+@app.get("/chat", response_class=HTMLResponse)
+def chat_page(request: Request):
+    return templates.TemplateResponse(request, "chat.html", {})
+
+@app.get("/age-verify", response_class=HTMLResponse)
+def age_verify_page(request: Request):
+    return templates.TemplateResponse(request, "age_verify.html", {})
+
+@app.get("/profile", response_class=HTMLResponse)
+def profile_page(request: Request):
+    return templates.TemplateResponse(request, "profile.html", {})
+
+@app.get("/blog", response_class=HTMLResponse)
+def blog_page(request: Request):
+    return templates.TemplateResponse(request, "blog.html", {})
+
+@app.get("/blog/{slug}", response_class=HTMLResponse)
+def blog_post_page(request: Request, slug: str):
+    return templates.TemplateResponse(request, "blog_post.html", {"slug": slug})
+
 @app.get("/pricing", response_class=HTMLResponse)
 def pricing_page(request: Request):
     return templates.TemplateResponse(request, "pricing.html", {})
