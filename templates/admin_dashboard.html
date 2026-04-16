@@ -143,6 +143,7 @@
   <div class="topbar-logo">Maya Admin</div>
   <div class="topbar-nav">
     <button class="tab active" onclick="showPage('posts', this)">Posts</button>
+    <button class="tab" onclick="showPage('write', this)">Write</button>
     <button class="tab" onclick="showPage('blog', this)">Blog</button>
     <button class="tab" onclick="showPage('engagement', this)">Engagement</button>
     <button class="tab" onclick="showPage('users', this)">Users</button>
@@ -168,6 +169,25 @@
   </div>
 
   <div class="post-list" id="post-list"><div class="empty">Loading...</div></div>
+</div>
+
+<!-- WRITE PAGE -->
+<div class="page" id="page-write">
+  <div class="section-header">
+    <div class="section-title">Write with Maya</div>
+    <button class="btn-reject" onclick="clearWriteChat()">Clear</button>
+  </div>
+
+  <div id="write-messages" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;min-height:80px;"></div>
+
+  <div style="display:flex;gap:8px;align-items:flex-end;">
+    <textarea id="write-input" rows="3" placeholder="Tell Maya what to write… e.g. 'write a post about a rough powder day' or 'caption for a bar shift where someone was obnoxious'"
+      style="flex:1;background:#1a1a1e;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;font-size:14px;font-family:inherit;resize:none;outline:none;"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendWriteMessage()}"
+    ></textarea>
+    <button class="btn-gen" onclick="sendWriteMessage()" id="write-send-btn" style="height:48px;padding:0 20px;">Send</button>
+  </div>
+  <div style="font-size:11px;color:#555;margin-top:6px;">Shift+Enter for new line · Enter to send</div>
 </div>
 
 <!-- BLOG PAGE -->
@@ -593,6 +613,97 @@
     const res = await fetch(`/admin/blog/posts/${id}?secret=${SECRET}`, { method: 'DELETE' })
     if (res.ok) { toast('Deleted.', ''); loadBlogPosts() }
     else { toast('Delete failed.', 'red') }
+  }
+
+  // ── Write with Maya ───────────────────────────────────────────────────────
+
+  const writeHistory = []
+
+  function clearWriteChat() {
+    writeHistory.length = 0
+    document.getElementById('write-messages').innerHTML = ''
+  }
+
+  function _appendWriteMsg(role, text) {
+    const el    = document.getElementById('write-messages')
+    const isMe  = role === 'user'
+    const div   = document.createElement('div')
+    div.style.cssText = `display:flex;flex-direction:column;align-items:${isMe ? 'flex-end' : 'flex-start'};`
+    div.innerHTML = `
+      <div style="
+        max-width:80%;background:${isMe ? '#c9956a' : '#1a1a1e'};
+        color:${isMe ? '#0a0a0b' : '#e0ddd8'};
+        border:1px solid ${isMe ? 'transparent' : 'rgba(255,255,255,0.07)'};
+        border-radius:${isMe ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};
+        padding:12px 16px;font-size:14px;line-height:1.6;white-space:pre-wrap;
+      ">${esc(text)}</div>
+      ${!isMe ? `
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button class="btn-approve" style="font-size:11px;padding:4px 10px;"
+            onclick="queueWriteReply(this)">+ Queue as post</button>
+          <button class="btn-reject" style="font-size:11px;padding:4px 10px;"
+            onclick="copyToClipboard(this)">Copy</button>
+        </div>
+      ` : ''}
+    `
+    if (!isMe) div.querySelector('.btn-approve').dataset.text = text
+    el.appendChild(div)
+    el.scrollTop = el.scrollHeight
+  }
+
+  async function sendWriteMessage() {
+    const input = document.getElementById('write-input')
+    const msg   = input.value.trim()
+    if (!msg) return
+
+    const btn = document.getElementById('write-send-btn')
+    btn.disabled = true; btn.textContent = '...'
+    input.value = ''
+
+    _appendWriteMsg('user', msg)
+
+    try {
+      const res  = await fetch(`/admin/write/chat?secret=${SECRET}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ message: msg }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        _appendWriteMsg('maya', data.reply)
+      } else {
+        _appendWriteMsg('maya', `Error: ${data.detail}`)
+      }
+    } catch (e) {
+      _appendWriteMsg('maya', 'Something went wrong — check logs.')
+    } finally {
+      btn.disabled = false; btn.textContent = 'Send'
+      input.focus()
+    }
+  }
+
+  async function queueWriteReply(btn) {
+    const text = btn.dataset.text
+    const res  = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ caption: text }),
+    })
+    if (res.ok) {
+      btn.textContent = '✓ Queued'
+      btn.disabled = true
+      toast('Post queued! Go to Posts tab to review.', 'green')
+    } else {
+      toast('Failed to queue.', 'red')
+    }
+  }
+
+  function copyToClipboard(btn) {
+    const text = btn.closest('div').previousElementSibling.textContent
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied'
+      setTimeout(() => btn.textContent = 'Copy', 2000)
+    })
   }
 
   // ── Engagement ────────────────────────────────────────────────────────────

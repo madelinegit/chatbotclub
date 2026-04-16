@@ -117,6 +117,65 @@ def post_now(post_id: int, secret: str = Query(...), platform: str = Query("thre
     return {"status": "posted", "platform": platform}
 
 
+@router.post("/write/chat")
+async def admin_write_chat(secret: str = Query(...), request: Request = None):
+    """Chat with Maya in admin — she writes back in her voice."""
+    _check(secret)
+    body    = await request.json()
+    message = body.get("message", "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="message required.")
+
+    import requests as req
+    from app.config import MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL
+    from app.ai.persona import load_persona
+
+    persona = load_persona()
+    system  = persona + (
+        "\n\nYou are chatting with your admin (the person who runs your account). "
+        "They may ask you to write posts, captions, ideas, or just talk. "
+        "Stay in character as Maya. Be real, direct, conversational."
+    )
+
+    payload = {
+        "model":    MODELSLAB_MODEL,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user",   "content": message},
+        ],
+    }
+    headers = {
+        "Authorization": f"Bearer {MODELSLAB_API_KEY}",
+        "Content-Type":  "application/json",
+    }
+    try:
+        r = req.post(MODELSLAB_API_URL, json=payload, headers=headers, timeout=30)
+        r.raise_for_status()
+        data  = r.json()
+        reply = ""
+        if "choices" in data:
+            reply = data["choices"][0]["message"]["content"].strip()
+        elif "output" in data:
+            reply = data["output"][0].strip()
+        return {"reply": reply}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM error: {e}")
+
+
+@router.post("/write/queue")
+async def admin_write_queue(secret: str = Query(...), request: Request = None):
+    """Queue a piece of text as a pending post."""
+    _check(secret)
+    body      = await request.json()
+    caption   = body.get("caption", "").strip()
+    image_url = body.get("image_url", "").strip() or None
+    if not caption:
+        raise HTTPException(status_code=400, detail="caption required.")
+    from app.db.crud import create_social_post
+    post_id = create_social_post(caption=caption, image_url=image_url)
+    return {"id": post_id, "caption": caption}
+
+
 @router.post("/generate")
 def generate_post_now(secret: str = Query(...)):
     _check(secret)
