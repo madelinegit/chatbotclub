@@ -456,3 +456,49 @@ def mark_post_failed(post_id: int) -> None:
     conn.commit()
     cur.close()
     conn.close()
+
+
+# ── Social Comment Replies ────────────────────────────────────────────────────
+
+def log_comment_reply(platform: str, comment_id: str, post_id: str,
+                      reply_text: str, platform_reply_id: str = None) -> None:
+    conn = get_connection()
+    cur  = _cursor(conn)
+    cur.execute(
+        """
+        INSERT INTO social_comment_replies
+            (platform, comment_id, post_id, reply_text, platform_reply_id)
+        VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT (platform, comment_id) DO NOTHING
+        """,
+        (platform, comment_id, post_id, reply_text, platform_reply_id),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def has_replied_to_comment(platform: str, comment_id: str) -> bool:
+    conn = get_connection()
+    cur  = _cursor(conn)
+    cur.execute(
+        "SELECT 1 FROM social_comment_replies WHERE platform = %s AND comment_id = %s",
+        (platform, comment_id),
+    )
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return row is not None
+
+
+def get_recent_comment_replies(limit: int = 50) -> list:
+    conn = get_connection()
+    cur  = _cursor(conn)
+    cur.execute(
+        "SELECT * FROM social_comment_replies ORDER BY replied_at DESC LIMIT %s",
+        (limit,),
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return [dict(r) for r in rows]

@@ -121,6 +121,19 @@ def init_db() -> None:
         )
     """)
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS social_comment_replies (
+            id                BIGSERIAL PRIMARY KEY,
+            platform          TEXT NOT NULL DEFAULT 'threads',
+            comment_id        TEXT NOT NULL,
+            post_id           TEXT,
+            reply_text        TEXT NOT NULL,
+            platform_reply_id TEXT,
+            replied_at        TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE(platform, comment_id)
+        )
+    """)
+
     # Safe migration: add is_dev if this DB predates the column
     cur.execute("""
         ALTER TABLE users ADD COLUMN IF NOT EXISTS is_dev INTEGER DEFAULT 0

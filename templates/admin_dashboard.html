@@ -144,6 +144,7 @@
   <div class="topbar-nav">
     <button class="tab active" onclick="showPage('posts', this)">Posts</button>
     <button class="tab" onclick="showPage('blog', this)">Blog</button>
+    <button class="tab" onclick="showPage('engagement', this)">Engagement</button>
     <button class="tab" onclick="showPage('users', this)">Users</button>
     <button class="tab" onclick="showPage('context', this)">Local Context</button>
   </div>
@@ -201,6 +202,42 @@
   <p style="font-size:12px;color:#555;margin-top:12px;">This is what Maya sees when someone asks about local topics or when generating social posts.</p>
 </div>
 
+<!-- ENGAGEMENT PAGE -->
+<div class="page" id="page-engagement">
+  <div class="section-header">
+    <div class="section-title">Engagement</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-approve" onclick="loadEngagement()">Refresh</button>
+      <button class="btn-gen" onclick="runEngagementPass()">Auto-Reply All</button>
+    </div>
+  </div>
+
+  <!-- Outbound comment box -->
+  <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px;margin-bottom:20px;">
+    <div style="font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Comment on a Threads Post</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <input id="outbound-thread-id" type="text" placeholder="Threads post ID (numeric)"
+        style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;font-size:13px;outline:none;min-width:180px;">
+      <input id="outbound-topic" type="text" placeholder="Topic / context (optional)"
+        style="flex:2;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;font-size:13px;outline:none;min-width:180px;">
+      <button class="btn-post" onclick="postOutboundComment()">Comment</button>
+    </div>
+    <div id="outbound-preview" style="font-size:12px;color:#6ac97a;margin-top:8px;display:none;"></div>
+  </div>
+
+  <!-- Pending comments -->
+  <div class="section-header" style="margin-bottom:10px;">
+    <div style="font-size:13px;color:#999;">Unanswered comments on Maya's posts</div>
+  </div>
+  <div id="engagement-list"><div class="empty">Loading...</div></div>
+
+  <!-- Reply history -->
+  <div class="section-header" style="margin-top:28px;margin-bottom:10px;">
+    <div class="section-title" style="font-size:13px;color:#666;">Reply History</div>
+  </div>
+  <div id="engagement-history"><div class="empty">—</div></div>
+</div>
+
 <!-- Blog Post Modal -->
 <div class="modal-overlay hidden" id="blog-modal">
   <div class="modal-box">
@@ -248,9 +285,10 @@
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
     document.getElementById('page-' + name).classList.add('active')
     el.classList.add('active')
-    if (name === 'users')   loadUsers()
-    if (name === 'context') loadContext()
-    if (name === 'blog')    loadBlogPosts()
+    if (name === 'users')      loadUsers()
+    if (name === 'context')    loadContext()
+    if (name === 'blog')       loadBlogPosts()
+    if (name === 'engagement') loadEngagement()
   }
 
   function toast(msg, color) {
@@ -509,6 +547,132 @@
     const res = await fetch(`/admin/blog/posts/${id}?secret=${SECRET}`, { method: 'DELETE' })
     if (res.ok) { toast('Deleted.', ''); loadBlogPosts() }
     else { toast('Delete failed.', 'red') }
+  }
+
+  // ── Engagement ────────────────────────────────────────────────────────────
+
+  async function loadEngagement() {
+    document.getElementById('engagement-list').innerHTML = '<div class="empty">Fetching comments from Threads...</div>'
+    document.getElementById('engagement-history').innerHTML = '<div class="empty">Loading...</div>'
+
+    const [cRes, hRes] = await Promise.all([
+      fetch(`/admin/engagement/comments?secret=${SECRET}`),
+      fetch(`/admin/engagement/history?secret=${SECRET}`),
+    ])
+    const cData = cRes.ok ? await cRes.json() : { comments: [] }
+    const hData = hRes.ok ? await hRes.json() : { replies: [] }
+
+    renderPendingComments(cData.comments || [])
+    renderReplyHistory(hData.replies || [])
+  }
+
+  function renderPendingComments(comments) {
+    const el = document.getElementById('engagement-list')
+    if (!comments.length) {
+      el.innerHTML = '<div class="empty">No unanswered comments right now.</div>'
+      return
+    }
+    el.innerHTML = comments.map(c => `
+      <div class="post-card" id="ec-${c.comment_id}">
+        <div class="post-meta">
+          <span class="post-id">${esc(c.username || 'unknown')}</span>
+          <span class="post-time">${(c.timestamp || '').slice(0,16)}</span>
+          <span style="font-size:11px;color:#555;">on post ${esc(c.post_id)}</span>
+        </div>
+        <div class="post-text" style="font-size:13px;margin-bottom:10px;">"${esc(c.comment_text)}"</div>
+        <div style="font-size:11px;color:#555;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          Post: ${esc((c.post_caption || '').slice(0, 80))}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input id="reply-text-${c.comment_id}" type="text" placeholder="Type a custom reply, or leave blank to auto-generate…"
+            style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:12px;outline:none;min-width:160px;">
+          <button class="btn-post" onclick="replyToComment(${JSON.stringify(c).replace(/"/g,'&quot;')})">Reply</button>
+        </div>
+      </div>
+    `).join('')
+  }
+
+  function renderReplyHistory(replies) {
+    const el = document.getElementById('engagement-history')
+    if (!replies.length) { el.innerHTML = '<div class="empty">No replies sent yet.</div>'; return }
+    el.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px;">` +
+      replies.map(r => `
+        <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:12px;font-size:13px;">
+          <div style="font-size:11px;color:#555;margin-bottom:4px;">
+            ${r.platform} · comment ${r.comment_id} · ${(r.replied_at || '').slice(0,16)}
+          </div>
+          <div style="color:#c9956a;">"${esc(r.reply_text)}"</div>
+        </div>
+      `).join('') + `</div>`
+  }
+
+  async function runEngagementPass() {
+    const btn = event.target
+    btn.disabled = true; btn.textContent = 'Running...'
+    toast('Checking for unanswered comments...', '')
+    try {
+      const res  = await fetch(`/admin/engagement/run?secret=${SECRET}`, { method: 'POST' })
+      const data = await res.json()
+      if (res.ok) {
+        toast(`Done — ${data.replied} replied, ${data.skipped} skipped, ${data.errors} errors`, 'green')
+        loadEngagement()
+      } else {
+        toast(`Failed: ${data.detail}`, 'red')
+      }
+    } catch (e) {
+      toast('Engagement pass failed — check logs.', 'red')
+    } finally {
+      btn.disabled = false; btn.textContent = 'Auto-Reply All'
+    }
+  }
+
+  async function replyToComment(c) {
+    const customText = document.getElementById(`reply-text-${c.comment_id}`).value.trim()
+    const res = await fetch(`/admin/engagement/reply?secret=${SECRET}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        comment_id:   c.comment_id,
+        post_id:      c.post_id,
+        post_caption: c.post_caption,
+        comment_text: c.comment_text,
+        reply_text:   customText || undefined,
+      }),
+    })
+    if (res.ok) {
+      const d = await res.json()
+      toast(`Replied: "${d.reply.slice(0,60)}..."`, 'green')
+      document.getElementById(`ec-${c.comment_id}`)?.remove()
+    } else {
+      const d = await res.json()
+      toast(`Reply failed: ${d.detail}`, 'red')
+    }
+  }
+
+  async function postOutboundComment() {
+    const threadId  = document.getElementById('outbound-thread-id').value.trim()
+    const topic     = document.getElementById('outbound-topic').value.trim()
+    const preview   = document.getElementById('outbound-preview')
+    if (!threadId) { toast('Enter a Threads post ID first.', 'red'); return }
+
+    preview.style.display = 'none'
+    toast('Generating and posting comment...', '')
+    const res = await fetch(`/admin/engagement/comment-on?secret=${SECRET}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ thread_id: threadId, topic }),
+    })
+    if (res.ok) {
+      const d = await res.json()
+      preview.textContent = `Posted: "${d.text}"`
+      preview.style.display = 'block'
+      toast('Comment posted!', 'green')
+      document.getElementById('outbound-thread-id').value = ''
+      document.getElementById('outbound-topic').value = ''
+    } else {
+      const d = await res.json()
+      toast(`Failed: ${d.detail}`, 'red')
+    }
   }
 
   // Init

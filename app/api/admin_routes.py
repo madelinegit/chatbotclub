@@ -263,3 +263,79 @@ def local_context_preview(secret: str = Query(...)):
     from app.services.local_context_service import get_local_context
     context = get_local_context()
     return {"context": context or "Nothing fetched — check RSS feeds or network."}
+
+
+# ── Engagement API ────────────────────────────────────────────────────────────
+
+@router.get("/engagement/comments")
+def engagement_pending(secret: str = Query(...)):
+    """List unanswered comments on Maya's recent Threads posts."""
+    _check(secret)
+    from app.services.social_engagement_service import fetch_pending_comments
+    comments = fetch_pending_comments()
+    return {"comments": comments}
+
+
+@router.post("/engagement/run")
+def engagement_run(secret: str = Query(...)):
+    """Auto-reply to all unanswered comments."""
+    _check(secret)
+    from app.services.social_engagement_service import run_engagement_pass
+    result = run_engagement_pass()
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+
+@router.post("/engagement/reply")
+async def engagement_reply_one(secret: str = Query(...), request: Request = None):
+    """Reply to a specific comment (optionally with custom text)."""
+    _check(secret)
+    body        = await request.json()
+    comment_id  = body.get("comment_id", "")
+    post_id     = body.get("post_id", "")
+    post_caption = body.get("post_caption", "")
+    comment_text = body.get("comment_text", "")
+    reply_text  = body.get("reply_text")  # optional — generate if not provided
+
+    if not comment_id or not comment_text:
+        raise HTTPException(status_code=400, detail="comment_id and comment_text required.")
+
+    from app.services.social_engagement_service import reply_to_comment
+    result = reply_to_comment(
+        comment_id=comment_id,
+        post_id=post_id,
+        post_caption=post_caption,
+        comment_text=comment_text,
+        reply_text=reply_text,
+    )
+    if not result.get("ok"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Reply failed."))
+    return result
+
+
+@router.post("/engagement/comment-on")
+async def engagement_comment_on(secret: str = Query(...), request: Request = None):
+    """Post an outbound comment on any Threads post by ID."""
+    _check(secret)
+    body       = await request.json()
+    thread_id  = body.get("thread_id", "")
+    topic      = body.get("topic", "")
+    custom_text = body.get("custom_text", "")
+
+    if not thread_id:
+        raise HTTPException(status_code=400, detail="thread_id required.")
+
+    from app.services.social_engagement_service import post_outbound_comment
+    result = post_outbound_comment(thread_id=thread_id, topic=topic, custom_text=custom_text)
+    if not result.get("ok"):
+        raise HTTPException(status_code=500, detail=result.get("error", "Failed."))
+    return result
+
+
+@router.get("/engagement/history")
+def engagement_history(secret: str = Query(...)):
+    """Recent comment replies Maya has sent."""
+    _check(secret)
+    from app.db.crud import get_recent_comment_replies
+    return {"replies": get_recent_comment_replies(limit=50)}
