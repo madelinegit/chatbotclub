@@ -15,27 +15,17 @@ from app.api.admin_routes import router as admin_router
 
 
 def _auto_post_job():
-    """Generate a post and publish it to Threads automatically."""
+    """Generate a post and add it to the approval queue. Does NOT auto-post."""
     try:
         from app.services.social_service import generate_post_for_queue
         from app.services.local_context_service import get_local_context
-        from app.services.threads_service import post_to_threads
 
         context = get_local_context()
         result  = generate_post_for_queue(local_context=context)
         if not result:
             print("CRON: post generation failed")
             return
-
-        success = post_to_threads(
-            post_id=result["id"],
-            caption=result["caption"],
-            image_url=result.get("image_url"),
-        )
-        if success:
-            print(f"CRON: auto-posted to Threads — {result['caption'][:60]}")
-        else:
-            print("CRON: Threads post failed — check logs")
+        print(f"CRON: queued post #{result['id']} for approval — {result['caption'][:60]}")
     except Exception as e:
         print(f"CRON ERROR: {e}")
 

@@ -437,6 +437,26 @@ def reject_post(post_id: int) -> None:
     conn.close()
 
 
+def update_social_post(post_id: int, caption: str = None, image_url: str = None,
+                       clear_image: bool = False) -> None:
+    conn = get_connection()
+    cur  = _cursor(conn)
+    fields, values = [], []
+    if caption is not None:
+        fields.append("caption = %s"); values.append(caption)
+    if clear_image:
+        fields.append("image_url = NULL")
+    elif image_url is not None:
+        fields.append("image_url = %s"); values.append(image_url)
+    if not fields:
+        cur.close(); conn.close(); return
+    values.append(post_id)
+    cur.execute(f"UPDATE social_posts SET {', '.join(fields)} WHERE id = %s", values)
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
 def mark_post_posted(post_id: int, platform_post_id: str) -> None:
     conn = get_connection()
     cur  = _cursor(conn)

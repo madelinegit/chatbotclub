@@ -11,6 +11,7 @@ import re
 from app.db.crud import (
     get_pending_posts, get_all_posts,
     approve_post, reject_post,
+    update_social_post,
     get_all_blog_posts, get_blog_post_by_id,
     create_blog_post, update_blog_post,
     publish_blog_post, unpublish_blog_post, delete_blog_post,
@@ -49,6 +50,17 @@ def list_posts(secret: str = Query(...), status: str = Query("pending")):
     if status == "all":
         return {"posts": get_all_posts()}
     return {"posts": get_pending_posts()}
+
+
+@router.put("/posts/{post_id}")
+async def edit_post(post_id: int, secret: str = Query(...), request: Request = None):
+    _check(secret)
+    body        = await request.json()
+    caption     = body.get("caption")
+    image_url   = body.get("image_url")
+    clear_image = body.get("clear_image", False)
+    update_social_post(post_id, caption=caption, image_url=image_url, clear_image=clear_image)
+    return {"status": "updated"}
 
 
 @router.post("/posts/{post_id}/approve")

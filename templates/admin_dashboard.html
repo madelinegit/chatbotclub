@@ -335,15 +335,61 @@
           }
         </div>
         ${(p.status === 'pending' || p.status === 'approved') ? `
-          <div class="post-actions">
-            <button class="btn-post" onclick="postNow(${p.id}, 'threads')" style="margin-right:4px;">Post to Threads</button>
-            <button class="btn-post" onclick="postNow(${p.id}, 'instagram')" style="background:#833ab4;">Post to Instagram</button>
-            ${p.status === 'pending' ? `<button class="btn-approve" onclick="approvePost(${p.id})">Approve</button>` : ''}
-            <button class="btn-reject" onclick="rejectPost(${p.id})">Reject</button>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
+            <textarea id="caption-${p.id}" rows="3"
+              style="width:100%;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;margin-bottom:8px;"
+            >${esc(p.caption)}</textarea>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+              <input id="img-${p.id}" type="text" placeholder="Image URL (leave blank for text-only)"
+                value="${p.image_url ? esc(p.image_url) : ''}"
+                style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:12px;outline:none;min-width:160px;">
+              ${p.image_url ? `<button class="btn-reject" style="white-space:nowrap;" onclick="removeImage(${p.id})">Remove image</button>` : ''}
+            </div>
+            <div class="post-actions" style="margin-top:0;padding-top:0;border-top:none;">
+              <button class="btn-approve" onclick="savePost(${p.id})">Save edits</button>
+              <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Save & Post to Threads</button>
+              <button class="btn-reject" onclick="rejectPost(${p.id})">Delete</button>
+            </div>
           </div>
         ` : ''}
       </div>
     `).join('')
+  }
+
+  async function savePost(id) {
+    const caption   = document.getElementById(`caption-${id}`).value.trim()
+    const image_url = document.getElementById(`img-${id}`).value.trim() || null
+    const res = await fetch(`/admin/posts/${id}?secret=${SECRET}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caption, image_url }),
+    })
+    if (res.ok) toast('Saved.', 'green')
+    else toast('Save failed.', 'red')
+  }
+
+  async function saveAndPost(id, platform) {
+    const caption   = document.getElementById(`caption-${id}`).value.trim()
+    const image_url = document.getElementById(`img-${id}`).value.trim() || null
+    await fetch(`/admin/posts/${id}?secret=${SECRET}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caption, image_url }),
+    })
+    await postNow(id, platform)
+  }
+
+  async function removeImage(id) {
+    const res = await fetch(`/admin/posts/${id}?secret=${SECRET}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clear_image: true }),
+    })
+    if (res.ok) {
+      document.getElementById(`img-${id}`).value = ''
+      toast('Image removed.', '')
+      loadPosts('all', document.getElementById('filter-all'))
+    }
   }
 
   async function approvePost(id) {
