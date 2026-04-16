@@ -6,4 +6,4 @@ python-dotenv
 requests
 supabase
 psycopg2-binary
-tweepy
+email-validator
