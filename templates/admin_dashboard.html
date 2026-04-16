@@ -163,8 +163,8 @@
   </div>
 
   <div style="display:flex;gap:8px;margin-bottom:16px;">
-    <button class="tab active" id="filter-pending" onclick="loadPosts('pending', this)">Pending</button>
-    <button class="tab" id="filter-all" onclick="loadPosts('all', this)">All</button>
+    <button class="tab" id="filter-pending" onclick="loadPosts('pending', this)">Pending</button>
+    <button class="tab active" id="filter-all" onclick="loadPosts('all', this)">All</button>
   </div>
 
   <div class="post-list" id="post-list"><div class="empty">Loading...</div></div>
@@ -380,7 +380,7 @@
       if (res.ok) {
         const data = await res.json()
         toast(`Post queued! "${data.caption.slice(0,60)}..."`, 'green')
-        loadPosts('pending')
+        loadPosts('all', document.getElementById('filter-all'))
       } else {
         const d = await res.json()
         toast(`Generation failed: ${d.detail}`, 'red')
@@ -676,7 +676,7 @@
   }
 
   // Init
-  loadPosts('pending')
+  loadPosts('all', document.getElementById('filter-all'))
   loadStats()
 </script>
 </body>
