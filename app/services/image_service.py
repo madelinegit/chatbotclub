@@ -98,6 +98,42 @@ def generate_text_card(caption: str) -> bytes | None:
         return None
 
 
+def _notify_image(caption: str, image_url: str) -> None:
+    """Fire-and-forget email with the image URL to NOTIFY_EMAIL."""
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        from app.config import GMAIL_USER, GMAIL_APP_PASSWORD, NOTIFY_EMAIL
+
+        if not GMAIL_USER or not GMAIL_APP_PASSWORD:
+            return
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"Maya post image ready"
+        msg["From"]    = GMAIL_USER
+        msg["To"]      = NOTIFY_EMAIL
+
+        html = f"""
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0f0f10;color:#e0ddd8;padding:24px;border-radius:12px;">
+          <div style="font-size:13px;color:#c9956a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;">Maya — New Post</div>
+          <img src="{image_url}" style="width:100%;border-radius:8px;margin-bottom:16px;" />
+          <div style="font-size:15px;line-height:1.6;color:#e0ddd8;margin-bottom:16px;">"{caption}"</div>
+          <a href="{image_url}" style="color:#c9956a;font-size:13px;">View full image ↗</a>
+          <div style="margin-top:24px;font-size:11px;color:#555;">magicmaya.vip</div>
+        </div>
+        """
+        msg.attach(MIMEText(html, "html"))
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            server.sendmail(GMAIL_USER, NOTIFY_EMAIL, msg.as_string())
+
+        print(f"EMAIL: image notification sent to {NOTIFY_EMAIL}")
+    except Exception as e:
+        print(f"EMAIL NOTIFY ERROR: {e}")
+
+
 def upload_text_card(caption: str) -> str | None:
     """
     Generate a text card and upload it to Cloudinary.
@@ -130,7 +166,10 @@ def upload_text_card(caption: str) -> str | None:
             timeout=30,
         )
         r.raise_for_status()
-        return r.json().get("secure_url")
+        url = r.json().get("secure_url")
+        if url:
+            _notify_image(caption, url)
+        return url
     except Exception as e:
         print(f"CLOUDINARY UPLOAD ERROR: {e}")
         return None

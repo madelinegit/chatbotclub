@@ -46,3 +46,8 @@ INSTAGRAM_ACCESS_TOKEN = os.getenv("INSTAGRAM_ACCESS_TOKEN")
 
 # Cloudinary (free image hosting for text card uploads)
 CLOUDINARY_URL        = os.getenv("CLOUDINARY_URL")
+
+# Email notifications (Gmail SMTP)
+NOTIFY_EMAIL      = os.getenv("NOTIFY_EMAIL", "ecodevwy@gmail.com")
+GMAIL_USER        = os.getenv("GMAIL_USER")
+GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
