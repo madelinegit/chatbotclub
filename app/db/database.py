@@ -134,10 +134,9 @@ def init_db() -> None:
         )
     """)
 
-    # Safe migration: add is_dev if this DB predates the column
-    cur.execute("""
-        ALTER TABLE users ADD COLUMN IF NOT EXISTS is_dev INTEGER DEFAULT 0
-    """)
+    # Safe migrations
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_dev INTEGER DEFAULT 0")
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT")
 
     conn.commit()
     cur.close()

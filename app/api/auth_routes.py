@@ -19,13 +19,7 @@ def register_user(data: RegisterRequest):
             return JSONResponse(status_code=200, content={"verify_email": True, "detail": detail})
         raise HTTPException(status_code=400, detail=detail)
     except Exception as e:
-        msg = str(e)
-        # Surface Supabase AuthApiError messages clearly
-        if "already registered" in msg.lower() or "already been registered" in msg.lower():
-            raise HTTPException(status_code=400, detail="An account with that email already exists. Try logging in.")
-        if "password" in msg.lower():
-            raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
-        raise HTTPException(status_code=400, detail=f"Registration failed: {msg}")
+        raise HTTPException(status_code=400, detail=f"Registration failed: {str(e)}")
 
 
 @router.post("/login", response_model=AuthResponse)
