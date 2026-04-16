@@ -7,6 +7,8 @@ STARTER_CREDITS = 10
 
 
 def _client() -> Client:
+    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        raise ValueError(f"Supabase env vars not set. URL={'set' if SUPABASE_URL else 'MISSING'}, KEY={'set' if SUPABASE_ANON_KEY else 'MISSING'}")
     return create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 
