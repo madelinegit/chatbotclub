@@ -8,3 +8,5 @@ supabase
 psycopg2-binary
 email-validator
 Pillow
+apscheduler
+pytz
