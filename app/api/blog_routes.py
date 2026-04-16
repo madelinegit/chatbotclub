@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.api.chat_routes import get_current_user
+from app.config import OWNER_EMAIL
 from app.db.crud import (
     get_published_blog_posts, get_blog_post_by_slug,
     has_unlocked_blog_post, unlock_blog_post,
-    get_credit_balance, deduct_credit, is_dev_user,
+    get_credit_balance, deduct_credit,
 )
 
 router = APIRouter(prefix="/api/blog")
@@ -14,7 +15,7 @@ def list_posts(user: dict = Depends(get_current_user)):
     """Return all published posts. Content is withheld for locked posts."""
     posts = get_published_blog_posts()
     user_id = user["user_id"]
-    dev = is_dev_user(user_id)
+    dev = OWNER_EMAIL and user["email"] == OWNER_EMAIL
     result = []
     for p in posts:
         is_free = p["credit_cost"] == 0
@@ -42,7 +43,7 @@ def get_post(slug: str, user: dict = Depends(get_current_user)):
 
     user_id = user["user_id"]
     is_free  = post["credit_cost"] == 0
-    unlocked = is_free or is_dev_user(user_id) or has_unlocked_blog_post(user_id, post["id"])
+    unlocked = is_free or (OWNER_EMAIL and user["email"] == OWNER_EMAIL) or has_unlocked_blog_post(user_id, post["id"])
 
     return {
         "id":              post["id"],
@@ -74,7 +75,7 @@ def unlock_post(slug: str, user: dict = Depends(get_current_user)):
         return {"unlocked": True, "credits_spent": 0}
 
     cost = post["credit_cost"]
-    dev = is_dev_user(user_id)
+    dev = OWNER_EMAIL and user["email"] == OWNER_EMAIL
     if not dev and get_credit_balance(user_id) < cost:
         raise HTTPException(
             status_code=402,

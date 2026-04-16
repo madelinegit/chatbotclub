@@ -1,8 +1,8 @@
 from supabase import create_client, Client
 from app.config import SUPABASE_URL, SUPABASE_ANON_KEY
-from app.db.crud import create_user, add_credits
+from app.db.crud import create_user
 
-# 10 free credits on signup — enough to get hooked, not enough to be satisfied
+# 10 free credits on first login — only granted to verified users
 STARTER_CREDITS = 10
 
 
@@ -18,17 +18,13 @@ def register(email: str, password: str) -> dict:
     if response.user is None:
         raise ValueError("Registration failed. Email may already be in use.")
 
-    user_id = response.user.id
-    create_user(user_id=user_id, email=email)
-    add_credits(user_id=user_id, amount=STARTER_CREDITS)
-
     if response.session is None:
         # Supabase email confirmation is enabled — user must verify before logging in.
         raise ValueError("Account created. Please check your email to verify your address, then sign in.")
 
     return {
         "access_token": response.session.access_token,
-        "user_id":      user_id,
+        "user_id":      response.user.id,
         "email":        email,
     }
 
@@ -41,9 +37,12 @@ def login(email: str, password: str) -> dict:
     if response.user is None:
         raise ValueError("Invalid email or password.")
 
+    user_id = response.user.id
+    create_user(user_id=user_id, email=email, initial_credits=STARTER_CREDITS)
+
     return {
         "access_token": response.session.access_token,
-        "user_id":      response.user.id,
+        "user_id":      user_id,
         "email":        response.user.email,
     }
 

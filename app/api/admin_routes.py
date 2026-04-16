@@ -136,16 +136,6 @@ def get_stats(secret: str = Query(...)):
 
 # ── Users API ─────────────────────────────────────────────────────────────────
 
-@router.post("/users/{user_id}/set-dev")
-def set_dev(user_id: str, secret: str = Query(...), enabled: bool = Query(True)):
-    _check(secret)
-    from app.db.crud import set_dev_user, get_user_by_id
-    if not get_user_by_id(user_id):
-        raise HTTPException(status_code=404, detail="User not found.")
-    set_dev_user(user_id, enabled)
-    return {"user_id": user_id, "is_dev": enabled}
-
-
 @router.get("/users")
 def list_users(secret: str = Query(...)):
     _check(secret)

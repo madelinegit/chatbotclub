@@ -22,6 +22,7 @@ CCBILL_SECRET_KEY   = os.getenv("CCBILL_SECRET_KEY")
 
 # App
 DATABASE_URL        = os.getenv("DATABASE_URL")
+OWNER_EMAIL         = os.getenv("OWNER_EMAIL")
 PERSONA_FILE        = os.getenv("PERSONA_FILE", "persona/maya.txt")
 SECRET_KEY          = os.getenv("SECRET_KEY", "change-me-in-production")
 

@@ -9,7 +9,8 @@ from app.models.schemas import ChatRequest, ChatResponse
 from app.services.auth_service import get_user_from_token
 from app.services.rate_limiter import is_rate_limited
 from app.services.payment_service import COST_MESSAGE, COST_IMAGE
-from app.db.crud import get_credit_balance, deduct_credit, is_age_verified, is_dev_user
+from app.config import OWNER_EMAIL
+from app.db.crud import get_credit_balance, deduct_credit, is_age_verified
 
 router = APIRouter(prefix="/api")
 bearer = HTTPBearer()
@@ -39,7 +40,7 @@ def _is_image_request(message: str) -> bool:
 async def chat(data: ChatRequest, user: dict = Depends(get_current_user)):
     user_id = user["user_id"]
 
-    dev = is_dev_user(user_id)
+    dev = OWNER_EMAIL and user["email"] == OWNER_EMAIL
 
     # Age verification gate (bypassed for dev users)
     if not dev and not is_age_verified(user_id):

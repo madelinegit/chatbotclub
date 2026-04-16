@@ -1,10 +1,33 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.requests import Request
 
-app = FastAPI(title="Maya AI", redirect_slashes=False)
+from app.db.database import init_db
+from app.api.auth_routes import router as auth_router
+from app.api.chat_routes import router as chat_router
+from app.api.payment_routes import router as payment_router
+from app.api.profile_routes import router as profile_router
+from app.api.blog_routes import router as blog_router
+from app.api.admin_routes import router as admin_router
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+
+app = FastAPI(title="Maya AI", redirect_slashes=False, lifespan=lifespan)
+
+app.include_router(auth_router)
+app.include_router(chat_router)
+app.include_router(payment_router)
+app.include_router(profile_router)
+app.include_router(blog_router)
+app.include_router(admin_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")

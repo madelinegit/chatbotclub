@@ -53,7 +53,7 @@ def get_all_messages(user_id: str) -> list:
 
 # ── Users ─────────────────────────────────────────────────────────────────────
 
-def create_user(user_id: str, email: str) -> None:
+def create_user(user_id: str, email: str, initial_credits: int = 0) -> None:
     conn = get_connection()
     cur  = _cursor(conn)
     cur.execute(
@@ -61,8 +61,8 @@ def create_user(user_id: str, email: str) -> None:
         (user_id, email),
     )
     cur.execute(
-        "INSERT INTO credits (user_id, balance) VALUES (%s, 0) ON CONFLICT DO NOTHING",
-        (user_id,),
+        "INSERT INTO credits (user_id, balance) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+        (user_id, initial_credits),
     )
     cur.execute(
         "INSERT INTO user_profiles (user_id) VALUES (%s) ON CONFLICT DO NOTHING",
