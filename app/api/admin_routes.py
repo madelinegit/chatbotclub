@@ -97,7 +97,11 @@ def post_now(post_id: int, secret: str = Query(...), platform: str = Query("thre
         )
 
     if not success:
-        raise HTTPException(status_code=500, detail=f"Failed to post to {platform}.")
+        if platform == "instagram":
+            from app.config import INSTAGRAM_ACCESS_TOKEN
+            if not INSTAGRAM_ACCESS_TOKEN:
+                raise HTTPException(status_code=422, detail="INSTAGRAM_ACCESS_TOKEN is not set. Add it to Railway env vars.")
+        raise HTTPException(status_code=500, detail=f"Failed to post to {platform}. Check Railway logs.")
     return {"status": "posted", "platform": platform}
 
 
