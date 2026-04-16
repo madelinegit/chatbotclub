@@ -40,3 +40,6 @@ POSTS_PER_DAY = int(os.getenv("POSTS_PER_DAY", "4"))
 
 # Threads
 THREADS_ACCESS_TOKEN  = os.getenv("THREADS_ACCESS_TOKEN")
+
+# Image hosting (imgbb.com — free tier, needed for text card uploads to Threads)
+IMGBB_API_KEY         = os.getenv("IMGBB_API_KEY")

@@ -29,6 +29,7 @@ def _check(secret: str):
 
 # ── Pages ─────────────────────────────────────────────────────────────────────
 
+@router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 def admin_login(request: Request):
     return templates.TemplateResponse(request, "admin_login.html", {})
