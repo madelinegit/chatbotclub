@@ -100,34 +100,37 @@ def generate_text_card(caption: str) -> bytes | None:
 
 def upload_text_card(caption: str) -> str | None:
     """
-    Generate a text card and upload it to a free image host (imgbb or similar).
-    Returns a public URL or None.
-    Returns None if IMGBB_API_KEY is not set — image posting skipped.
+    Generate a text card and upload it to Cloudinary.
+    Returns a public URL or None if upload fails or CLOUDINARY_URL not set.
     """
     import base64
-    from app.config import IMGBB_API_KEY
+    from app.config import CLOUDINARY_URL
+
+    if not CLOUDINARY_URL:
+        print("CLOUDINARY: no CLOUDINARY_URL set, skipping image upload")
+        return None
 
     card_bytes = generate_text_card(caption)
     if not card_bytes:
         return None
 
-    if not IMGBB_API_KEY:
-        # Save locally as fallback (won't work for Threads which needs a public URL)
-        path = f"static/generated_cards/{abs(hash(caption))}.png"
-        os.makedirs("static/generated_cards", exist_ok=True)
-        with open(path, "wb") as f:
-            f.write(card_bytes)
-        return None
-
     try:
+        # Parse cloudinary://api_key:api_secret@cloud_name
+        stripped  = CLOUDINARY_URL.replace("cloudinary://", "")
+        auth_part, cloud_name = stripped.rsplit("@", 1)
+        api_key, api_secret   = auth_part.split(":", 1)
+
         encoded = base64.b64encode(card_bytes).decode("utf-8")
+        data_uri = f"data:image/png;base64,{encoded}"
+
         r = requests.post(
-            "https://api.imgbb.com/1/upload",
-            data={"key": IMGBB_API_KEY, "image": encoded},
+            f"https://api.cloudinary.com/v1_1/{cloud_name}/image/upload",
+            data={"file": data_uri, "upload_preset": "ml_default"},
+            auth=(api_key, api_secret),
             timeout=30,
         )
         r.raise_for_status()
-        return r.json()["data"]["url"]
+        return r.json().get("secure_url")
     except Exception as e:
-        print(f"IMGBB UPLOAD ERROR: {e}")
+        print(f"CLOUDINARY UPLOAD ERROR: {e}")
         return None
