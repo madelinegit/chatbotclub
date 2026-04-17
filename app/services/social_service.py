@@ -7,6 +7,13 @@ tweepy is imported lazily so the app doesn't crash if X keys aren't set yet.
 """
 import random
 import requests
+
+# Consistent character description prepended to every image prompt
+MAYA_CHARACTER = (
+    "young woman, long beachy wavy blonde hair, thin waist, fit toned body, "
+    "subtle curves, naturally pretty face, sun-kissed skin, subtly sexy, "
+    "candid lifestyle photo, "
+)
 from app.config import (
     MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL,
     MODELSLAB_IMAGE_URL, MODELSLAB_IMAGE_MODEL,
@@ -37,7 +44,7 @@ POST_TYPES = [
         "weight":       10,
         "prompt":       "Write a short caption Maya would post with a selfie or candid photo. One line, a mood, or just a feeling. Lowercase, no hashtags. Under 90 characters. Just the caption.",
         "with_image":   True,
-        "image_prompt": "stunning young woman, candid portrait, south lake tahoe, golden hour sunlight, natural skin texture, f1.8 bokeh, shot on Sony A7IV, hyperrealistic, no watermark",
+        "image_prompt": "selfie, south lake tahoe, golden hour sunlight, natural lighting, warm tones, hyperrealistic",
     },
     {
         "type":       "bar_shift",
@@ -50,7 +57,7 @@ POST_TYPES = [
         "weight":       8,
         "prompt":       "Write a post as Maya about snowboarding at Squaw Valley (she calls it Squaw, never Palisades). Something real — conditions, a specific run, who she went with, what the day felt like. Under 200 characters. Lowercase fine. No hashtags.",
         "with_image":   True,
-        "image_prompt": "young woman snowboarding squaw valley tahoe, deep powder, alpine peaks, action shot, GoPro POV style, hyperrealistic, natural light, no watermark",
+        "image_prompt": "snowboarding squaw valley tahoe, deep powder, alpine peaks, action shot, ski jacket, snow pants, hyperrealistic",
     },
     {
         "type":       "house_music",
@@ -75,7 +82,7 @@ POST_TYPES = [
         "weight":       8,
         "prompt":       "Write a post as Maya about a day at Lake Tahoe — on the water, at the beach, paddleboarding, watching the sunset, just floating around. Short and feels like summer. Under 180 characters. No hashtags.",
         "with_image":   True,
-        "image_prompt": "young woman at Lake Tahoe, summer, crystal blue water, dock, golden hour, sun-kissed skin, candid lifestyle photography, Sony A7IV, hyperrealistic, no watermark",
+        "image_prompt": "lake tahoe summer, crystal blue water, dock, bikini, golden hour, hyperrealistic",
     },
     {
         "type":       "festival",
@@ -136,10 +143,10 @@ def _generate_image(prompt: str) -> str | None:
     payload = {
         "key":                 MODELSLAB_API_KEY,
         "model_id":            MODELSLAB_IMAGE_MODEL,
-        "prompt":              prompt,
-        "negative_prompt":     "bad quality, blurry, distorted, watermark, text, deformed hands, extra limbs, plastic skin, overexposed, ugly, lowres, amateur",
-        "width":               "1024",
-        "height":              "1024",
+        "prompt":              MAYA_CHARACTER + prompt,
+        "negative_prompt":     "bad quality, blurry, distorted, watermark, text, deformed hands, extra limbs, plastic skin, overexposed, ugly, lowres, amateur, man, male, old, wrinkles",
+        "width":               "768",
+        "height":              "768",
         "samples":             "1",
         "num_inference_steps": "30",
         "guidance_scale":      7.5,
