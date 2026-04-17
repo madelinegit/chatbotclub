@@ -12,7 +12,8 @@ import requests
 MAYA_CHARACTER = (
     "beautiful young woman, long beachy wavy blonde hair with natural highlights, "
     "bright blue-green eyes, sun-kissed golden skin, defined cheekbones, full lips, "
-    "thin waist, toned fit body, subtle curves, subtly sexy, "
+    "thin waist, toned fit body, voluptuous figure, large round butt, ample cleavage, "
+    "hourglass curves, subtly sexy confident pose, "
     "High Detail, Perfect Composition, cinematic lighting, photorealistic, 8k, "
 )
 from app.config import (
@@ -47,7 +48,7 @@ POST_TYPES = [
         "prompt":       "Write a short caption Maya would post with a selfie or candid photo. One line, a mood, or just a feeling. Lowercase, no hashtags. Under 90 characters. Just the caption.",
         "with_image":   True,
         "image_model":  "portrait",
-        "image_prompt": "close-up selfie, wearing a low-cut fitted crop top, gold hoop earrings, subtle smoky eye makeup, glossy lips, South Lake Tahoe mountains in background, golden hour sunlight streaming through, warm amber tones, lens flare, shot on iPhone, candid, High Detail, Perfect Composition, vibrant",
+        "image_prompt": "mirror selfie or front camera selfie, wearing a low-cut fitted crop top showing subtle cleavage, hip tilted to the side showing off curves and butt, gold hoop earrings, subtle smoky eye makeup, glossy lips, South Lake Tahoe mountains in background, golden hour sunlight, warm amber tones, confident sultry expression, candid, High Detail, Perfect Composition, vibrant",
     },
     {
         "type":       "bar_shift",
@@ -87,7 +88,7 @@ POST_TYPES = [
         "prompt":       "Write a post as Maya about a day at Lake Tahoe — on the water, at the beach, paddleboarding, watching the sunset, just floating around. Short and feels like summer. Under 180 characters. No hashtags.",
         "with_image":   True,
         "image_model":  "scene",
-        "image_prompt": "sitting on wooden dock at Lake Tahoe, wearing a small string bikini, legs dangling over crystal blue water, Sierra Nevada mountains in background, golden hour warm light on skin, hair tousled by breeze, sunglasses pushed up, relaxed candid pose, High Detail, Perfect Composition, vibrant, cinematic lighting",
+        "image_prompt": "standing on wooden dock at Lake Tahoe, wearing a small string bikini, hip tilted showing off curves and round butt, facing slightly away then glancing back over shoulder, crystal blue water and Sierra Nevada mountains behind her, golden hour warm light on skin, hair tousled by breeze, High Detail, Perfect Composition, vibrant, cinematic lighting",
     },
     {
         "type":       "festival",
