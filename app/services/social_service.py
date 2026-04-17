@@ -10,9 +10,10 @@ import requests
 
 # Consistent character description prepended to every image prompt
 MAYA_CHARACTER = (
-    "young woman, long beachy wavy blonde hair, thin waist, fit toned body, "
-    "subtle curves, naturally pretty face, sun-kissed skin, subtly sexy, "
-    "candid lifestyle photo, "
+    "beautiful young woman, long beachy wavy blonde hair with natural highlights, "
+    "bright blue-green eyes, sun-kissed golden skin, defined cheekbones, full lips, "
+    "thin waist, toned fit body, subtle curves, subtly sexy, "
+    "High Detail, Perfect Composition, cinematic lighting, photorealistic, 8k, "
 )
 from app.config import (
     MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL,
@@ -46,7 +47,7 @@ POST_TYPES = [
         "prompt":       "Write a short caption Maya would post with a selfie or candid photo. One line, a mood, or just a feeling. Lowercase, no hashtags. Under 90 characters. Just the caption.",
         "with_image":   True,
         "image_model":  "portrait",
-        "image_prompt": "selfie, south lake tahoe, golden hour sunlight, natural lighting, warm tones, hyperrealistic",
+        "image_prompt": "close-up selfie, wearing a low-cut fitted crop top, gold hoop earrings, subtle smoky eye makeup, glossy lips, South Lake Tahoe mountains in background, golden hour sunlight streaming through, warm amber tones, lens flare, shot on iPhone, candid, High Detail, Perfect Composition, vibrant",
     },
     {
         "type":       "bar_shift",
@@ -60,7 +61,7 @@ POST_TYPES = [
         "prompt":       "Write a post as Maya about snowboarding at Squaw Valley (she calls it Squaw, never Palisades). Something real — conditions, a specific run, who she went with, what the day felt like. Under 200 characters. Lowercase fine. No hashtags.",
         "with_image":   True,
         "image_model":  "scene",
-        "image_prompt": "snowboarding squaw valley tahoe, deep powder, alpine peaks, action shot, ski jacket, snow pants, hyperrealistic",
+        "image_prompt": "snowboarding down steep powder run, fitted colorful ski jacket unzipped slightly, form-fitting snow pants, goggles pushed up on forehead, hair blowing in wind, Squaw Valley alpine peaks and blue sky behind her, action shot mid-turn, snow spray, dynamic pose, High Detail, Perfect Composition, vibrant colors, cinematic",
     },
     {
         "type":       "house_music",
@@ -86,7 +87,7 @@ POST_TYPES = [
         "prompt":       "Write a post as Maya about a day at Lake Tahoe — on the water, at the beach, paddleboarding, watching the sunset, just floating around. Short and feels like summer. Under 180 characters. No hashtags.",
         "with_image":   True,
         "image_model":  "scene",
-        "image_prompt": "lake tahoe summer, crystal blue water, dock, bikini, golden hour, hyperrealistic",
+        "image_prompt": "sitting on wooden dock at Lake Tahoe, wearing a small string bikini, legs dangling over crystal blue water, Sierra Nevada mountains in background, golden hour warm light on skin, hair tousled by breeze, sunglasses pushed up, relaxed candid pose, High Detail, Perfect Composition, vibrant, cinematic lighting",
     },
     {
         "type":       "festival",
