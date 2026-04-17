@@ -37,7 +37,7 @@ POST_TYPES = [
         "weight":       10,
         "prompt":       "Write a short caption Maya would post with a selfie or candid photo. One line, a mood, or just a feeling. Lowercase, no hashtags. Under 90 characters. Just the caption.",
         "with_image":   True,
-        "image_prompt": "beautiful woman south lake tahoe california natural lighting golden hour candid portrait photorealistic warm tones",
+        "image_prompt": "stunning young woman, candid portrait, south lake tahoe, golden hour sunlight, natural skin texture, f1.8 bokeh, shot on Sony A7IV, hyperrealistic, no watermark",
     },
     {
         "type":       "bar_shift",
@@ -50,7 +50,7 @@ POST_TYPES = [
         "weight":       8,
         "prompt":       "Write a post as Maya about snowboarding at Squaw Valley (she calls it Squaw, never Palisades). Something real — conditions, a specific run, who she went with, what the day felt like. Under 200 characters. Lowercase fine. No hashtags.",
         "with_image":   True,
-        "image_prompt": "woman snowboarding squaw valley lake tahoe powder day action shot mountains photorealistic",
+        "image_prompt": "young woman snowboarding squaw valley tahoe, deep powder, alpine peaks, action shot, GoPro POV style, hyperrealistic, natural light, no watermark",
     },
     {
         "type":       "house_music",
@@ -75,7 +75,7 @@ POST_TYPES = [
         "weight":       8,
         "prompt":       "Write a post as Maya about a day at Lake Tahoe — on the water, at the beach, paddleboarding, watching the sunset, just floating around. Short and feels like summer. Under 180 characters. No hashtags.",
         "with_image":   True,
-        "image_prompt": "woman at lake tahoe california summer lake day blue water sunshine dock golden hour photorealistic",
+        "image_prompt": "young woman at Lake Tahoe, summer, crystal blue water, dock, golden hour, sun-kissed skin, candid lifestyle photography, Sony A7IV, hyperrealistic, no watermark",
     },
     {
         "type":       "festival",
@@ -137,7 +137,7 @@ def _generate_image(prompt: str) -> str | None:
         "key":                 MODELSLAB_API_KEY,
         "model_id":            MODELSLAB_IMAGE_MODEL,
         "prompt":              prompt,
-        "negative_prompt":     "bad quality, blurry, distorted, watermark, text",
+        "negative_prompt":     "bad quality, blurry, distorted, watermark, text, deformed hands, extra limbs, plastic skin, overexposed, ugly, lowres, amateur",
         "width":               "1024",
         "height":              "1024",
         "samples":             "1",
