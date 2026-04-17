@@ -16,7 +16,8 @@ MAYA_CHARACTER = (
 )
 from app.config import (
     MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL,
-    MODELSLAB_IMAGE_URL, MODELSLAB_IMAGE_MODEL,
+    MODELSLAB_IMAGE_URL,
+    MODELSLAB_PORTRAIT_MODEL, MODELSLAB_SCENE_MODEL,
     X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET,
 )
 from app.ai.persona import load_persona
@@ -44,6 +45,7 @@ POST_TYPES = [
         "weight":       10,
         "prompt":       "Write a short caption Maya would post with a selfie or candid photo. One line, a mood, or just a feeling. Lowercase, no hashtags. Under 90 characters. Just the caption.",
         "with_image":   True,
+        "image_model":  "portrait",
         "image_prompt": "selfie, south lake tahoe, golden hour sunlight, natural lighting, warm tones, hyperrealistic",
     },
     {
@@ -57,6 +59,7 @@ POST_TYPES = [
         "weight":       8,
         "prompt":       "Write a post as Maya about snowboarding at Squaw Valley (she calls it Squaw, never Palisades). Something real — conditions, a specific run, who she went with, what the day felt like. Under 200 characters. Lowercase fine. No hashtags.",
         "with_image":   True,
+        "image_model":  "scene",
         "image_prompt": "snowboarding squaw valley tahoe, deep powder, alpine peaks, action shot, ski jacket, snow pants, hyperrealistic",
     },
     {
@@ -82,6 +85,7 @@ POST_TYPES = [
         "weight":       8,
         "prompt":       "Write a post as Maya about a day at Lake Tahoe — on the water, at the beach, paddleboarding, watching the sunset, just floating around. Short and feels like summer. Under 180 characters. No hashtags.",
         "with_image":   True,
+        "image_model":  "scene",
         "image_prompt": "lake tahoe summer, crystal blue water, dock, bikini, golden hour, hyperrealistic",
     },
     {
@@ -139,10 +143,11 @@ def _generate_caption(post_prompt: str, context: str = "") -> str | None:
     return None
 
 
-def _generate_image(prompt: str) -> str | None:
+def _generate_image(prompt: str, model_type: str = "scene") -> str | None:
+    model = MODELSLAB_PORTRAIT_MODEL if model_type == "portrait" else MODELSLAB_SCENE_MODEL
     payload = {
         "key":                 MODELSLAB_API_KEY,
-        "model_id":            MODELSLAB_IMAGE_MODEL,
+        "model_id":            model,
         "prompt":              MAYA_CHARACTER + prompt,
         "negative_prompt":     "bad quality, blurry, distorted, watermark, text, deformed hands, extra limbs, plastic skin, overexposed, ugly, lowres, amateur, man, male, old, wrinkles",
         "width":               "768",
@@ -183,7 +188,8 @@ def generate_post_for_queue(local_context: str = "") -> dict | None:
 
     if post_cfg.get("with_image"):
         image_prompt = post_cfg.get("image_prompt", "")
-        image_url    = _generate_image(image_prompt)
+        model_type   = post_cfg.get("image_model", "scene")
+        image_url    = _generate_image(image_prompt, model_type=model_type)
 
     post_id = create_social_post(
         caption=caption,
