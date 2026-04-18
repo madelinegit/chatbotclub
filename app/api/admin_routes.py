@@ -117,6 +117,13 @@ def post_now(post_id: int, secret: str = Query(...), platform: str = Query("thre
             image_url=row["image_url"],
             hashtags=row.get("hashtags"),
         )
+    elif platform == "x":
+        from app.services.social_service import post_to_x
+        success = post_to_x(
+            post_id=post_id,
+            caption=row["caption"],
+            image_url=row["image_url"],
+        )
     else:
         success = post_to_threads(
             post_id=post_id,

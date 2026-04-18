@@ -264,6 +264,7 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn-approve" onclick="queueImagePost()">Update Caption in Queue</button>
         <button class="btn-post" onclick="postImageNow('threads')">Post to Threads</button>
+        <button class="btn-post" style="background:#000;" onclick="postImageNow('x')">Post to X</button>
         <button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="postImageNow('instagram')">Post to Instagram</button>
       </div>
     </div>
@@ -472,6 +473,7 @@
             <div class="post-actions" style="margin-top:0;padding-top:0;border-top:none;">
               <button class="btn-approve" onclick="savePost(${p.id})">Save edits</button>
               <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Post to Threads</button>
+              <button class="btn-post" style="background:#000;" onclick="saveAndPost(${p.id}, 'x')">Post to X</button>
               ${p.image_url ? `<button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="saveAndPost(${p.id}, 'instagram')">Post to Instagram</button>` : ''}
               <button class="btn-reject" onclick="deletePost(${p.id})">Delete</button>
             </div>
@@ -490,6 +492,7 @@
               <button class="btn-approve" onclick="savePost(${p.id})">Save edits</button>
               <button class="btn-post" onclick="retryPost(${p.id})">↺ Retry</button>
               <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Post to Threads</button>
+              <button class="btn-post" style="background:#000;" onclick="saveAndPost(${p.id}, 'x')">Post to X</button>
               ${p.image_url ? `<button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="saveAndPost(${p.id}, 'instagram')">Post to Instagram</button>` : ''}
               <button class="btn-reject" onclick="deletePost(${p.id})">Delete</button>
             </div>

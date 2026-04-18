@@ -189,9 +189,11 @@ def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None,
         if not MODELSLAB_LORA_MODEL:
             return None, "MODELSLAB_LORA_MODEL not set in Railway env vars"
         # ModelsLab expects HuggingFace repo ID (user/repo), not full URL
+        # ModelsLab expects bare training ID (e.g. "cb790b46-...")
+        # Strip full HuggingFace URLs or "user/repo" down to just the repo name
         lora_id = MODELSLAB_LORA_MODEL
-        if lora_id.startswith("https://huggingface.co/"):
-            lora_id = lora_id.replace("https://huggingface.co/", "").split("/resolve/")[0]
+        if "/" in lora_id:
+            lora_id = lora_id.rstrip("/").split("/")[-1]
         lora_weights = lora_id
     else:
         model = MODELSLAB_SCENE_MODEL
