@@ -13,6 +13,18 @@ IMAGE_TO_VIDEO_MODEL = "minimax/video-01"
 TEXT_TO_VIDEO_MODEL  = "minimax/video-01"
 
 
+def _extract_url(output) -> str | None:
+    """Extract a URL string from whatever Replicate returns (str, list, FileOutput)."""
+    if output is None:
+        return None
+    if isinstance(output, list):
+        output = output[0] if output else None
+    if output is None:
+        return None
+    url = str(output)
+    return url if url.startswith("http") else None
+
+
 def _check_token() -> str | None:
     if not REPLICATE_API_TOKEN:
         return "REPLICATE_API_TOKEN not set in Railway env vars"
@@ -43,10 +55,9 @@ def image_to_video(image_url: str, prompt: str = "", duration: int = 5) -> tuple
         print(f"REPLICATE i2v: model={IMAGE_TO_VIDEO_MODEL} prompt={prompt!r} image={image_url[:80]}")
         output = replicate.run(IMAGE_TO_VIDEO_MODEL, input=inp)
 
-        # replicate returns a FileOutput or URL string
-        video_url = str(output) if output else None
+        video_url = _extract_url(output)
         if not video_url:
-            return None, f"REPLICATE i2v: empty output — model returned {output!r}"
+            return None, f"REPLICATE i2v: could not extract URL from output={output!r}"
 
         print(f"REPLICATE i2v: done — {video_url[:80]}")
         from app.services.social_service import _upload_to_cloudinary
@@ -78,9 +89,9 @@ def text_to_video(prompt: str, duration: int = 5) -> tuple[str | None, str | Non
             "resolution": "1080P",
         })
 
-        video_url = str(output) if output else None
+        video_url = _extract_url(output)
         if not video_url:
-            return None, f"REPLICATE t2v: empty output — model returned {output!r}"
+            return None, f"REPLICATE t2v: could not extract URL from output={output!r}"
 
         print(f"REPLICATE t2v: done — {video_url[:80]}")
         from app.services.social_service import _upload_to_cloudinary
