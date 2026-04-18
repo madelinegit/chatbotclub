@@ -23,10 +23,11 @@ FB_APP_SECRET = os.getenv("FB_APP_SECRET")
 REDIRECT_URI  = "https://magicmaya.vip/auth/instagram/callback"
 
 SCOPES = ",".join([
-    "pages_show_list",
+    "instagram_basic",
+    "instagram_content_publishing",
     "pages_read_engagement",
-    "instagram_manage_insights",
-    "instagram_manage_comments",
+    "business_management",
+    "pages_show_list",
 ])
 
 
