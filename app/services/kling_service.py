@@ -38,32 +38,62 @@ def _headers() -> dict:
     }
 
 
-def _poll(endpoint: str, task_id: str, max_wait: int = 300) -> str | None:
-    """Poll until video is ready. Returns video URL or None."""
+def _http_error(r: requests.Response, context: str) -> str:
+    """Build a detailed error string from a non-2xx response."""
+    try:
+        body = r.json()
+    except Exception:
+        body = r.text[:500]
+    return (
+        f"KLING {context} HTTP {r.status_code} {r.reason} | "
+        f"url={r.url} | body={body}"
+    )
+
+
+def _poll(endpoint: str, task_id: str, max_wait: int = 300) -> tuple[str | None, str | None]:
+    """Poll until video is ready. Returns (video_url, error)."""
     deadline = time.time() + max_wait
+    attempts = 0
     while time.time() < deadline:
         time.sleep(10)
+        attempts += 1
         try:
-            r = requests.get(f"{KLING_API}{endpoint}/{task_id}", headers=_headers(), timeout=15)
+            r = requests.get(
+                f"{KLING_API}{endpoint}/{task_id}",
+                headers=_headers(), timeout=15,
+            )
             if r.status_code == 429:
-                print("KLING poll: rate limited, waiting 30s")
+                print(f"KLING poll attempt {attempts}: 429 rate-limited, sleeping 30s | body={r.text[:200]}")
                 time.sleep(30)
                 continue
-            r.raise_for_status()
+            if not r.ok:
+                err = _http_error(r, f"poll attempt {attempts}")
+                print(err)
+                time.sleep(15)
+                continue
+        except requests.exceptions.Timeout:
+            print(f"KLING poll attempt {attempts}: GET timeout after 15s, retrying")
+            continue
         except Exception as e:
-            print(f"KLING poll error: {e}")
+            print(f"KLING poll attempt {attempts}: {type(e).__name__}: {e}")
             time.sleep(15)
             continue
+
         data   = r.json().get("data", {})
         status = data.get("task_status")
-        print(f"KLING poll: status={status}")
+        msg    = data.get("task_status_msg", "")
+        print(f"KLING poll attempt {attempts}: task_id={task_id} status={status} msg={msg!r}")
+
         if status == "succeed":
             works = data.get("task_result", {}).get("videos", [])
-            return works[0].get("url") if works else None
+            if works:
+                return works[0].get("url"), None
+            return None, f"KLING task succeeded but videos list is empty: {data}"
         if status == "failed":
-            print(f"KLING task failed: {data.get('task_status_msg')}")
-            return None
-    return None
+            return None, f"KLING task failed: status_msg={msg!r} full_data={data}"
+
+    elapsed = int(max_wait)
+    return None, f"KLING poll timed out after {elapsed}s / {attempts} attempts — task_id={task_id} endpoint={endpoint}"
 
 
 def image_to_video(image_url: str, prompt: str = "", duration: int = 5) -> tuple[str | None, str | None]:
@@ -71,8 +101,10 @@ def image_to_video(image_url: str, prompt: str = "", duration: int = 5) -> tuple
     Animate an image into a video.
     Returns (video_url, error_message).
     """
-    if not KLING_ACCESS_KEY or not KLING_SECRET_KEY:
-        return None, "KLING_ACCESS_KEY / KLING_SECRET_KEY not set in Railway"
+    if not KLING_ACCESS_KEY:
+        return None, "KLING_ACCESS_KEY not set in Railway env vars"
+    if not KLING_SECRET_KEY:
+        return None, "KLING_SECRET_KEY not set in Railway env vars"
 
     payload = {
         "model_name": "kling-v1",
@@ -88,20 +120,19 @@ def image_to_video(image_url: str, prompt: str = "", duration: int = 5) -> tuple
             f"{KLING_API}/v1/videos/image2video",
             json=payload, headers=_headers(), timeout=30,
         )
-        print(f"KLING i2v create: status={r.status_code} body={r.text[:300]}")
-        if r.status_code == 429:
-            return None, f"Kling 429: {r.text[:300]}"
-        r.raise_for_status()
+        print(f"KLING i2v create: status={r.status_code} body={r.text[:400]}")
+        if not r.ok:
+            return None, _http_error(r, "i2v create")
         task_id = r.json().get("data", {}).get("task_id")
         if not task_id:
-            return None, f"No task_id returned: {r.text[:200]}"
+            return None, f"KLING i2v: no task_id in response — full body={r.text[:300]}"
 
-        video_url = _poll("/v1/videos/image2video", task_id)
-        if video_url:
-            return video_url, None
-        return None, "Video generation timed out or failed"
+        return _poll("/v1/videos/image2video", task_id)
+
+    except requests.exceptions.Timeout:
+        return None, "KLING i2v create: POST timed out after 30s (Kling API may be slow)"
     except Exception as e:
-        return None, f"Kling error: {type(e).__name__}: {e}"
+        return None, f"KLING i2v create: {type(e).__name__}: {e}"
 
 
 def text_to_video(prompt: str, duration: int = 5) -> tuple[str | None, str | None]:
@@ -109,8 +140,10 @@ def text_to_video(prompt: str, duration: int = 5) -> tuple[str | None, str | Non
     Generate a video from a text prompt.
     Returns (video_url, error_message).
     """
-    if not KLING_ACCESS_KEY or not KLING_SECRET_KEY:
-        return None, "KLING_ACCESS_KEY / KLING_SECRET_KEY not set in Railway"
+    if not KLING_ACCESS_KEY:
+        return None, "KLING_ACCESS_KEY not set in Railway env vars"
+    if not KLING_SECRET_KEY:
+        return None, "KLING_SECRET_KEY not set in Railway env vars"
 
     try:
         r = requests.post(
@@ -118,17 +151,16 @@ def text_to_video(prompt: str, duration: int = 5) -> tuple[str | None, str | Non
             json={"model_name": "kling-v1", "prompt": prompt, "duration": str(duration), "mode": "std"},
             headers=_headers(), timeout=30,
         )
-        print(f"KLING t2v create: status={r.status_code} body={r.text[:300]}")
-        if r.status_code == 429:
-            return None, f"Kling 429: {r.text[:300]}"
-        r.raise_for_status()
+        print(f"KLING t2v create: status={r.status_code} body={r.text[:400]}")
+        if not r.ok:
+            return None, _http_error(r, "t2v create")
         task_id = r.json().get("data", {}).get("task_id")
         if not task_id:
-            return None, f"No task_id returned: {r.text[:200]}"
+            return None, f"KLING t2v: no task_id in response — full body={r.text[:300]}"
 
-        video_url = _poll("/v1/videos/text2video", task_id)
-        if video_url:
-            return video_url, None
-        return None, "Video generation timed out or failed"
+        return _poll("/v1/videos/text2video", task_id)
+
+    except requests.exceptions.Timeout:
+        return None, "KLING t2v create: POST timed out after 30s (Kling API may be slow)"
     except Exception as e:
-        return None, f"Kling error: {type(e).__name__}: {e}"
+        return None, f"KLING t2v create: {type(e).__name__}: {e}"
