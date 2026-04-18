@@ -188,7 +188,11 @@ def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None,
         model = MODELSLAB_FLUX_BASE
         if not MODELSLAB_LORA_MODEL:
             return None, "MODELSLAB_LORA_MODEL not set in Railway env vars"
-        lora_weights = [MODELSLAB_LORA_MODEL]
+        # ModelsLab expects HuggingFace repo ID (user/repo), not full URL
+        lora_id = MODELSLAB_LORA_MODEL
+        if lora_id.startswith("https://huggingface.co/"):
+            lora_id = lora_id.replace("https://huggingface.co/", "").split("/resolve/")[0]
+        lora_weights = lora_id
     else:
         model = MODELSLAB_SCENE_MODEL
     if not MODELSLAB_API_KEY:
@@ -215,10 +219,11 @@ def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None,
         "guidance_scale":      3.5 if is_flux else 7.5,
         "enhance_prompt":      False,
         "safety_checker":      "no",
-        "lora_model":          lora_weights,
+        "lora_model":          lora_weights if lora_weights else None,
         "lora_strength":       "0.9" if lora_weights else None,
     }
     if not lora_weights:
+        del payload["lora_model"]
         del payload["lora_strength"]
 
     try:
