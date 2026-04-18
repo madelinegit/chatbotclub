@@ -468,7 +468,8 @@
           </div>
           <div class="actions">
             <button class="btn btn-ig" onclick="postVideoAsReel()">Post as Reel</button>
-            <button class="btn btn-save" onclick="copyVideoUrl()">Copy URL</button>
+            <button class="btn btn-save" onclick="downloadVideo()">⬇ Save to Device</button>
+            <button class="btn" style="background:rgba(255,255,255,0.06);color:var(--muted);" onclick="copyVideoUrl()">Copy URL</button>
           </div>
         </div>
       </div>
@@ -1060,6 +1061,17 @@
       btn.disabled = false
       btn.innerHTML = 'Generate Video'
     }
+  }
+
+  function downloadVideo() {
+    if (!_lastVideoUrl) { toast('No video to save.', 'red'); return }
+    const a = document.createElement('a')
+    a.href = _lastVideoUrl
+    a.download = 'maya-video.mp4'
+    a.target = '_blank'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
   }
 
   function copyVideoUrl() {

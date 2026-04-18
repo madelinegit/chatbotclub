@@ -477,6 +477,7 @@
       <button class="btn-cancel" onclick="closeVideoModal()">Close</button>
       <button class="btn-approve" id="vm-gen-btn" onclick="generateFromModal()">Generate Video</button>
       <button class="btn-post" id="vm-reel-btn" style="display:none;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="postModalReel()">Post as Reel</button>
+      <button class="btn-approve" id="vm-dl-btn" style="display:none;" onclick="downloadModalVideo()">⬇ Save to Device</button>
     </div>
   </div>
 </div>
@@ -1556,6 +1557,7 @@
     document.getElementById('vm-prompt').value    = ''
     document.getElementById('vm-result').style.display = 'none'
     document.getElementById('vm-reel-btn').style.display = 'none'
+    document.getElementById('vm-dl-btn').style.display = 'none'
     document.getElementById('vm-gen-btn').textContent = 'Generate Video'
     document.getElementById('vm-gen-btn').disabled = false
     const img = document.getElementById('vm-preview')
@@ -1587,6 +1589,7 @@
       document.getElementById('vm-video-url').value = data.video_url
       document.getElementById('vm-result').style.display = 'block'
       document.getElementById('vm-reel-btn').style.display = ''
+      document.getElementById('vm-dl-btn').style.display = ''
       toast('Video ready!', 'green')
     } catch (e) {
       toast('Error: ' + e.message, 'red')
@@ -1594,6 +1597,14 @@
       btn.textContent = 'Regenerate'
       btn.disabled = false
     }
+  }
+
+  function downloadModalVideo() {
+    const url = document.getElementById('vm-video-url').value
+    if (!url) { toast('No video to save.', 'red'); return }
+    const a = document.createElement('a')
+    a.href = url; a.download = 'maya-video.mp4'; a.target = '_blank'
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
   }
 
   async function postModalReel() {
