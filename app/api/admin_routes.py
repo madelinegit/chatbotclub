@@ -340,7 +340,7 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
         raise HTTPException(status_code=400, detail="expanded_prompt required.")
 
     # Step 2 — generate image from expanded prompt
-    model_type = body.get("model_type", "portrait")
+    model_type = body.get("model_type", "lora")
     image_url, img_error = _generate_image(expanded, model_type=model_type)
 
     if img_error and not image_url:

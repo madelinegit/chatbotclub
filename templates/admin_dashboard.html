@@ -268,10 +268,10 @@
       ></textarea>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <select id="image-model-type" style="background:#111113;color:#ccc;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:13px;outline:none;">
+          <option value="lora" selected>LoRA (Maya)</option>
           <option value="portrait">Portrait model</option>
           <option value="scene">Scene model</option>
           <option value="explicit">Explicit model</option>
-          <option value="lora">LoRA (mayavip)</option>
         </select>
         <button class="btn-gen" onclick="generateImage()" id="image-gen-btn" style="padding:10px 20px;">Generate</button>
       </div>
@@ -1107,7 +1107,7 @@
 
   let _lastImageUrl = null
   let _lastImagePrompt = null
-  let _lastModelType = 'portrait'
+  let _lastModelType = 'lora'
 
   async function generateImage() {
     const idea = document.getElementById('image-idea-input').value.trim()
