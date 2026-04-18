@@ -162,6 +162,68 @@ async def admin_write_chat(secret: str = Query(...), request: Request = None):
         raise HTTPException(status_code=500, detail=f"LLM error: {e}")
 
 
+@router.post("/write/image")
+async def admin_write_image(secret: str = Query(...), request: Request = None):
+    """
+    Take a simple idea, expand it into a full Maya image prompt via LLM,
+    then generate the image. Returns the expanded prompt + image URL.
+    """
+    _check(secret)
+    body = await request.json()
+    idea = body.get("idea", "").strip()
+    if not idea:
+        raise HTTPException(status_code=400, detail="idea required.")
+
+    import requests as req
+    from app.config import MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL
+    from app.services.social_service import _generate_image, MAYA_CHARACTER
+
+    # Step 1 — LLM expands the idea into a detailed image prompt
+    system = (
+        "You are a creative director generating image prompts for an AI image model. "
+        "The subject is always Maya: beautiful young woman, long beachy wavy blonde hair, "
+        "bright blue-green eyes, sun-kissed golden skin, hourglass curves, voluptuous figure. "
+        "Take the user's simple idea and write a single detailed image generation prompt. "
+        "Include: setting, lighting, outfit (form-fitting, revealing, or sensual as appropriate), "
+        "Maya's pose (confident, sensual, showing off her figure), mood, and photographic style. "
+        "Output ONLY the prompt text. No explanation, no quotes, no extra text."
+    )
+    payload = {
+        "model":    MODELSLAB_MODEL,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user",   "content": idea},
+        ],
+    }
+    headers = {
+        "Authorization": f"Bearer {MODELSLAB_API_KEY}",
+        "Content-Type":  "application/json",
+    }
+    try:
+        r = req.post(MODELSLAB_API_URL, json=payload, headers=headers, timeout=30)
+        r.raise_for_status()
+        data = r.json()
+        expanded = ""
+        if "choices" in data:
+            expanded = data["choices"][0]["message"]["content"].strip().strip('"').strip("'")
+        elif "output" in data:
+            expanded = data["output"][0].strip().strip('"').strip("'")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM error: {e}")
+
+    if not expanded:
+        raise HTTPException(status_code=500, detail="LLM returned empty prompt.")
+
+    # Step 2 — generate image from expanded prompt
+    model_type = body.get("model_type", "portrait")
+    image_url = _generate_image(expanded, model_type=model_type)
+
+    return {
+        "expanded_prompt": expanded,
+        "image_url": image_url,
+    }
+
+
 @router.post("/write/queue")
 async def admin_write_queue(secret: str = Query(...), request: Request = None):
     """Queue a piece of text as a pending post."""

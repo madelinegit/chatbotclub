@@ -173,21 +173,59 @@
 
 <!-- WRITE PAGE -->
 <div class="page" id="page-write">
-  <div class="section-header">
-    <div class="section-title">Write with Maya</div>
-    <button class="btn-reject" onclick="clearWriteChat()">Clear</button>
+
+  <!-- Image Generator -->
+  <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:24px;">
+    <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Image Generator</div>
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px;">
+      <textarea id="image-idea-input" rows="2" placeholder="Describe the shot… e.g. 'Maya at the bar after a long shift' or 'poolside in Vegas, sunny day'"
+        style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;font-size:14px;font-family:inherit;resize:none;outline:none;"
+      ></textarea>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <select id="image-model-type" style="background:#111113;color:#ccc;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:13px;outline:none;">
+          <option value="portrait">Portrait model</option>
+          <option value="scene">Scene model</option>
+        </select>
+        <button class="btn-gen" onclick="generateImage()" id="image-gen-btn" style="padding:10px 20px;">Generate</button>
+      </div>
+    </div>
+
+    <!-- Result area -->
+    <div id="image-result" style="display:none;">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;">
+        <img id="image-preview" src="" style="width:280px;height:280px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.08);">
+        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:10px;">
+          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.08em;">Expanded prompt</div>
+          <div id="image-expanded-prompt" style="font-size:12px;color:#888;line-height:1.6;background:#111113;border-radius:8px;padding:12px;max-height:120px;overflow-y:auto;"></div>
+          <textarea id="image-caption-input" rows="3" placeholder="Caption for this post…"
+            style="background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;font-size:13px;font-family:inherit;resize:none;outline:none;"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-approve" onclick="queueImagePost()">Add to Queue</button>
+            <button class="btn-post" onclick="postImageNow('threads')">Post to Threads</button>
+            <button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="postImageNow('instagram')">Post to Instagram</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="image-status" style="font-size:13px;color:#6ac97a;margin-top:8px;display:none;"></div>
   </div>
 
-  <div id="write-messages" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;min-height:80px;"></div>
-
-  <div style="display:flex;gap:8px;align-items:flex-end;">
-    <textarea id="write-input" rows="3" placeholder="Tell Maya what to write… e.g. 'write a post about a rough powder day' or 'caption for a bar shift where someone was obnoxious'"
-      style="flex:1;background:#1a1a1e;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;font-size:14px;font-family:inherit;resize:none;outline:none;"
-      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendWriteMessage()}"
-    ></textarea>
-    <button class="btn-gen" onclick="sendWriteMessage()" id="write-send-btn" style="height:48px;padding:0 20px;">Send</button>
+  <!-- Chat with Maya -->
+  <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.08em;">Chat with Maya</div>
+      <button class="btn-reject" onclick="clearWriteChat()">Clear</button>
+    </div>
+    <div id="write-messages" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px;min-height:60px;"></div>
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <textarea id="write-input" rows="3" placeholder="Tell Maya what to write… e.g. 'write a post about a rough powder day'"
+        style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;font-size:14px;font-family:inherit;resize:none;outline:none;"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendWriteMessage()}"
+      ></textarea>
+      <button class="btn-gen" onclick="sendWriteMessage()" id="write-send-btn" style="height:48px;padding:0 20px;">Send</button>
+    </div>
+    <div style="font-size:11px;color:#555;margin-top:6px;">Shift+Enter for new line · Enter to send</div>
   </div>
-  <div style="font-size:11px;color:#555;margin-top:6px;">Shift+Enter for new line · Enter to send</div>
 </div>
 
 <!-- BLOG PAGE -->
@@ -649,6 +687,81 @@
     if (!isMe) div.querySelector('.btn-approve').dataset.text = text
     el.appendChild(div)
     el.scrollTop = el.scrollHeight
+  }
+
+  let _lastImageUrl = null
+  let _lastImagePrompt = null
+
+  async function generateImage() {
+    const idea = document.getElementById('image-idea-input').value.trim()
+    if (!idea) return
+    const btn = document.getElementById('image-gen-btn')
+    const modelType = document.getElementById('image-model-type').value
+    btn.disabled = true; btn.textContent = 'Generating…'
+    document.getElementById('image-result').style.display = 'none'
+    document.getElementById('image-status').style.display = 'none'
+
+    try {
+      const res  = await fetch(`/admin/write/image?secret=${SECRET}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ idea, model_type: modelType }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast(data.detail || 'Generation failed.', 'red'); return }
+
+      _lastImageUrl    = data.image_url
+      _lastImagePrompt = data.expanded_prompt
+
+      document.getElementById('image-expanded-prompt').textContent = data.expanded_prompt
+      if (data.image_url) {
+        document.getElementById('image-preview').src = data.image_url
+        document.getElementById('image-result').style.display = 'flex'
+      } else {
+        toast('Image is processing — check back in a minute and paste the URL manually.', 'orange')
+      }
+    } catch (e) {
+      toast('Error generating image.', 'red')
+    } finally {
+      btn.disabled = false; btn.textContent = 'Generate'
+    }
+  }
+
+  async function queueImagePost() {
+    const caption   = document.getElementById('image-caption-input').value.trim()
+    const image_url = _lastImageUrl
+    if (!caption) { toast('Add a caption first.', 'red'); return }
+    const res = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ caption, image_url }),
+    })
+    if (res.ok) toast('Added to queue! Go to Posts tab to review.', 'green')
+    else toast('Failed to queue.', 'red')
+  }
+
+  async function postImageNow(platform) {
+    const caption   = document.getElementById('image-caption-input').value.trim()
+    const image_url = _lastImageUrl
+    if (!caption) { toast('Add a caption first.', 'red'); return }
+
+    // Queue it first, then post
+    const qRes = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ caption, image_url }),
+    })
+    if (!qRes.ok) { toast('Failed to save post.', 'red'); return }
+    const { id } = await qRes.json()
+
+    const pRes = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}&platform=${platform}`, {
+      method: 'POST',
+    })
+    if (pRes.ok) toast(`Posted to ${platform}!`, 'green')
+    else {
+      const d = await pRes.json()
+      toast(d.detail || `Failed to post to ${platform}.`, 'red')
+    }
   }
 
   async function sendWriteMessage() {
