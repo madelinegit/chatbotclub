@@ -209,6 +209,15 @@
 
     /* ── Write tab ── */
     #tab-write { display: none; }
+    .model-chip {
+      flex: 1; padding: 8px 4px; font-size: 13px; border-radius: 8px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--muted); cursor: pointer;
+    }
+    .model-chip.active {
+      background: rgba(201,149,106,0.15); border-color: var(--accent);
+      color: var(--accent); font-weight: 600;
+    }
 
     /* ── Replies tab ── */
     #tab-replies { display: none; }
@@ -373,7 +382,7 @@
     <!-- Write tab -->
     <div id="tab-write">
 
-      <!-- Platform selector (shared) -->
+      <!-- Platform selector -->
       <div class="write-section">
         <h3>Post To</h3>
         <div class="platform-toggles">
@@ -383,9 +392,58 @@
         </div>
       </div>
 
+      <!-- ── CREATE POST (image + caption, one tap) ── -->
+      <div class="write-section">
+        <h3>Create Post</h3>
+
+        <!-- Model selector -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button id="m-lora"     class="model-chip active" onclick="setModel('lora')">LoRA (Maya)</button>
+          <button id="m-portrait" class="model-chip"        onclick="setModel('portrait')">Portrait</button>
+          <button id="m-scene"    class="model-chip"        onclick="setModel('scene')">Scene</button>
+        </div>
+
+        <!-- Scene description -->
+        <textarea id="c-scene" rows="3" placeholder="Describe the scene — e.g. 'poolside at Tahoe, golden hour, wearing a string bikini, looking back at camera'"></textarea>
+
+        <!-- Optional background photo for img2img -->
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Background photo (optional — Maya will be composited in)</label>
+          <input type="file" id="c-bg-file" accept="image/*" onchange="cBgPreview()">
+          <img id="c-bg-thumb" src="" alt="" style="display:none;width:100%;border-radius:8px;margin-top:8px;">
+          <div id="c-blend-wrap" style="display:none;margin-top:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:11px;color:var(--muted);">Scene</span>
+              <input type="range" id="c-blend" min="50" max="95" value="80" style="flex:1;" oninput="document.getElementById('c-blend-val').textContent=this.value+'%'">
+              <span id="c-blend-val" style="font-size:11px;color:var(--muted);width:32px;">80%</span>
+              <span style="font-size:11px;color:var(--muted);">Maya</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Caption hint (optional) -->
+        <textarea id="c-caption-hint" rows="2" placeholder="Caption idea (optional) — leave blank to auto-generate, or type something to have it optimised for your platform"></textarea>
+
+        <!-- Single create button -->
+        <div class="actions">
+          <button class="btn btn-gen" id="c-create-btn" onclick="createPost()">✦ Create</button>
+        </div>
+
+        <!-- Result -->
+        <div id="c-result" style="display:none;margin-top:16px;">
+          <img id="c-out-img" src="" style="width:100%;border-radius:10px;margin-bottom:12px;cursor:pointer;" onclick="openImgOverlay(this.src)">
+          <textarea id="c-out-caption" rows="4" style="margin-bottom:10px;"></textarea>
+          <div class="actions">
+            <button class="btn btn-gen" onclick="cPostNow()">Post Now</button>
+            <button class="btn btn-save" onclick="cQueue()">Queue</button>
+            <button class="btn" style="background:rgba(255,255,255,0.06);color:var(--muted);" onclick="cMakeVideo()">🎬 Video</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Quick text post -->
       <div class="write-section">
-        <h3>Quick Post</h3>
+        <h3>Quick Text Post</h3>
         <textarea id="q-text" rows="4" placeholder="Type exactly what you want to post…"></textarea>
         <div class="actions">
           <button class="btn btn-threads" onclick="quickPostNow()">Post Now</button>
@@ -393,51 +451,11 @@
         </div>
       </div>
 
-      <!-- Generate caption -->
-      <div class="write-section">
-        <h3>Generate Caption</h3>
-        <textarea id="w-idea" rows="3" placeholder="Topic, idea, or event — e.g. 'Heavenly just got 2 feet of snow' or '@skiheavenly reopened today'"></textarea>
-        <div id="w-expanded-wrap" style="display:none;">
-          <textarea id="w-expanded" rows="4" placeholder="Caption — edit before posting"></textarea>
-        </div>
-        <div class="actions">
-          <button class="btn btn-gen" id="w-gen-btn" onclick="generateCaption()">Generate</button>
-          <button class="btn btn-save" id="w-queue-btn" style="display:none;" onclick="queueGenerated()">Queue</button>
-          <button class="btn btn-threads" id="w-post-btn" style="display:none;" onclick="postGeneratedNow()">Post Now</button>
-        </div>
-      </div>
-
-      <!-- Insert Maya into scene (img2img) -->
-      <div class="write-section">
-        <h3>Insert Maya into Scene</h3>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Upload any background photo — Maya will be composited in using the LoRA.</div>
-        <input type="file" id="i2i-m-file" accept="image/*" onchange="i2iMobilePreview()">
-        <img id="i2i-m-thumb" src="" alt="" style="display:none;width:100%;border-radius:10px;margin-bottom:10px;">
-        <textarea id="i2i-m-prompt" rows="2" placeholder="Describe Maya in the scene — e.g. 'leaning against the railing, looking back, golden hour'"></textarea>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-          <span style="font-size:12px;color:var(--muted);">Scene</span>
-          <input type="range" id="i2i-m-strength" min="50" max="95" value="80" style="flex:1;" oninput="document.getElementById('i2i-m-val').textContent=this.value+'%'">
-          <span id="i2i-m-val" style="font-size:12px;color:var(--muted);width:36px;">80%</span>
-          <span style="font-size:12px;color:var(--muted);">Maya</span>
-        </div>
-        <div class="actions">
-          <button class="btn btn-gen" id="i2i-m-btn" onclick="generateImg2ImgMobile()">Insert Maya</button>
-        </div>
-        <div id="i2i-m-result" style="display:none;margin-top:12px;">
-          <img id="i2i-m-output" src="" style="width:100%;border-radius:10px;margin-bottom:10px;" onclick="openImgOverlay(this.src)">
-          <textarea id="i2i-m-caption" rows="2" placeholder="Caption for this post…"></textarea>
-          <div class="actions" style="margin-top:8px;">
-            <button class="btn btn-threads" onclick="i2iMobilePost()">Post Now</button>
-            <button class="btn btn-save" onclick="i2iMobileMakeVideo()">🎬 Video</button>
-          </div>
-        </div>
-      </div>
-
       <!-- Generate video -->
       <div class="write-section">
         <h3>Generate Video</h3>
         <textarea id="v-prompt" rows="3" placeholder="Motion prompt — e.g. 'slow pan out, golden hour, hair blowing in wind'"></textarea>
-        <div id="v-img-wrap" style="margin-bottom:10px;">
+        <div style="margin-bottom:10px;">
           <input type="text" id="v-image-url" placeholder="Image URL to animate (optional — leave blank for text-to-video)">
         </div>
         <div class="actions">
@@ -455,9 +473,9 @@
         </div>
       </div>
 
-      <!-- Upload photo -->
+      <!-- Upload your own photo -->
       <div class="write-section">
-        <h3>Upload Photo</h3>
+        <h3>Upload Your Own Photo</h3>
         <input type="file" id="w-file" accept="image/*" onchange="previewUpload()">
         <img id="upload-thumb-preview" src="" alt="">
         <textarea id="w-caption" rows="2" placeholder="Caption (optional)"></textarea>
@@ -829,6 +847,108 @@
     if (ok.length)  toast(`Posted to ${ok.join(', ')}!`, 'green')
     if (bad.length) toast(`Failed: ${bad.join(', ')}`, 'red')
     return ok.length > 0
+  }
+
+  // ── Write — unified Create Post ──────────────────────────────────────────────
+
+  let _cModel = 'lora'
+  let _cBgUrl = null
+
+  function setModel(m) {
+    _cModel = m
+    document.querySelectorAll('.model-chip').forEach(b => b.classList.remove('active'))
+    document.getElementById('m-' + m).classList.add('active')
+  }
+
+  function cBgPreview() {
+    const f = document.getElementById('c-bg-file').files[0]
+    if (!f) return
+    const thumb = document.getElementById('c-bg-thumb')
+    thumb.src = URL.createObjectURL(f)
+    thumb.style.display = 'block'
+    document.getElementById('c-blend-wrap').style.display = 'block'
+  }
+
+  async function createPost() {
+    const scene   = document.getElementById('c-scene').value.trim()
+    const hint    = document.getElementById('c-caption-hint').value.trim()
+    const blend   = parseInt(document.getElementById('c-blend').value) / 100
+    const btn     = document.getElementById('c-create-btn')
+    if (!scene) { toast('Describe the scene first.', 'red'); return }
+
+    btn.disabled = true
+    btn.textContent = 'Creating… (~30s)'
+    document.getElementById('c-result').style.display = 'none'
+
+    // Upload background if provided
+    let bgUrl = null
+    const bgFile = document.getElementById('c-bg-file').files[0]
+    if (bgFile) {
+      const fd = new FormData(); fd.append('file', bgFile)
+      const up = await mSafeFetch(`/admin/upload-image?secret=${encodeURIComponent(SECRET)}`, { method: 'POST', body: fd })
+      if (!up.ok) { btn.disabled = false; btn.textContent = '✦ Create'; return }
+      bgUrl = up.data.url
+    }
+
+    const platform = _strategyPlatform()
+    const res = await mSafeFetch(`/admin/write/create?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        scene_prompt:  scene,
+        model_type:    _cModel,
+        bg_image_url:  bgUrl,
+        blend,
+        caption_hint:  hint || null,
+        platform,
+      }),
+    })
+
+    btn.disabled = false
+    btn.textContent = '✦ Create'
+
+    if (!res.ok) { toast('Creation failed — see error log', 'red'); return }
+    document.getElementById('c-out-img').src       = res.data.image_url
+    document.getElementById('c-out-caption').value = res.data.caption
+    document.getElementById('c-result').style.display = 'block'
+    // pre-fill video image url
+    document.getElementById('v-image-url').value = res.data.image_url
+  }
+
+  async function cPostNow() {
+    const caption  = document.getElementById('c-out-caption').value.trim()
+    const imageUrl = document.getElementById('c-out-img').src
+    const platform = _strategyPlatform()
+    if (!caption) { toast('Add a caption.', 'red'); return }
+    const res = await mSafeFetch(`/admin/posts/${encodeURIComponent(platform)}/post-now?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caption, image_url: imageUrl, target_platform: platform }),
+    })
+    if (res.ok) toast(`Posted to ${platform}!`, 'green')
+    else toast('Post failed — see error log', 'red')
+  }
+
+  async function cQueue() {
+    const caption  = document.getElementById('c-out-caption').value.trim()
+    const imageUrl = document.getElementById('c-out-img').src
+    const platform = _strategyPlatform()
+    if (!caption) { toast('Add a caption.', 'red'); return }
+    const res = await mSafeFetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caption, image_url: imageUrl, target_platform: platform }),
+    })
+    if (res.ok) toast('Queued!', 'green')
+    else toast('Queue failed — see error log', 'red')
+  }
+
+  function cMakeVideo() {
+    const imageUrl = document.getElementById('c-out-img').src
+    document.getElementById('v-image-url').value = imageUrl
+    // scroll to video section
+    document.getElementById('v-prompt').scrollIntoView({ behavior: 'smooth' })
+    toast('Image pre-filled in Generate Video — add a motion prompt and generate.', '')
   }
 
   // ── Write — img2img ──────────────────────────────────────────────────────────

@@ -352,6 +352,83 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
     }
 
 
+@router.post("/write/create")
+async def admin_write_create(secret: str = Query(...), request: Request = None):
+    """
+    One-shot mobile create: generate image + caption in a single call.
+    Body:
+      scene_prompt   - what the image should look like
+      model_type     - lora (default) | portrait | scene
+      bg_image_url   - optional: background image for img2img
+      blend          - 0.0–1.0 prompt_strength for img2img (default 0.8)
+      caption_hint   - optional: if provided, optimize for platform instead of generating fresh
+      platform       - threads | instagram | x (affects caption style)
+    Returns: { image_url, caption }
+    """
+    _check(secret)
+    body         = await request.json()
+    scene_prompt = body.get("scene_prompt", "").strip()
+    model_type   = body.get("model_type", "lora")
+    bg_image_url = (body.get("bg_image_url") or "").strip() or None
+    blend        = float(body.get("blend", 0.8))
+    caption_hint = (body.get("caption_hint") or "").strip() or None
+    platform     = body.get("platform", "instagram")
+
+    if not scene_prompt:
+        raise HTTPException(status_code=400, detail="scene_prompt required.")
+
+    import requests as req
+    from app.config import MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL
+    from app.services.social_service import _generate_image, _generate_image_lora
+    from app.ai.persona import load_persona
+
+    # ── 1. Generate image ───────────────────────────────────────────────────
+    if model_type == "lora" or bg_image_url:
+        image_url, img_err = _generate_image_lora(
+            scene_prompt,
+            image_url=bg_image_url,
+            prompt_strength=blend,
+        )
+    else:
+        image_url, img_err = _generate_image(scene_prompt, model_type=model_type)
+
+    if not image_url:
+        raise HTTPException(status_code=500, detail=f"Image generation failed: {img_err}")
+
+    # ── 2. Generate or optimise caption ────────────────────────────────────
+    platform_style = {
+        "instagram": "Instagram — hook first line, warm and personal, ends with a soft CTA or question. 3–5 relevant hashtags on a new line.",
+        "threads":   "Threads — 1–3 lines, dry wit or genuine moment, no hashtags, lowercase fine.",
+        "x":         "X/Twitter — punchy, under 200 chars, optionally @mention a relevant account.",
+    }.get(platform, "casual social media post")
+
+    if caption_hint:
+        user_msg = f"Optimise this caption for {platform_style}:\n\n{caption_hint}"
+    else:
+        user_msg = f"Write a caption for this image scene for {platform_style}:\n\nScene: {scene_prompt}"
+
+    persona = load_persona()
+    llm_payload = {
+        "model": MODELSLAB_MODEL,
+        "messages": [
+            {"role": "system", "content": persona + "\n\nWrite only the caption text. No explanation."},
+            {"role": "user",   "content": user_msg},
+        ],
+    }
+    try:
+        r = req.post(MODELSLAB_API_URL, json=llm_payload,
+                     headers={"Authorization": f"Bearer {MODELSLAB_API_KEY}", "Content-Type": "application/json"},
+                     timeout=30)
+        r.raise_for_status()
+        d = r.json()
+        caption = (d.get("choices", [{}])[0].get("message", {}).get("content") or
+                   (d.get("output") or [""])[0]).strip()
+    except Exception as e:
+        caption = caption_hint or scene_prompt  # fallback
+
+    return {"image_url": image_url, "caption": caption}
+
+
 @router.post("/write/queue")
 async def admin_write_queue(secret: str = Query(...), request: Request = None):
     """Queue a piece of text as a pending post."""
