@@ -12,6 +12,7 @@ from app.api.payment_routes import router as payment_router
 from app.api.profile_routes import router as profile_router
 from app.api.blog_routes import router as blog_router
 from app.api.admin_routes import router as admin_router
+from app.api.instagram_auth_routes import router as instagram_auth_router
 
 
 def _auto_post_job():
@@ -56,6 +57,7 @@ app.include_router(payment_router)
 app.include_router(profile_router)
 app.include_router(blog_router)
 app.include_router(admin_router)
+app.include_router(instagram_auth_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
