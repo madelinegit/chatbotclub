@@ -324,14 +324,14 @@ async def admin_write_queue(secret: str = Query(...), request: Request = None):
 
 
 @router.post("/generate")
-def generate_post_now(secret: str = Query(...), platform: str = Query("threads")):
+def generate_post_now(secret: str = Query(...), platform: str = Query("threads"), idea: str = Query(None)):
     _check(secret)
     if platform not in ("threads", "instagram", "x"):
         raise HTTPException(status_code=400, detail="platform must be threads, instagram, or x")
     from app.services.social_service import generate_post_for_queue
     from app.services.local_context_service import get_local_context
     context = get_local_context()
-    result  = generate_post_for_queue(local_context=context, platform=platform)
+    result  = generate_post_for_queue(local_context=context, platform=platform, idea=idea)
     if not result:
         raise HTTPException(status_code=500, detail="Generation failed.")
     return result

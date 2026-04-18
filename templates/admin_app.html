@@ -195,6 +195,18 @@
     .btn-save    { background: rgba(201,149,106,.15); color: var(--accent); }
     .btn-gen     { background: var(--accent); color: #0a0a0b; font-weight: 700; }
 
+    /* ── Platform toggles ── */
+    .platform-toggles { display: flex; gap: 8px; margin-bottom: 12px; }
+    .ptog {
+      flex: 1; padding: 10px 6px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 600;
+      cursor: pointer; text-align: center; transition: all .15s; -webkit-appearance: none;
+    }
+    .ptog.active-threads { background: rgba(255,255,255,.12); color: var(--text); border-color: rgba(255,255,255,.25); }
+    .ptog.active-x       { background: #111; color: #fff; border-color: #555; }
+    .ptog.active-ig      { background: linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045); color: #fff; border-color: transparent; }
+    .ptog:active { opacity: .75; transform: scale(.96); }
+
     /* ── Write tab ── */
     #tab-write { display: none; }
 
@@ -339,18 +351,28 @@
 
     <!-- Write tab -->
     <div id="tab-write">
-      <!-- Generate -->
+
+      <!-- Platform selector (shared) -->
       <div class="write-section">
-        <h3>Generate Post</h3>
-        <textarea id="w-idea" rows="3" placeholder="Describe the post idea… Maya will write it in her voice"></textarea>
+        <h3>Post To</h3>
+        <div class="platform-toggles">
+          <button class="ptog" id="ptog-threads" onclick="togglePlatform('threads')">Threads</button>
+          <button class="ptog" id="ptog-x"       onclick="togglePlatform('x')">X</button>
+          <button class="ptog" id="ptog-ig"      onclick="togglePlatform('ig')">Instagram</button>
+        </div>
+      </div>
+
+      <!-- Generate caption -->
+      <div class="write-section">
+        <h3>Generate Caption</h3>
+        <textarea id="w-idea" rows="3" placeholder="Topic or idea — Maya will write it in her voice"></textarea>
         <div id="w-expanded-wrap" style="display:none;">
-          <textarea id="w-expanded" rows="4" placeholder="Expanded caption — edit before queuing"></textarea>
+          <textarea id="w-expanded" rows="4" placeholder="Caption — edit before posting"></textarea>
         </div>
         <div class="actions">
           <button class="btn btn-gen" id="w-gen-btn" onclick="generateCaption()">Generate</button>
           <button class="btn btn-save" id="w-queue-btn" style="display:none;" onclick="queueGenerated()">Queue</button>
-          <button class="btn btn-threads" id="w-post-threads-btn" style="display:none;" onclick="postGeneratedNow('threads')">→ Threads</button>
-          <button class="btn btn-x" id="w-post-x-btn" style="display:none;" onclick="postGeneratedNow('x')">→ X</button>
+          <button class="btn btn-threads" id="w-post-btn" style="display:none;" onclick="postGeneratedNow()">Post Now</button>
         </div>
       </div>
 
@@ -362,8 +384,8 @@
         <textarea id="w-caption" rows="2" placeholder="Caption (optional)"></textarea>
         <input type="datetime-local" id="w-schedule" placeholder="Schedule for…">
         <div class="actions">
-          <button class="btn btn-save" onclick="uploadAndQueue()">Upload &amp; Queue</button>
-          <button class="btn btn-ig" onclick="uploadAndPostIG()">Post to IG Now</button>
+          <button class="btn btn-save" onclick="uploadAndQueue()">Queue</button>
+          <button class="btn btn-gen" onclick="uploadAndPostNow()">Post Now</button>
         </div>
       </div>
     </div>
@@ -613,9 +635,54 @@
     } else toast('Delete failed.', 'red')
   }
 
-  // ── Write — Generate caption ─────────────────────────────────────────────────
+  // ── Platform toggles ─────────────────────────────────────────────────────────
 
-  let _generatedCaption = ''
+  const _selected = new Set()
+
+  function togglePlatform(p) {
+    const btn = document.getElementById(`ptog-${p}`)
+    if (_selected.has(p)) {
+      _selected.delete(p)
+      btn.className = 'ptog'
+    } else {
+      _selected.add(p)
+      btn.className = `ptog active-${p}`
+    }
+  }
+
+  function _getSelectedPlatforms() {
+    return [..._selected]
+  }
+
+  // Pick the best strategy platform: X if selected, else threads
+  function _strategyPlatform() {
+    if (_selected.has('x')) return 'x'
+    if (_selected.has('ig')) return 'instagram'
+    return 'threads'
+  }
+
+  // Post a queued post to all selected platforms in parallel
+  async function _postToAll(postId) {
+    const platforms = _getSelectedPlatforms()
+    if (!platforms.length) { toast('Select at least one platform.', 'red'); return false }
+    // map 'ig' → 'instagram'
+    const mapped = platforms.map(p => p === 'ig' ? 'instagram' : p)
+    toast(`Posting to ${mapped.join(', ')}…`, '')
+    const results = await Promise.all(
+      mapped.map(platform =>
+        fetch(`/admin/posts/${postId}/post-now?secret=${encodeURIComponent(SECRET)}&platform=${platform}`, { method: 'POST' })
+          .then(r => ({ platform, ok: r.ok }))
+          .catch(() => ({ platform, ok: false }))
+      )
+    )
+    const ok  = results.filter(r => r.ok).map(r => r.platform)
+    const bad = results.filter(r => !r.ok).map(r => r.platform)
+    if (ok.length)  toast(`Posted to ${ok.join(', ')}!`, 'green')
+    if (bad.length) toast(`Failed: ${bad.join(', ')}`, 'red')
+    return ok.length > 0
+  }
+
+  // ── Write — Generate caption ─────────────────────────────────────────────────
 
   async function generateCaption() {
     const idea = document.getElementById('w-idea').value.trim()
@@ -624,20 +691,20 @@
     btn.disabled = true
     btn.innerHTML = '<span class="spinner"></span>Writing…'
 
+    // Use strategy matching selected platforms
+    const platform = _strategyPlatform()
     try {
-      const r = await fetch(`/admin/write/expand-prompt?secret=${encodeURIComponent(SECRET)}`, {
+      const r = await fetch(`/admin/generate?secret=${encodeURIComponent(SECRET)}&platform=${platform}&idea=${encodeURIComponent(idea)}`, {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ idea }),
       })
       const data = await r.json()
       if (!r.ok) { toast(data.detail || 'Failed.', 'red'); return }
-      _generatedCaption = data.expanded_prompt
-      document.getElementById('w-expanded').value = _generatedCaption
+      document.getElementById('w-expanded').value = data.caption
       document.getElementById('w-expanded-wrap').style.display = 'block'
       document.getElementById('w-queue-btn').style.display = 'block'
-      document.getElementById('w-post-threads-btn').style.display = 'block'
-      document.getElementById('w-post-x-btn').style.display = 'block'
+      document.getElementById('w-post-btn').style.display = 'block'
+      // Store the queued post id for posting
+      document.getElementById('w-post-btn')._postId = data.id
     } catch (e) {
       toast('Error: ' + e.message, 'red')
     } finally {
@@ -646,48 +713,41 @@
     }
   }
 
-  async function queueGenerated() {
-    const caption = document.getElementById('w-expanded').value.trim()
-    if (!caption) return
-    const r = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ caption }),
-    })
-    if (r.ok) {
-      toast('Queued!', 'green')
-      document.getElementById('w-idea').value = ''
-      document.getElementById('w-expanded-wrap').style.display = 'none'
-      document.getElementById('w-queue-btn').style.display = 'none'
-      document.getElementById('w-post-threads-btn').style.display = 'none'
-      document.getElementById('w-post-x-btn').style.display = 'none'
-      document.getElementById('w-gen-btn').innerHTML = 'Generate'
-    } else toast('Queue failed.', 'red')
+  function _resetWriteForm() {
+    document.getElementById('w-idea').value = ''
+    document.getElementById('w-expanded-wrap').style.display = 'none'
+    document.getElementById('w-queue-btn').style.display = 'none'
+    document.getElementById('w-post-btn').style.display = 'none'
+    document.getElementById('w-gen-btn').innerHTML = 'Generate'
   }
 
-  async function postGeneratedNow(platform) {
+  async function queueGenerated() {
+    const postBtn = document.getElementById('w-post-btn')
+    if (postBtn._postId) {
+      // Already queued by generate — just update caption if edited
+      const caption = document.getElementById('w-expanded').value.trim()
+      await fetch(`/admin/posts/${postBtn._postId}?secret=${encodeURIComponent(SECRET)}`, {
+        method: 'PUT', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ caption }),
+      })
+      toast('Queued!', 'green')
+      _resetWriteForm()
+    }
+  }
+
+  async function postGeneratedNow() {
+    if (!_selected.size) { toast('Select at least one platform first.', 'red'); return }
+    const postBtn = document.getElementById('w-post-btn')
+    const postId  = postBtn._postId
+    if (!postId) { toast('Generate a caption first.', 'red'); return }
+    // Save any edits to caption first
     const caption = document.getElementById('w-expanded').value.trim()
-    if (!caption) return
-    const qr = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+    await fetch(`/admin/posts/${postId}?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ caption }),
     })
-    if (!qr.ok) { toast('Queue failed.', 'red'); return }
-    const { id } = await qr.json()
-    toast(`Posting to ${platform}…`, '')
-    const pr = await fetch(`/admin/posts/${id}/post-now?secret=${encodeURIComponent(SECRET)}&platform=${platform}`, { method: 'POST' })
-    if (pr.ok) {
-      toast(`Posted!`, 'green')
-      document.getElementById('w-idea').value = ''
-      document.getElementById('w-expanded-wrap').style.display = 'none'
-      document.getElementById('w-queue-btn').style.display = 'none'
-      document.getElementById('w-post-threads-btn').style.display = 'none'
-      document.getElementById('w-post-x-btn').style.display = 'none'
-    } else {
-      const d = await pr.json()
-      toast(`Failed: ${d.detail}`, 'red')
-    }
+    const success = await _postToAll(postId)
+    if (success) { _resetWriteForm(); loadStats() }
   }
 
   // ── Write — Upload ───────────────────────────────────────────────────────────
@@ -706,53 +766,36 @@
     const form = new FormData()
     form.append('file', fileInput.files[0])
     const r = await fetch(`/admin/upload-image?secret=${encodeURIComponent(SECRET)}`, { method: 'POST', body: form })
-    if (!r.ok) {
-      const d = await r.json()
-      toast(`Upload failed: ${d.detail}`, 'red')
-      return null
-    }
-    const data = await r.json()
-    return data.url
+    if (!r.ok) { toast('Upload failed.', 'red'); return null }
+    return (await r.json()).url
+  }
+
+  async function _queueUpload() {
+    const url     = await _doUpload()
+    if (!url) return null
+    const caption  = document.getElementById('w-caption').value.trim() || '(add caption)'
+    const schedule = document.getElementById('w-schedule').value || null
+    const r = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption, image_url: url, scheduled_at: schedule }),
+    })
+    if (!r.ok) { toast('Queue failed.', 'red'); return null }
+    return (await r.json()).id
   }
 
   async function uploadAndQueue() {
     toast('Uploading…', '')
-    const url = await _doUpload()
-    if (!url) return
-    const caption  = document.getElementById('w-caption').value.trim() || '(add caption)'
-    const schedule = document.getElementById('w-schedule').value || null
-    const r = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ caption, image_url: url, scheduled_at: schedule }),
-    })
-    if (r.ok) {
-      toast('Queued!', 'green')
-      resetUploadForm()
-    } else toast('Queue failed.', 'red')
+    const id = await _queueUpload()
+    if (id) { toast('Queued!', 'green'); resetUploadForm() }
   }
 
-  async function uploadAndPostIG() {
+  async function uploadAndPostNow() {
+    if (!_selected.size) { toast('Select at least one platform first.', 'red'); return }
     toast('Uploading…', '')
-    const url = await _doUpload()
-    if (!url) return
-    const caption = document.getElementById('w-caption').value.trim() || '(add caption)'
-    const qr = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ caption, image_url: url }),
-    })
-    if (!qr.ok) { toast('Queue failed.', 'red'); return }
-    const { id } = await qr.json()
-    toast('Posting to Instagram…', '')
-    const pr = await fetch(`/admin/posts/${id}/post-now?secret=${encodeURIComponent(SECRET)}&platform=instagram`, { method: 'POST' })
-    if (pr.ok) {
-      toast('Posted to Instagram!', 'green')
-      resetUploadForm()
-    } else {
-      const d = await pr.json()
-      toast(`IG failed: ${d.detail}`, 'red')
-    }
+    const id = await _queueUpload()
+    if (!id) return
+    const success = await _postToAll(id)
+    if (success) resetUploadForm()
   }
 
   function resetUploadForm() {

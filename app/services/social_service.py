@@ -24,7 +24,7 @@ from app.config import (
 )
 from app.ai.persona import load_persona
 from app.db.crud import (
-    create_social_post, approve_post,
+    create_social_post,
     mark_post_posted, mark_post_failed
 )
 
@@ -357,7 +357,7 @@ def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None,
         return None, f"{type(e).__name__}: {e}"
 
 
-def generate_post_for_queue(local_context: str = "", platform: str = "threads") -> dict | None:
+def generate_post_for_queue(local_context: str = "", platform: str = "threads", idea: str = None) -> dict | None:
     """
     Generate a post and add to the approval queue.
     platform: "threads" | "instagram" | "x"
@@ -366,15 +366,22 @@ def generate_post_for_queue(local_context: str = "", platform: str = "threads") 
     weekday     = datetime.datetime.now().weekday()
     _, weekday_note = WEEKDAY_MODES.get(weekday, (None, ""))
 
-    if platform == "x":
-        pool     = X_POST_TYPES
-        weights  = [p["weight"] for p in pool]
-        post_cfg = random.choices(pool, weights=weights, k=1)[0]
+    if idea:
+        # User supplied a specific idea — write it in Maya's voice for the chosen platform
+        voice_note = "Keep it under 3 lines. Write only for this platform's strategy."
+        if platform == "x":
+            voice_note = "X post: 1–2 lines max. Punchy, no hashtags, no fluff."
+        caption = _generate_caption(idea, context=local_context, weekday_note=voice_note)
+        post_cfg = {"type": "custom", "with_image": False}
     else:
-        weights  = [p["weight"] for p in POST_TYPES]
-        post_cfg = random.choices(POST_TYPES, weights=weights, k=1)[0]
-
-    caption = _generate_caption(post_cfg["prompt"], context=local_context, weekday_note=weekday_note)
+        if platform == "x":
+            pool     = X_POST_TYPES
+            weights  = [p["weight"] for p in pool]
+            post_cfg = random.choices(pool, weights=weights, k=1)[0]
+        else:
+            weights  = [p["weight"] for p in POST_TYPES]
+            post_cfg = random.choices(POST_TYPES, weights=weights, k=1)[0]
+        caption = _generate_caption(post_cfg["prompt"], context=local_context, weekday_note=weekday_note)
     if not caption:
         return None
 
@@ -452,5 +459,3 @@ def post_to_x(post_id: int, caption: str, image_url: str = None) -> bool:
         return False
 
 
-def post_to_instagram(post_id: int, caption: str, image_url: str = None) -> bool:
-    raise NotImplementedError("Instagram integration pending Meta API approval.")
