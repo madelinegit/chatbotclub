@@ -382,16 +382,17 @@ def unlock_blog_post(user_id: str, post_id: int) -> None:
 # ── Social Posts ──────────────────────────────────────────────────────────────
 
 def create_social_post(caption: str, image_url: str = None, image_prompt: str = None,
-                       scheduled_at: str = None, hashtags: str = None) -> int:
+                       scheduled_at: str = None, hashtags: str = None,
+                       target_platform: str = "threads") -> int:
     conn = get_connection()
     cur  = _cursor(conn)
     cur.execute(
         """
-        INSERT INTO social_posts (caption, image_url, image_prompt, scheduled_at, hashtags)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO social_posts (caption, image_url, image_prompt, scheduled_at, hashtags, target_platform)
+        VALUES (%s, %s, %s, %s, %s, %s)
         RETURNING id
         """,
-        (caption, image_url, image_prompt, scheduled_at, hashtags),
+        (caption, image_url, image_prompt, scheduled_at, hashtags, target_platform),
     )
     post_id = cur.fetchone()["id"]
     conn.commit()

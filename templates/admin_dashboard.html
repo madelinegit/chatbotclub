@@ -160,7 +160,12 @@
     <button class="tab" onclick="showPage('users', this)">Users</button>
     <button class="tab" onclick="showPage('context', this)">Local Context</button>
   </div>
-  <div class="topbar-right">
+  <div class="topbar-right" style="display:flex;gap:8px;align-items:center;">
+    <select id="gen-platform" style="background:#1a1a1e;color:#e0ddd8;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;font-size:13px;outline:none;">
+      <option value="threads">Threads</option>
+      <option value="instagram">Instagram</option>
+      <option value="x">X / Twitter</option>
+    </select>
     <button class="btn-gen" onclick="generatePost()">+ Generate Post</button>
   </div>
 </div>
@@ -440,6 +445,7 @@
         <div class="post-meta">
           <span class="post-id">#${p.id}</span>
           <span class="status-pill s-${p.status}">${p.status}</span>
+          ${p.target_platform ? `<span style="font-size:11px;padding:2px 7px;border-radius:4px;background:${p.target_platform==='x'?'#000':p.target_platform==='instagram'?'#833ab4':'#444'};color:#fff;font-weight:600;">${p.target_platform==='x'?'X':p.target_platform==='instagram'?'IG':'Threads'}</span>` : ''}
           <span class="post-time">${(p.created_at || '').slice(0,16)}</span>
           ${p.posted_at ? `<span class="post-time" style="color:#6ac97a;">↑ ${p.posted_at.slice(0,16)}</span>` : ''}
         </div>
@@ -686,15 +692,17 @@
   }
 
   async function generatePost() {
-    const btn = document.querySelector('.btn-gen')
+    const btn      = document.querySelector('.btn-gen')
+    const platform = document.getElementById('gen-platform').value
     btn.disabled = true
     btn.innerHTML = '<span class="spinner"></span>Generating…'
-    toast('Generating post — this takes ~10 seconds...', '')
+    toast(`Generating ${platform} post — this takes ~10 seconds...`, '')
     try {
-      const res = await fetch(`/admin/generate?secret=${SECRET}`, { method: 'POST' })
+      const res = await fetch(`/admin/generate?secret=${SECRET}&platform=${platform}`, { method: 'POST' })
       if (res.ok) {
         const data = await res.json()
-        toast(`Post queued! "${data.caption.slice(0,60)}..."`, 'green')
+        const label = data.platform ? ` [${data.platform}]` : ''
+        toast(`Post queued${label}! "${data.caption.slice(0,60)}..."`, 'green')
         loadPosts('all', document.getElementById('filter-all'))
       } else {
         const d = await res.json()

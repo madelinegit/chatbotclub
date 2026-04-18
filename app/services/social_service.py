@@ -137,6 +137,40 @@ POST_TYPES = [
 ]
 
 
+X_POST_TYPES = [
+    {
+        "type":   "observation",
+        "weight": 20,
+        "prompt": "Write 1–2 lines as Maya — something she noticed today that is funny, strange, or uncomfortably true. Feels like a passing thought, not a crafted joke. No hashtags. No questions. No explanation. Lowercase fine. Output only the post.",
+    },
+    {
+        "type":   "reaction",
+        "weight": 18,
+        "prompt": "Write 1–2 lines as Maya reacting to a feeling without naming it directly. Don't explain what is happening — respond to the vibe of it. Dry, unfiltered, no setup-punchline format. No hashtags. Output only the post.",
+    },
+    {
+        "type":   "personality_flash",
+        "weight": 18,
+        "prompt": "Write 1–2 lines as Maya that reveal character without explaining it — her taste, a pet peeve, something specific she finds funny. Don't introduce it, just say it. No hashtags. Output only the post.",
+    },
+    {
+        "type":   "relatable_bait",
+        "weight": 16,
+        "prompt": "Write 1–2 lines as Maya — something just basic enough that people screenshot it and send it to someone. She does this deliberately and without shame. No hashtags. No questions. Output only the post.",
+    },
+    {
+        "type":   "flirt_post",
+        "weight": 16,
+        "prompt": "Write 1–2 lines as Maya being light and confident — flirty without trying. The kind of thing that makes someone read it twice. Never explicit. No hashtags. Output only the post.",
+    },
+    {
+        "type":   "sincere_moment",
+        "weight": 12,
+        "prompt": "Write 1 line as Maya — one genuine, unguarded moment. Warm or real or soft. Still her voice, but the armor is down. No irony. No hashtags. Output only the post.",
+    },
+]
+
+
 def _generate_caption(post_prompt: str, context: str = "", weekday_note: str = "") -> str | None:
     """Call the LLM to write a post in Maya's voice."""
     persona = load_persona()
@@ -250,16 +284,22 @@ def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None,
         return None, f"{type(e).__name__}: {e}"
 
 
-def generate_post_for_queue(local_context: str = "") -> dict | None:
+def generate_post_for_queue(local_context: str = "", platform: str = "threads") -> dict | None:
     """
     Generate a post and add to the approval queue.
+    platform: "threads" | "instagram" | "x"
     Pass local_context (current Tahoe news/weather) to make posts topical.
     """
     weekday     = datetime.datetime.now().weekday()
     _, weekday_note = WEEKDAY_MODES.get(weekday, (None, ""))
 
-    weights  = [p["weight"] for p in POST_TYPES]
-    post_cfg = random.choices(POST_TYPES, weights=weights, k=1)[0]
+    if platform == "x":
+        pool     = X_POST_TYPES
+        weights  = [p["weight"] for p in pool]
+        post_cfg = random.choices(pool, weights=weights, k=1)[0]
+    else:
+        weights  = [p["weight"] for p in POST_TYPES]
+        post_cfg = random.choices(POST_TYPES, weights=weights, k=1)[0]
 
     caption = _generate_caption(post_cfg["prompt"], context=local_context, weekday_note=weekday_note)
     if not caption:
@@ -273,19 +313,22 @@ def generate_post_for_queue(local_context: str = "") -> dict | None:
         model_type   = post_cfg.get("image_model", "scene")
         image_url, _ = _generate_image(image_prompt, model_type=model_type)
 
-    # Pick a hashtag set for Instagram (rotated randomly)
-    hashtag_options = HASHTAG_SETS.get(post_cfg["type"], [])
-    hashtags = random.choice(hashtag_options) if hashtag_options else None
+    # Hashtags only for Instagram/Threads, never X
+    hashtags = None
+    if platform != "x":
+        hashtag_options = HASHTAG_SETS.get(post_cfg["type"], [])
+        hashtags = random.choice(hashtag_options) if hashtag_options else None
 
     post_id = create_social_post(
         caption=caption,
         image_url=image_url,
         image_prompt=image_prompt,
         hashtags=hashtags,
+        target_platform=platform,
     )
 
-    print(f"SOCIAL: queued post #{post_id} [{WEEKDAY_MODES[weekday][0]}] — {caption[:60]}...")
-    return {"id": post_id, "caption": caption, "image_url": image_url}
+    print(f"SOCIAL: queued post #{post_id} [{platform}] [{WEEKDAY_MODES[weekday][0]}] — {caption[:60]}...")
+    return {"id": post_id, "caption": caption, "image_url": image_url, "platform": platform}
 
 
 def post_to_x(post_id: int, caption: str, image_url: str = None) -> bool:

@@ -156,6 +156,7 @@ def init_db() -> None:
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_dev INTEGER DEFAULT 0")
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT")
     cur.execute("ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS hashtags TEXT")
+    cur.execute("ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS target_platform TEXT DEFAULT 'threads'")
 
     conn.commit()
     cur.close()
