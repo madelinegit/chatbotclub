@@ -18,7 +18,8 @@ from app.config import (
     MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL,
     MODELSLAB_IMAGE_URL,
     MODELSLAB_PORTRAIT_MODEL, MODELSLAB_SCENE_MODEL, MODELSLAB_EXPLICIT_MODEL,
-    MODELSLAB_LORA_MODEL, MODELSLAB_FLUX_BASE,
+    MODELSLAB_LORA_MODEL,
+    REPLICATE_API_TOKEN,
     X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET,
 )
 from app.ai.persona import load_persona
@@ -211,26 +212,90 @@ def _generate_caption(post_prompt: str, context: str = "", weekday_note: str = "
     return None
 
 
+def _generate_image_lora(prompt: str) -> tuple[str | None, str | None]:
+    """
+    Flux LoRA inference via Replicate.
+    ModelsLab doesn't support external HuggingFace LoRAs on their Flux endpoint.
+    Uses lucataco/flux-dev-lora which accepts a HuggingFace repo directly.
+    """
+    if not REPLICATE_API_TOKEN:
+        return None, "REPLICATE_API_TOKEN not set in Railway env vars"
+    if not MODELSLAB_LORA_MODEL:
+        return None, "MODELSLAB_LORA_MODEL not set in Railway env vars"
+
+    # Normalise to "user/repo" format — strip full HF URL if present
+    hf_repo = MODELSLAB_LORA_MODEL
+    if hf_repo.startswith("https://huggingface.co/"):
+        hf_repo = hf_repo.replace("https://huggingface.co/", "").split("/resolve/")[0]
+
+    full_prompt = "mayavip " + MAYA_CHARACTER + prompt
+
+    try:
+        # POST to start prediction
+        r = requests.post(
+            "https://api.replicate.com/v1/models/lucataco/flux-dev-lora/predictions",
+            json={"input": {
+                "prompt":       full_prompt,
+                "hf_lora":      hf_repo,
+                "lora_scale":   0.9,
+                "num_outputs":  1,
+                "aspect_ratio": "1:1",
+                "output_format": "webp",
+                "guidance_scale": 3.5,
+                "num_inference_steps": 28,
+            }},
+            headers={
+                "Authorization": f"Bearer {REPLICATE_API_TOKEN}",
+                "Content-Type":  "application/json",
+                "Prefer":        "wait=60",
+            },
+            timeout=90,
+        )
+        print(f"REPLICATE LORA: status={r.status_code} response={r.text[:300]}")
+        r.raise_for_status()
+        data = r.json()
+
+        # "wait" header means we may get a completed prediction immediately
+        if data.get("status") == "succeeded":
+            output = data.get("output", [])
+            return (output[0] if output else None), None
+
+        # Still processing — poll once more after 30s (best-effort)
+        pred_id = data.get("id")
+        if pred_id:
+            import time
+            time.sleep(30)
+            r2 = requests.get(
+                f"https://api.replicate.com/v1/predictions/{pred_id}",
+                headers={"Authorization": f"Bearer {REPLICATE_API_TOKEN}"},
+                timeout=15,
+            )
+            data2 = r2.json()
+            print(f"REPLICATE LORA poll: status={data2.get('status')} output={data2.get('output')}")
+            if data2.get("status") == "succeeded":
+                output = data2.get("output", [])
+                return (output[0] if output else None), None
+            return None, f"Replicate prediction {data2.get('status')}: {data2.get('error')}"
+
+        return None, f"Replicate unexpected response: {data}"
+    except requests.exceptions.Timeout:
+        return None, "Replicate request timed out"
+    except Exception as e:
+        return None, f"Replicate error: {type(e).__name__}: {e}"
+
+
 def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None, str | None]:
     """Returns (image_url, error_message). One of them will be None."""
-    lora_weights = []
+    if model_type == "lora":
+        return _generate_image_lora(prompt)
+
     if model_type == "portrait":
         model = MODELSLAB_PORTRAIT_MODEL
     elif model_type == "explicit":
         model = MODELSLAB_EXPLICIT_MODEL
-    elif model_type == "lora":
-        model = MODELSLAB_FLUX_BASE
-        if not MODELSLAB_LORA_MODEL:
-            return None, "MODELSLAB_LORA_MODEL not set in Railway env vars"
-        # ModelsLab expects HuggingFace repo ID (user/repo), not full URL
-        # ModelsLab expects bare training ID (e.g. "cb790b46-...")
-        # Strip full HuggingFace URLs or "user/repo" down to just the repo name
-        lora_id = MODELSLAB_LORA_MODEL
-        if "/" in lora_id:
-            lora_id = lora_id.rstrip("/").split("/")[-1]
-        lora_weights = lora_id
     else:
         model = MODELSLAB_SCENE_MODEL
+
     if not MODELSLAB_API_KEY:
         return None, "MODELSLAB_API_KEY not set in Railway env vars"
     if not model:
@@ -238,9 +303,7 @@ def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None,
     if not MODELSLAB_IMAGE_URL:
         return None, "MODELSLAB_IMAGE_URL not set in Railway env vars"
 
-    # LoRA uses Flux — different scheduler and steps
-    is_flux = model_type == "lora"
-    full_prompt = ("mayavip " if is_flux else "") + MAYA_CHARACTER + prompt
+    full_prompt = MAYA_CHARACTER + prompt
 
     payload = {
         "key":                 MODELSLAB_API_KEY,
@@ -250,25 +313,18 @@ def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None,
         "width":               "768",
         "height":              "768",
         "samples":             "1",
-        "num_inference_steps": "30" if is_flux else "31",
-        "scheduler":           "EulerDiscreteScheduler" if is_flux else "DPMSolverMultistepScheduler",
-        "guidance_scale":      3.5 if is_flux else 7.5,
+        "num_inference_steps": "31",
+        "scheduler":           "DPMSolverMultistepScheduler",
+        "guidance_scale":      7.5,
         "enhance_prompt":      False,
         "safety_checker":      "no",
-        "lora_model":          lora_weights if lora_weights else None,
-        "lora_strength":       "0.9" if lora_weights else None,
     }
-    if not lora_weights:
-        del payload["lora_model"]
-        del payload["lora_strength"]
 
     try:
-        import json as _json
-        print(f"IMAGE GEN: model={model} lora_model={payload.get('lora_model')} lora_strength={payload.get('lora_strength')}")
-        print(f"IMAGE GEN: full payload={_json.dumps({k:v for k,v in payload.items() if k != 'key'})[:500]}")
+        print(f"IMAGE GEN: model={model}")
         r = requests.post(MODELSLAB_IMAGE_URL, json=payload,
                           headers={"Content-Type": "application/json"}, timeout=90)
-        print(f"IMAGE GEN: status={r.status_code} response={r.text[:500]}")
+        print(f"IMAGE GEN: status={r.status_code} response={r.text[:300]}")
         r.raise_for_status()
         data = r.json()
         if data.get("status") == "success":
