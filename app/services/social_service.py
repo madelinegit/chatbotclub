@@ -227,10 +227,12 @@ def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None,
         del payload["lora_strength"]
 
     try:
-        print(f"IMAGE GEN: posting to {MODELSLAB_IMAGE_URL} model={model} lora={lora_weights}")
+        import json as _json
+        print(f"IMAGE GEN: model={model} lora_model={payload.get('lora_model')} lora_strength={payload.get('lora_strength')}")
+        print(f"IMAGE GEN: full payload={_json.dumps({k:v for k,v in payload.items() if k != 'key'})[:500]}")
         r = requests.post(MODELSLAB_IMAGE_URL, json=payload,
                           headers={"Content-Type": "application/json"}, timeout=90)
-        print(f"IMAGE GEN: status={r.status_code} response={r.text[:300]}")
+        print(f"IMAGE GEN: status={r.status_code} response={r.text[:500]}")
         r.raise_for_status()
         data = r.json()
         if data.get("status") == "success":
