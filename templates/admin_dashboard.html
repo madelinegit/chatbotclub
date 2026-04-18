@@ -213,20 +213,25 @@
     </div>
 
     <!-- Result area -->
-    <div id="image-result" style="display:none;">
-      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;">
-        <img id="image-preview" src="" style="width:280px;height:280px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.08);">
-        <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:10px;">
-          <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.08em;">Expanded prompt</div>
-          <div id="image-expanded-prompt" style="font-size:12px;color:#888;line-height:1.6;background:#111113;border-radius:8px;padding:12px;max-height:120px;overflow-y:auto;"></div>
-          <textarea id="image-caption-input" rows="3" placeholder="Caption for this post…"
-            style="background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;font-size:13px;font-family:inherit;resize:none;outline:none;"></textarea>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn-approve" onclick="queueImagePost()">Add to Queue</button>
-            <button class="btn-post" onclick="postImageNow('threads')">Post to Threads</button>
-            <button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="postImageNow('instagram')">Post to Instagram</button>
-          </div>
-        </div>
+    <div id="image-result" style="display:none;margin-top:12px;">
+      <img id="image-preview" src="" style="width:100%;max-width:480px;height:auto;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:block;margin-bottom:12px;"
+        onerror="this.style.display='none';document.getElementById('image-broken').style.display='block'">
+      <div id="image-broken" style="display:none;padding:16px;background:#1a1a1e;border-radius:8px;color:#888;font-size:13px;margin-bottom:12px;">
+        Image is still rendering — copy the URL below and check back in 1-2 minutes.
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+        <input id="image-url-display" type="text" readonly placeholder="Image URL will appear here"
+          style="flex:1;background:#111113;color:#6ac97a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;font-size:12px;font-family:monospace;outline:none;">
+        <button class="btn-approve" onclick="navigator.clipboard.writeText(document.getElementById('image-url-display').value).then(()=>toast('Copied!','green'))">Copy URL</button>
+      </div>
+      <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Expanded prompt used</div>
+      <div id="image-expanded-prompt" style="font-size:12px;color:#666;line-height:1.6;background:#111113;border-radius:8px;padding:10px;max-height:80px;overflow-y:auto;margin-bottom:12px;"></div>
+      <textarea id="image-caption-input" rows="3" placeholder="Caption for this post…"
+        style="width:100%;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;font-size:13px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;margin-bottom:10px;"></textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-approve" onclick="queueImagePost()">Update Caption in Queue</button>
+        <button class="btn-post" onclick="postImageNow('threads')">Post to Threads</button>
+        <button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="postImageNow('instagram')">Post to Instagram</button>
       </div>
     </div>
     <div id="image-status" style="font-size:13px;color:#6ac97a;margin-top:8px;display:none;"></div>
@@ -763,10 +768,15 @@
       _lastImagePrompt = prompt
 
       document.getElementById('image-expanded-prompt').textContent = prompt
-      document.getElementById('image-result').style.display = 'flex'
-      document.getElementById('image-preview').style.display = 'block'
+      document.getElementById('image-result').style.display = 'block'
+      document.getElementById('image-broken').style.display = 'none'
+      document.getElementById('image-url-display').value = data.image_url || ''
       if (data.image_url) {
+        document.getElementById('image-preview').style.display = 'block'
         document.getElementById('image-preview').src = data.image_url
+      } else {
+        document.getElementById('image-preview').style.display = 'none'
+        document.getElementById('image-broken').style.display = 'block'
       }
       document.getElementById('image-prompt-preview').style.display = 'none'
 
