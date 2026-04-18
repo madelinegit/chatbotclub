@@ -19,7 +19,7 @@ MAYA_CHARACTER = (
 from app.config import (
     MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL,
     MODELSLAB_IMAGE_URL,
-    MODELSLAB_PORTRAIT_MODEL, MODELSLAB_SCENE_MODEL,
+    MODELSLAB_PORTRAIT_MODEL, MODELSLAB_SCENE_MODEL, MODELSLAB_EXPLICIT_MODEL,
     X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET,
 )
 from app.ai.persona import load_persona
@@ -147,11 +147,16 @@ def _generate_caption(post_prompt: str, context: str = "") -> str | None:
 
 def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None, str | None]:
     """Returns (image_url, error_message). One of them will be None."""
-    model = MODELSLAB_PORTRAIT_MODEL if model_type == "portrait" else MODELSLAB_SCENE_MODEL
+    if model_type == "portrait":
+        model = MODELSLAB_PORTRAIT_MODEL
+    elif model_type == "explicit":
+        model = MODELSLAB_EXPLICIT_MODEL
+    else:
+        model = MODELSLAB_SCENE_MODEL
     if not MODELSLAB_API_KEY:
         return None, "MODELSLAB_API_KEY not set in Railway env vars"
     if not model:
-        return None, f"MODELSLAB_{'PORTRAIT' if model_type == 'portrait' else 'SCENE'}_MODEL not set in Railway env vars"
+        return None, f"MODELSLAB_{model_type.upper()}_MODEL not set in Railway env vars"
     if not MODELSLAB_IMAGE_URL:
         return None, "MODELSLAB_IMAGE_URL not set in Railway env vars"
 

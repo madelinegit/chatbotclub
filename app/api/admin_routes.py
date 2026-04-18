@@ -3,7 +3,7 @@ Admin routes — protected by ADMIN_SECRET env var.
 Access at /admin (login page) then /admin/dashboard
 """
 import os
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -11,7 +11,7 @@ import re
 from app.db.crud import (
     get_pending_posts, get_all_posts,
     approve_post, reject_post,
-    update_social_post,
+    update_social_post, delete_social_post, retry_social_post,
     get_all_blog_posts, get_blog_post_by_id,
     create_blog_post, update_blog_post,
     publish_blog_post, unpublish_blog_post, delete_blog_post,
@@ -77,6 +77,20 @@ def reject(post_id: int, secret: str = Query(...)):
     return {"status": "rejected"}
 
 
+@router.delete("/posts/{post_id}")
+def delete_post(post_id: int, secret: str = Query(...)):
+    _check(secret)
+    delete_social_post(post_id)
+    return {"status": "deleted"}
+
+
+@router.post("/posts/{post_id}/retry")
+def retry_post(post_id: int, secret: str = Query(...)):
+    _check(secret)
+    retry_social_post(post_id)
+    return {"status": "pending"}
+
+
 @router.post("/posts/{post_id}/post-now")
 def post_now(post_id: int, secret: str = Query(...), platform: str = Query("threads")):
     _check(secret)
@@ -115,6 +129,42 @@ def post_now(post_id: int, secret: str = Query(...), platform: str = Query("thre
                 raise HTTPException(status_code=422, detail="INSTAGRAM_ACCESS_TOKEN is not set. Add it to Railway env vars.")
         raise HTTPException(status_code=500, detail=f"Failed to post to {platform}. Check Railway logs.")
     return {"status": "posted", "platform": platform}
+
+
+@router.post("/upload-image")
+async def upload_image(secret: str = Query(...), file: UploadFile = File(...)):
+    """Upload an image file to Cloudinary and return the public URL."""
+    _check(secret)
+    from app.config import CLOUDINARY_URL
+    if not CLOUDINARY_URL:
+        raise HTTPException(status_code=422, detail="CLOUDINARY_URL not set in Railway env vars.")
+    try:
+        import base64
+        contents = await file.read()
+        mime = file.content_type or "image/jpeg"
+        encoded = base64.b64encode(contents).decode("utf-8")
+        data_uri = f"data:{mime};base64,{encoded}"
+
+        stripped = CLOUDINARY_URL.replace("cloudinary://", "")
+        auth_part, cloud_name = stripped.rsplit("@", 1)
+        api_key, api_secret = auth_part.split(":", 1)
+
+        import requests as req
+        r = req.post(
+            f"https://api.cloudinary.com/v1_1/{cloud_name}/image/upload",
+            data={"file": data_uri, "upload_preset": "ml_default"},
+            auth=(api_key, api_secret),
+            timeout=30,
+        )
+        r.raise_for_status()
+        url = r.json().get("secure_url")
+        if not url:
+            raise HTTPException(status_code=500, detail=f"Cloudinary returned no URL: {r.text}")
+        return {"url": url}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload error: {e}")
 
 
 @router.post("/write/chat")

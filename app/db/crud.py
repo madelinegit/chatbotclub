@@ -478,6 +478,24 @@ def mark_post_failed(post_id: int) -> None:
     conn.close()
 
 
+def delete_social_post(post_id: int) -> None:
+    conn = get_connection()
+    cur  = _cursor(conn)
+    cur.execute("DELETE FROM social_posts WHERE id = %s", (post_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def retry_social_post(post_id: int) -> None:
+    conn = get_connection()
+    cur  = _cursor(conn)
+    cur.execute("UPDATE social_posts SET status = 'pending' WHERE id = %s", (post_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
 # ── Social Comment Replies ────────────────────────────────────────────────────
 
 def log_comment_reply(platform: str, comment_id: str, post_id: str,

@@ -179,6 +179,37 @@
     <button class="tab active" id="filter-all" onclick="loadPosts('all', this)">All</button>
   </div>
 
+  <!-- Upload Photo Panel -->
+  <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:20px;">
+    <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Upload Photo</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+      <div style="flex:1;min-width:220px;">
+        <label style="display:block;margin-bottom:6px;font-size:12px;color:#666;">Photo</label>
+        <input type="file" id="upload-file" accept="image/*" style="width:100%;background:#111113;color:#ccc;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:13px;">
+        <div id="upload-preview" style="margin-top:8px;display:none;">
+          <img id="upload-preview-img" style="max-width:100%;max-height:180px;border-radius:8px;object-fit:cover;">
+        </div>
+      </div>
+      <div style="flex:2;min-width:220px;display:flex;flex-direction:column;gap:8px;">
+        <div>
+          <label style="display:block;margin-bottom:6px;font-size:12px;color:#666;">Caption</label>
+          <textarea id="upload-caption" rows="3" placeholder="Caption for this post…"
+            style="width:100%;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+        </div>
+        <div>
+          <label style="display:block;margin-bottom:6px;font-size:12px;color:#666;">Schedule for (optional — leave blank to queue now)</label>
+          <input type="datetime-local" id="upload-schedule"
+            style="background:#111113;color:#ccc;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:13px;outline:none;width:100%;box-sizing:border-box;">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-approve" id="upload-queue-btn" onclick="uploadAndQueue()">Upload &amp; Queue</button>
+          <button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" id="upload-ig-btn" onclick="uploadAndPostIG()">Upload &amp; Post to Instagram Now</button>
+        </div>
+      </div>
+    </div>
+    <div id="upload-status" style="margin-top:10px;font-size:12px;color:#888;display:none;"></div>
+  </div>
+
   <div class="post-list" id="post-list"><div class="empty">Loading...</div></div>
 </div>
 
@@ -196,6 +227,7 @@
         <select id="image-model-type" style="background:#111113;color:#ccc;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:13px;outline:none;">
           <option value="portrait">Portrait model</option>
           <option value="scene">Scene model</option>
+          <option value="explicit">Explicit model</option>
         </select>
         <button class="btn-gen" onclick="generateImage()" id="image-gen-btn" style="padding:10px 20px;">Generate</button>
       </div>
@@ -434,7 +466,25 @@
               <button class="btn-approve" onclick="savePost(${p.id})">Save edits</button>
               <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Post to Threads</button>
               ${p.image_url ? `<button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="saveAndPost(${p.id}, 'instagram')">Post to Instagram</button>` : ''}
-              <button class="btn-reject" onclick="rejectPost(${p.id})">Delete</button>
+              <button class="btn-reject" onclick="deletePost(${p.id})">Delete</button>
+            </div>
+          </div>
+        ` : (p.status === 'failed') ? `
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
+            <textarea id="caption-${p.id}" rows="3"
+              style="width:100%;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;margin-bottom:8px;"
+            >${esc(p.caption)}</textarea>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+              <input id="img-${p.id}" type="text" placeholder="Image URL (leave blank for text-only)"
+                value="${p.image_url ? esc(p.image_url) : ''}"
+                style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:12px;outline:none;min-width:160px;">
+            </div>
+            <div class="post-actions" style="margin-top:0;padding-top:0;border-top:none;">
+              <button class="btn-approve" onclick="savePost(${p.id})">Save edits</button>
+              <button class="btn-post" onclick="retryPost(${p.id})">↺ Retry</button>
+              <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Post to Threads</button>
+              ${p.image_url ? `<button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="saveAndPost(${p.id}, 'instagram')">Post to Instagram</button>` : ''}
+              <button class="btn-reject" onclick="deletePost(${p.id})">Delete</button>
             </div>
           </div>
         ` : ''}
@@ -488,6 +538,115 @@
     await fetch(`/admin/posts/${id}/reject?secret=${SECRET}`, { method: 'POST' })
     toast('Rejected.', '')
     loadPosts('pending')
+  }
+
+  async function deletePost(id) {
+    if (!confirm(`Delete post #${id}? This cannot be undone.`)) return
+    const res = await fetch(`/admin/posts/${id}?secret=${SECRET}`, { method: 'DELETE' })
+    if (res.ok) {
+      document.getElementById(`pc-${id}`)?.remove()
+      toast('Deleted.', '')
+      loadStats()
+    } else toast('Delete failed.', 'red')
+  }
+
+  async function retryPost(id) {
+    const caption   = document.getElementById(`caption-${id}`)?.value.trim()
+    const image_url = document.getElementById(`img-${id}`)?.value.trim() || null
+    if (caption) {
+      await fetch(`/admin/posts/${id}?secret=${SECRET}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caption, image_url }),
+      })
+    }
+    const res = await fetch(`/admin/posts/${id}/retry?secret=${SECRET}`, { method: 'POST' })
+    if (res.ok) { toast('Re-queued as pending.', 'green'); loadPosts('all', document.getElementById('filter-all')) }
+    else toast('Retry failed.', 'red')
+  }
+
+  // Upload photo helpers
+  document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('upload-file')
+    if (fileInput) {
+      fileInput.addEventListener('change', () => {
+        const f = fileInput.files[0]
+        if (!f) return
+        const preview = document.getElementById('upload-preview')
+        const img     = document.getElementById('upload-preview-img')
+        img.src = URL.createObjectURL(f)
+        preview.style.display = 'block'
+      })
+    }
+  })
+
+  async function _uploadFile() {
+    const fileInput = document.getElementById('upload-file')
+    if (!fileInput?.files?.length) { toast('Select a photo first.', 'red'); return null }
+    const status = document.getElementById('upload-status')
+    status.style.display = 'block'
+    status.textContent = 'Uploading to Cloudinary…'
+    const form = new FormData()
+    form.append('file', fileInput.files[0])
+    const res = await fetch(`/admin/upload-image?secret=${SECRET}`, { method: 'POST', body: form })
+    if (!res.ok) {
+      const d = await res.json()
+      status.textContent = `Upload failed: ${d.detail}`
+      toast(`Upload failed: ${d.detail}`, 'red')
+      return null
+    }
+    const data = await res.json()
+    status.textContent = `Uploaded: ${data.url}`
+    return data.url
+  }
+
+  async function uploadAndQueue() {
+    const url     = await _uploadFile()
+    if (!url) return
+    const caption  = document.getElementById('upload-caption').value.trim() || '(add caption)'
+    const schedule = document.getElementById('upload-schedule').value || null
+    const res = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caption, image_url: url, scheduled_at: schedule }),
+    })
+    if (res.ok) {
+      toast('Queued!', 'green')
+      document.getElementById('upload-caption').value = ''
+      document.getElementById('upload-schedule').value = ''
+      document.getElementById('upload-preview').style.display = 'none'
+      document.getElementById('upload-file').value = ''
+      document.getElementById('upload-status').style.display = 'none'
+      loadPosts('all', document.getElementById('filter-all'))
+    } else toast('Queue failed.', 'red')
+  }
+
+  async function uploadAndPostIG() {
+    const url = await _uploadFile()
+    if (!url) return
+    const caption = document.getElementById('upload-caption').value.trim() || '(add caption)'
+    // Queue first then post immediately
+    const qRes = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caption, image_url: url }),
+    })
+    if (!qRes.ok) { toast('Queue failed.', 'red'); return }
+    const { id } = await qRes.json()
+    toast('Uploading done — posting to Instagram…', '')
+    const pRes = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}&platform=instagram`, { method: 'POST' })
+    if (pRes.ok) {
+      toast('Posted to Instagram!', 'green')
+      document.getElementById('upload-caption').value = ''
+      document.getElementById('upload-preview').style.display = 'none'
+      document.getElementById('upload-file').value = ''
+      document.getElementById('upload-status').style.display = 'none'
+      loadPosts('all', document.getElementById('filter-all'))
+    } else {
+      const d = await pRes.json()
+      toast(`Instagram failed: ${d.detail}`, 'red')
+      loadPosts('all', document.getElementById('filter-all'))
+    }
   }
 
   async function postNow(id, platform) {
