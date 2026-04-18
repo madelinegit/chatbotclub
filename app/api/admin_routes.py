@@ -180,12 +180,18 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
 
     # Step 1 — LLM expands the idea into a detailed image prompt
     system = (
-        "You are a creative director generating image prompts for an AI image model. "
-        "The subject is always Maya: beautiful young woman, long beachy wavy blonde hair, "
-        "bright blue-green eyes, sun-kissed golden skin, hourglass curves, voluptuous figure. "
-        "Take the user's simple idea and write a single detailed image generation prompt. "
-        "Include: setting, lighting, outfit (form-fitting, revealing, or sensual as appropriate), "
-        "Maya's pose (confident, sensual, showing off her figure), mood, and photographic style. "
+        "You are generating image prompts for an AI image model. "
+        "The subject is Maya: beautiful young woman, long beachy wavy blonde hair with natural highlights, "
+        "bright blue-green eyes, sun-kissed golden skin, hourglass figure, voluptuous curves. "
+        "Maya's style is CASUAL, REAL, and EFFORTLESSLY SEXY — NOT high fashion, NOT editorial, NOT a photoshoot. "
+        "Think: messy bun or air-dried wavy hair, crop tops, oversized tees knotted at the waist, low-rise jeans, "
+        "string bikinis, athletic shorts, vintage band tees, bralettes, casual sundresses — everyday clothes that "
+        "happen to look great on her body. NO satin gowns, NO ballgowns, NO couture, NO studio lighting setups. "
+        "Settings should feel real: her bedroom (lived-in, unmade bed), a bar, a ski lodge, lake dock, "
+        "friend's couch, car selfie, bathroom mirror, outdoor patio. "
+        "Lighting should be natural — golden hour, morning light through blinds, neon bar light, phone flash. "
+        "Pose is confident and natural — not posed like a model, more like she just looked up from her phone. "
+        "Take the user's idea and write ONE detailed image generation prompt. "
         "Output ONLY the prompt text. No explanation, no quotes, no extra text."
     )
     payload = {
