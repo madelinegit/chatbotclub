@@ -94,6 +94,29 @@ def retry_post(post_id: int, secret: str = Query(...)):
     return {"status": "pending"}
 
 
+@router.post("/posts/{post_id}/duplicate")
+def duplicate_post(post_id: int, secret: str = Query(...)):
+    _check(secret)
+    import psycopg2.extras
+    from app.db.database import get_connection
+    from app.db.crud import create_social_post
+    conn = get_connection()
+    cur  = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("SELECT * FROM social_posts WHERE id = %s", (post_id,))
+    row = cur.fetchone()
+    cur.close(); conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Post not found.")
+    new_id = create_social_post(
+        caption=row["caption"],
+        image_url=row.get("image_url"),
+        image_prompt=row.get("image_prompt"),
+        hashtags=row.get("hashtags"),
+        target_platform=row.get("target_platform", "threads"),
+    )
+    return {"id": new_id, "status": "pending"}
+
+
 @router.post("/posts/{post_id}/post-now")
 def post_now(post_id: int, secret: str = Query(...), platform: str = Query("threads")):
     _check(secret)

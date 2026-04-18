@@ -531,12 +531,16 @@
       return
     }
     list.innerHTML = posts.map(p => {
-      const editing = p.status === 'pending' || p.status === 'approved' || p.status === 'failed'
+      const editing  = p.status === 'pending' || p.status === 'approved' || p.status === 'failed'
+      const platform = p.target_platform || 'threads'
+      const platLabel = platform === 'x' ? 'X' : platform === 'instagram' ? 'IG' : 'Threads'
+      const platColor = platform === 'x' ? '#000' : platform === 'instagram' ? '#833ab4' : '#444'
       return `
       <div class="post-card" id="mpc-${p.id}">
         <div class="post-meta">
           <span>#${p.id}</span>
           <span class="pill pill-${p.status}">${p.status}</span>
+          <span style="background:${platColor};color:#fff;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;">${platLabel}</span>
           <span>${(p.created_at || '').slice(0,10)}</span>
         </div>
         <div class="post-body">
@@ -551,17 +555,20 @@
             }
           </div>
         </div>
-        ${editing ? `
-        <div class="actions">
-          ${p.status !== 'failed' ? `<button class="btn btn-threads" onclick="mSaveAndPost(${p.id},'threads')">Threads</button>` : ''}
-          ${p.status !== 'failed' ? `<button class="btn btn-x" onclick="mSaveAndPost(${p.id},'x')">X</button>` : ''}
-          ${p.image_url ? `<button class="btn btn-ig" onclick="mSaveAndPost(${p.id},'instagram')">IG</button>` : ''}
-          ${p.status === 'failed' ? `<button class="btn btn-retry" onclick="mRetry(${p.id})">↺ Retry</button>` : ''}
-          ${p.status === 'failed' ? `<button class="btn btn-threads" onclick="mSaveAndPost(${p.id},'threads')">Threads</button>` : ''}
-          ${p.status === 'failed' ? `<button class="btn btn-x" onclick="mSaveAndPost(${p.id},'x')">X</button>` : ''}
-          <button class="btn btn-save" onclick="mSave(${p.id})">Save</button>
+        <div class="actions" style="margin-top:10px;">
+          ${editing && p.status !== 'failed' ? `<button class="btn btn-threads" onclick="mSaveAndPost(${p.id},'threads')">Threads</button>` : ''}
+          ${editing && p.status !== 'failed' ? `<button class="btn btn-x" onclick="mSaveAndPost(${p.id},'x')">X</button>` : ''}
+          ${editing && p.image_url          ? `<button class="btn btn-ig" onclick="mSaveAndPost(${p.id},'instagram')">IG</button>` : ''}
+          ${p.status === 'failed'           ? `<button class="btn btn-retry" onclick="mRetry(${p.id})">↺ Retry</button>` : ''}
+          ${p.status === 'failed'           ? `<button class="btn btn-threads" onclick="mSaveAndPost(${p.id},'threads')">Threads</button>` : ''}
+          ${p.status === 'failed'           ? `<button class="btn btn-x" onclick="mSaveAndPost(${p.id},'x')">X</button>` : ''}
+          ${p.status === 'posted'           ? `<button class="btn btn-threads" onclick="mCrossPost(${p.id},'threads')">→ Threads</button>` : ''}
+          ${p.status === 'posted'           ? `<button class="btn btn-x" onclick="mCrossPost(${p.id},'x')">→ X</button>` : ''}
+          ${p.status === 'posted' && p.image_url ? `<button class="btn btn-ig" onclick="mCrossPost(${p.id},'instagram')">→ IG</button>` : ''}
+          ${editing ? `<button class="btn btn-save" onclick="mSave(${p.id})">Save</button>` : ''}
+          <button class="btn btn-save" style="background:rgba(255,255,255,.06);" onclick="mDuplicate(${p.id})">⧉ Dupe</button>
           <button class="btn btn-del" onclick="mDelete(${p.id})">✕</button>
-        </div>` : ''}
+        </div>
       </div>`
     }).join('')
 
@@ -623,6 +630,25 @@
     const r = await fetch(`/admin/posts/${id}/retry?secret=${encodeURIComponent(SECRET)}`, { method: 'POST' })
     if (r.ok) { toast('Re-queued.', 'green'); loadPosts() }
     else toast('Retry failed.', 'red')
+  }
+
+  async function mDuplicate(id) {
+    const r = await fetch(`/admin/posts/${id}/duplicate?secret=${encodeURIComponent(SECRET)}`, { method: 'POST' })
+    if (r.ok) {
+      const d = await r.json()
+      toast(`Duplicated as #${d.id} — now pending.`, 'green')
+      loadPosts('pending')
+    } else toast('Duplicate failed.', 'red')
+  }
+
+  async function mCrossPost(id, platform) {
+    toast(`Posting to ${platform}…`, '')
+    const r = await fetch(`/admin/posts/${id}/post-now?secret=${encodeURIComponent(SECRET)}&platform=${platform}`, { method: 'POST' })
+    if (r.ok) toast(`Posted to ${platform}!`, 'green')
+    else {
+      const d = await r.json()
+      toast(`Failed: ${d.detail}`, 'red')
+    }
   }
 
   async function mDelete(id) {
