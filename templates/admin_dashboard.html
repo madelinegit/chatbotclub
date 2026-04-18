@@ -556,6 +556,24 @@
     if (color === 'red') logError(msg)
   }
 
+  // Safe fetch-to-JSON: never throws on bad responses, always returns {ok, status, data, text}
+  async function safeFetch(url, opts = {}) {
+    try {
+      const r = await fetch(url, opts)
+      const raw = await r.text()
+      let data = null
+      try { data = JSON.parse(raw) } catch (_) {}
+      if (!r.ok) {
+        const msg = data?.detail || raw.slice(0, 400)
+        logError(`HTTP ${r.status} ${r.url?.split('?')[0]} — ${msg}`)
+      }
+      return { ok: r.ok, status: r.status, data, text: raw }
+    } catch (e) {
+      logError(`fetch failed: ${e.message}`)
+      return { ok: false, status: 0, data: null, text: e.message }
+    }
+  }
+
   let _errorLog = []
   function logError(msg) {
     const ts = new Date().toLocaleTimeString()
@@ -563,11 +581,18 @@
     const body = document.getElementById('error-log-body')
     const entry = document.createElement('div')
     entry.className = 'error-entry'
-    entry.innerHTML = `
-      <span class="error-entry-time">${ts}</span>
-      <span>${msg}</span>
-      <button class="error-entry-copy" onclick="navigator.clipboard.writeText(${JSON.stringify(msg)}).then(()=>toast('Copied!','green'))">Copy</button>
-    `
+    const timeEl = document.createElement('span')
+    timeEl.className = 'error-entry-time'
+    timeEl.textContent = ts
+    const msgEl = document.createElement('span')
+    msgEl.textContent = msg
+    const copyBtn = document.createElement('button')
+    copyBtn.className = 'error-entry-copy'
+    copyBtn.textContent = 'Copy'
+    copyBtn.addEventListener('click', () => navigator.clipboard.writeText(msg).then(() => toast('Copied!', 'green')))
+    entry.appendChild(timeEl)
+    entry.appendChild(msgEl)
+    entry.appendChild(copyBtn)
     body.appendChild(entry)
     body.scrollTop = body.scrollHeight
     const n = _errorLog.length
@@ -1553,13 +1578,12 @@
     document.getElementById('vm-result').style.display = 'none'
 
     try {
-      const r    = await fetch(`/admin/video/image-to-video?secret=${SECRET}`, {
+      const { ok, data } = await safeFetch(`/admin/video/image-to-video?secret=${SECRET}`, {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ image_url: imageUrl, prompt }),
       })
-      const data = await r.json()
-      if (!r.ok) { toast(`Failed: ${data.detail}`, 'red'); return }
-      document.getElementById('vm-player').src    = data.video_url
+      if (!ok) { toast('Video generation failed — see error log', 'red'); return }
+      document.getElementById('vm-player').src     = data.video_url
       document.getElementById('vm-video-url').value = data.video_url
       document.getElementById('vm-result').style.display = 'block'
       document.getElementById('vm-reel-btn').style.display = ''

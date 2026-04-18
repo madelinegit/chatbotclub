@@ -925,14 +925,13 @@
     const body     = imageUrl ? { image_url: imageUrl, prompt } : { prompt }
 
     try {
-      const r    = await fetch(`${endpoint}?secret=${encodeURIComponent(SECRET)}`, {
+      const res = await mSafeFetch(`${endpoint}?secret=${encodeURIComponent(SECRET)}`, {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify(body),
       })
-      const data = await r.json()
-      if (!r.ok) { toast(data.detail || 'Failed.', 'red'); return }
-      _lastVideoUrl = data.video_url
-      document.getElementById('v-player').src = data.video_url
+      if (!res.ok) { toast('Video failed — see error log', 'red'); return }
+      _lastVideoUrl = res.data.video_url
+      document.getElementById('v-player').src = res.data.video_url
       document.getElementById('v-result').style.display = 'block'
       toast('Video ready!', 'green')
     } catch (e) {
@@ -1375,6 +1374,20 @@
     if (type === 'red') mLogError(msg)
   }
 
+  async function mSafeFetch(url, opts = {}) {
+    try {
+      const r = await fetch(url, opts)
+      const raw = await r.text()
+      let data = null
+      try { data = JSON.parse(raw) } catch (_) {}
+      if (!r.ok) mLogError(`HTTP ${r.status} ${url.split('?')[0]} — ${data?.detail || raw.slice(0, 300)}`)
+      return { ok: r.ok, status: r.status, data, text: raw }
+    } catch (e) {
+      mLogError(`fetch failed: ${e.message}`)
+      return { ok: false, status: 0, data: null, text: e.message }
+    }
+  }
+
   let _mErrLog = []
   function mLogError(msg) {
     const ts = new Date().toLocaleTimeString()
@@ -1382,7 +1395,13 @@
     const body = document.getElementById('m-err-body')
     const e = document.createElement('div')
     e.style.cssText = 'background:#0f0a0a;border:1px solid rgba(201,106,106,0.15);border-radius:6px;padding:7px 10px;font-size:10px;font-family:monospace;color:#e0a0a0;word-break:break-all;display:flex;flex-direction:column;gap:4px;'
-    e.innerHTML = `<span style="color:#666;font-size:9px;">${ts}</span><span>${msg}</span><button onclick="navigator.clipboard.writeText(${JSON.stringify(msg)}).then(()=>toast('Copied!','success'))" style="align-self:flex-end;font-size:9px;padding:2px 6px;background:rgba(201,106,106,0.15);border:1px solid rgba(201,106,106,0.3);border-radius:3px;color:#c96a6a;">Copy</button>`
+    const tEl = document.createElement('span'); tEl.style.cssText='color:#666;font-size:9px;'; tEl.textContent = ts
+    const mEl = document.createElement('span'); mEl.textContent = msg
+    const btn = document.createElement('button')
+    btn.style.cssText = 'align-self:flex-end;font-size:9px;padding:2px 6px;background:rgba(201,106,106,0.15);border:1px solid rgba(201,106,106,0.3);border-radius:3px;color:#c96a6a;'
+    btn.textContent = 'Copy'
+    btn.addEventListener('click', () => navigator.clipboard.writeText(msg).then(() => toast('Copied!', 'success')))
+    e.appendChild(tEl); e.appendChild(mEl); e.appendChild(btn)
     body.appendChild(e)
     body.scrollTop = body.scrollHeight
     document.getElementById('m-err-count').textContent = _mErrLog.length
