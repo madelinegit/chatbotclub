@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 
 import re
 from app.db.crud import (
-    get_pending_posts, get_all_posts,
+    get_pending_posts, get_all_posts, get_posted_posts,
     approve_post, reject_post,
     update_social_post, delete_social_post, retry_social_post,
     get_all_blog_posts, get_blog_post_by_id,
@@ -49,6 +49,8 @@ def list_posts(secret: str = Query(...), status: str = Query("pending")):
     _check(secret)
     if status == "all":
         return {"posts": get_all_posts()}
+    if status == "posted":
+        return {"posts": get_posted_posts()}
     return {"posts": get_pending_posts()}
 
 

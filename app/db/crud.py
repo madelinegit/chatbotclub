@@ -421,6 +421,19 @@ def get_all_posts(limit: int = 50) -> list:
     return [dict(r) for r in rows]
 
 
+def get_posted_posts(limit: int = 50) -> list:
+    conn = get_connection()
+    cur  = _cursor(conn)
+    cur.execute(
+        "SELECT * FROM social_posts WHERE status = 'posted' ORDER BY posted_at DESC LIMIT %s",
+        (limit,),
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 def approve_post(post_id: int) -> None:
     conn = get_connection()
     cur  = _cursor(conn)
