@@ -462,6 +462,12 @@
                 style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:12px;outline:none;min-width:160px;">
               ${p.image_url ? `<button class="btn-reject" style="white-space:nowrap;" onclick="removeImage(${p.id})">Remove image</button>` : ''}
             </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+              <input type="datetime-local" id="sched-${p.id}"
+                value="${p.scheduled_at ? p.scheduled_at.slice(0,16) : ''}"
+                style="background:#111113;color:#ccc;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:12px;outline:none;color-scheme:dark;">
+              <button class="btn-approve" style="white-space:nowrap;" onclick="schedulePost(${p.id})">Schedule</button>
+            </div>
             <div class="post-actions" style="margin-top:0;padding-top:0;border-top:none;">
               <button class="btn-approve" onclick="savePost(${p.id})">Save edits</button>
               <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Post to Threads</button>
@@ -502,6 +508,20 @@
     })
     if (res.ok) toast('Saved.', 'green')
     else toast('Save failed.', 'red')
+  }
+
+  async function schedulePost(id) {
+    const scheduled_at = document.getElementById(`sched-${id}`).value
+    if (!scheduled_at) { toast('Pick a date and time first.', 'red'); return }
+    const caption   = document.getElementById(`caption-${id}`).value.trim()
+    const image_url = document.getElementById(`img-${id}`).value.trim() || null
+    const res = await fetch(`/admin/posts/${id}?secret=${SECRET}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caption, image_url, scheduled_at }),
+    })
+    if (res.ok) toast(`Scheduled for ${scheduled_at.replace('T',' ')}.`, 'green')
+    else toast('Schedule failed.', 'red')
   }
 
   async function saveAndPost(id, platform) {

@@ -55,11 +55,12 @@ def list_posts(secret: str = Query(...), status: str = Query("pending")):
 @router.put("/posts/{post_id}")
 async def edit_post(post_id: int, secret: str = Query(...), request: Request = None):
     _check(secret)
-    body        = await request.json()
-    caption     = body.get("caption")
-    image_url   = body.get("image_url")
-    clear_image = body.get("clear_image", False)
-    update_social_post(post_id, caption=caption, image_url=image_url, clear_image=clear_image)
+    body         = await request.json()
+    caption      = body.get("caption")
+    image_url    = body.get("image_url")
+    clear_image  = body.get("clear_image", False)
+    scheduled_at = body.get("scheduled_at") or None
+    update_social_post(post_id, caption=caption, image_url=image_url, clear_image=clear_image, scheduled_at=scheduled_at)
     return {"status": "updated"}
 
 

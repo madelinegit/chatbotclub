@@ -438,7 +438,7 @@ def reject_post(post_id: int) -> None:
 
 
 def update_social_post(post_id: int, caption: str = None, image_url: str = None,
-                       clear_image: bool = False) -> None:
+                       clear_image: bool = False, scheduled_at: str = None) -> None:
     conn = get_connection()
     cur  = _cursor(conn)
     fields, values = [], []
@@ -448,6 +448,8 @@ def update_social_post(post_id: int, caption: str = None, image_url: str = None,
         fields.append("image_url = NULL")
     elif image_url is not None:
         fields.append("image_url = %s"); values.append(image_url)
+    if scheduled_at is not None:
+        fields.append("scheduled_at = %s"); values.append(scheduled_at)
     if not fields:
         cur.close(); conn.close(); return
     values.append(post_id)
