@@ -755,12 +755,17 @@
     btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Generating…'
     document.getElementById('image-result').style.display = 'none'
 
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 90000)
+
     try {
       const res  = await fetch(`/admin/write/image?secret=${SECRET}`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ expanded_prompt: prompt, model_type: _lastModelType }),
+        signal:  controller.signal,
       })
+      clearTimeout(timeout)
       const data = await res.json()
       if (!res.ok) { toast(data.detail || 'Generation failed.', 'red'); return }
 
@@ -795,7 +800,12 @@
         toast(notice, 'green')
       }
     } catch (e) {
-      toast('Error generating image.', 'red')
+      clearTimeout(timeout)
+      if (e.name === 'AbortError') {
+        toast('Image generation timed out (90s). ModelsLab may be overloaded — try again in a minute.', 'red')
+      } else {
+        toast('Error generating image.', 'red')
+      }
     } finally {
       btn.disabled = false; btn.innerHTML = 'Generate Image'
     }

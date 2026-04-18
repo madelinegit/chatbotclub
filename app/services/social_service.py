@@ -164,7 +164,7 @@ def _generate_image(prompt: str, model_type: str = "scene") -> str | None:
     }
     try:
         r = requests.post(MODELSLAB_IMAGE_URL, json=payload,
-                          headers={"Content-Type": "application/json"}, timeout=60)
+                          headers={"Content-Type": "application/json"}, timeout=75)
         r.raise_for_status()
         data = r.json()
         if data.get("status") == "success":
