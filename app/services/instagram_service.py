@@ -24,7 +24,7 @@ def _get_ig_user_id() -> str | None:
             f"{GRAPH_API}/me/accounts",
             params={
                 "access_token": INSTAGRAM_ACCESS_TOKEN,
-                "fields": "id,name,instagram_business_account",
+                "fields": "id,name,access_token,instagram_business_account",
             },
             timeout=10,
         )
@@ -32,10 +32,31 @@ def _get_ig_user_id() -> str | None:
         pages = r.json().get("data", [])
         print(f"INSTAGRAM: found {len(pages)} pages")
         for page in pages:
-            print(f"INSTAGRAM: page {page.get('name')} ig={page.get('instagram_business_account')}")
+            page_name = page.get("name")
+            # Try user-token result first
             ig = page.get("instagram_business_account", {})
             if ig.get("id"):
+                print(f"INSTAGRAM: page {page_name} ig={ig['id']} (via user token)")
                 return ig["id"]
+
+            # Retry using the page's own access token
+            page_token = page.get("access_token")
+            if page_token:
+                r2 = requests.get(
+                    f"{GRAPH_API}/{page['id']}",
+                    params={
+                        "access_token": page_token,
+                        "fields": "instagram_business_account",
+                    },
+                    timeout=10,
+                )
+                ig2 = r2.json().get("instagram_business_account", {})
+                print(f"INSTAGRAM: page {page_name} page-token lookup: {r2.json()}")
+                if ig2.get("id"):
+                    print(f"INSTAGRAM: page {page_name} ig={ig2['id']} (via page token)")
+                    return ig2["id"]
+            else:
+                print(f"INSTAGRAM: page {page_name} ig=None (no page token returned)")
 
         print("INSTAGRAM: no Instagram Business/Creator account found on any linked Page")
     except Exception as e:
