@@ -237,7 +237,10 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
 
     # Step 2 — generate image from expanded prompt
     model_type = body.get("model_type", "portrait")
-    image_url = _generate_image(expanded, model_type=model_type)
+    image_url, img_error = _generate_image(expanded, model_type=model_type)
+
+    if img_error and not image_url:
+        raise HTTPException(status_code=500, detail=f"ModelsLab error: {img_error}")
 
     return {
         "expanded_prompt": expanded,

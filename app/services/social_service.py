@@ -145,8 +145,16 @@ def _generate_caption(post_prompt: str, context: str = "") -> str | None:
     return None
 
 
-def _generate_image(prompt: str, model_type: str = "scene") -> str | None:
+def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None, str | None]:
+    """Returns (image_url, error_message). One of them will be None."""
     model = MODELSLAB_PORTRAIT_MODEL if model_type == "portrait" else MODELSLAB_SCENE_MODEL
+    if not MODELSLAB_API_KEY:
+        return None, "MODELSLAB_API_KEY not set in Railway env vars"
+    if not model:
+        return None, f"MODELSLAB_{'PORTRAIT' if model_type == 'portrait' else 'SCENE'}_MODEL not set in Railway env vars"
+    if not MODELSLAB_IMAGE_URL:
+        return None, "MODELSLAB_IMAGE_URL not set in Railway env vars"
+
     payload = {
         "key":                 MODELSLAB_API_KEY,
         "model_id":            model,
@@ -163,18 +171,23 @@ def _generate_image(prompt: str, model_type: str = "scene") -> str | None:
         "lora_model":          [],
     }
     try:
+        print(f"IMAGE GEN: posting to {MODELSLAB_IMAGE_URL} model={model}")
         r = requests.post(MODELSLAB_IMAGE_URL, json=payload,
                           headers={"Content-Type": "application/json"}, timeout=75)
+        print(f"IMAGE GEN: status={r.status_code} response={r.text[:300]}")
         r.raise_for_status()
         data = r.json()
         if data.get("status") == "success":
-            return data["output"][0]
+            return data["output"][0], None
         if data.get("status") == "processing":
-            return data.get("future_links", [None])[0]
+            return data.get("future_links", [None])[0], None
+        return None, f"Unexpected ModelsLab response: {data}"
+    except requests.exceptions.Timeout:
+        return None, "ModelsLab request timed out after 75s — server may be overloaded"
+    except requests.exceptions.HTTPError as e:
+        return None, f"ModelsLab HTTP {e.response.status_code}: {e.response.text[:200]}"
     except Exception as e:
-        print(f"SOCIAL IMAGE ERROR: {type(e).__name__}: {e}")
-        print(f"SOCIAL IMAGE PAYLOAD model={model} prompt_len={len(payload['prompt'])}")
-    return None
+        return None, f"{type(e).__name__}: {e}"
 
 
 def generate_post_for_queue(local_context: str = "") -> dict | None:
@@ -195,7 +208,7 @@ def generate_post_for_queue(local_context: str = "") -> dict | None:
     if post_cfg.get("with_image"):
         image_prompt = post_cfg.get("image_prompt", "")
         model_type   = post_cfg.get("image_model", "scene")
-        image_url    = _generate_image(image_prompt, model_type=model_type)
+        image_url, _  = _generate_image(image_prompt, model_type=model_type)
 
     post_id = create_social_post(
         caption=caption,
