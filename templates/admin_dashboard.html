@@ -277,6 +277,43 @@
     <div id="image-status" style="font-size:13px;color:#6ac97a;margin-top:8px;display:none;"></div>
   </div>
 
+  <!-- Insert Maya into Scene (img2img) -->
+  <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:24px;">
+    <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Insert Maya into a Scene</div>
+    <div style="font-size:12px;color:#555;margin-bottom:14px;">Upload any background photo — Maya will be composited in using the LoRA.</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+      <div style="flex:1;min-width:200px;">
+        <input type="file" id="i2i-file" accept="image/*" onchange="i2iPreview()" style="margin-bottom:8px;width:100%;">
+        <img id="i2i-thumb" src="" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;display:none;">
+      </div>
+      <div style="flex:2;min-width:200px;display:flex;flex-direction:column;gap:8px;">
+        <textarea id="i2i-prompt" rows="2" placeholder="Describe Maya in the scene — e.g. 'standing at the edge, looking into the distance, golden hour'"
+          style="width:100%;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;font-size:13px;font-family:inherit;resize:none;outline:none;"></textarea>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <label style="font-size:12px;color:#666;white-space:nowrap;">Blend: scene ←→ Maya</label>
+          <input type="range" id="i2i-strength" min="50" max="95" value="80" style="flex:1;" oninput="document.getElementById('i2i-strength-val').textContent=this.value+'%'">
+          <span id="i2i-strength-val" style="font-size:12px;color:#888;width:36px;">80%</span>
+        </div>
+        <button class="btn-gen" id="i2i-btn" onclick="generateImg2Img()">Insert Maya</button>
+      </div>
+    </div>
+    <div id="i2i-result" style="display:none;">
+      <img id="i2i-output" src="" style="width:100%;max-width:480px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);margin-bottom:10px;">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+        <input id="i2i-url" type="text" readonly style="flex:1;background:#111113;color:#6ac97a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 10px;font-size:12px;font-family:monospace;outline:none;">
+        <button class="btn-approve" onclick="navigator.clipboard.writeText(document.getElementById('i2i-url').value).then(()=>toast('Copied!','green'))">Copy URL</button>
+      </div>
+      <textarea id="i2i-caption" rows="2" placeholder="Caption for this post…"
+        style="width:100%;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:none;outline:none;margin-bottom:8px;"></textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-post" onclick="i2iPostNow('threads')">Post to Threads</button>
+        <button class="btn-post" style="background:#e7e7e7;color:#000;" onclick="i2iPostNow('x')">Post to X</button>
+        <button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="i2iPostNow('instagram')">Post to Instagram</button>
+        <button class="btn-approve" onclick="i2iMakeVideo()">🎬 Make Video from this</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Chat with Maya -->
   <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -1325,6 +1362,76 @@
       const d = await res.json()
       toast(`Failed: ${d.detail}`, 'red')
     }
+  }
+
+  // ── Img2Img ───────────────────────────────────────────────────────────────────
+
+  function i2iPreview() {
+    const f = document.getElementById('i2i-file').files[0]
+    if (!f) return
+    const img = document.getElementById('i2i-thumb')
+    img.src = URL.createObjectURL(f)
+    img.style.display = 'block'
+  }
+
+  async function generateImg2Img() {
+    const fileInput = document.getElementById('i2i-file')
+    if (!fileInput.files?.length) { toast('Upload a background image first.', 'red'); return }
+    const prompt   = document.getElementById('i2i-prompt').value.trim()
+    const strength = parseInt(document.getElementById('i2i-strength').value) / 100
+    const btn      = document.getElementById('i2i-btn')
+    btn.textContent = 'Uploading…'
+    btn.disabled = true
+    document.getElementById('i2i-result').style.display = 'none'
+
+    try {
+      // Step 1 — upload scene to Cloudinary
+      const form = new FormData()
+      form.append('file', fileInput.files[0])
+      const up = await fetch(`/admin/upload-image?secret=${SECRET}`, { method: 'POST', body: form })
+      if (!up.ok) { toast('Upload failed.', 'red'); return }
+      const { url: imageUrl } = await up.json()
+
+      // Step 2 — img2img via LoRA
+      btn.textContent = 'Inserting Maya… (~60s)'
+      const r = await fetch(`/admin/generate-img2img?secret=${SECRET}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ image_url: imageUrl, prompt, prompt_strength: strength }),
+      })
+      const data = await r.json()
+      if (!r.ok) { toast(`Failed: ${data.detail}`, 'red'); return }
+
+      document.getElementById('i2i-output').src  = data.image_url
+      document.getElementById('i2i-url').value   = data.image_url
+      document.getElementById('i2i-result').style.display = 'block'
+      toast('Done!', 'green')
+    } catch (e) {
+      toast('Error: ' + e.message, 'red')
+    } finally {
+      btn.textContent = 'Insert Maya'
+      btn.disabled = false
+    }
+  }
+
+  async function i2iPostNow(platform) {
+    const caption  = document.getElementById('i2i-caption').value.trim()
+    const imageUrl = document.getElementById('i2i-url').value
+    if (!caption) { toast('Add a caption first.', 'red'); return }
+    const r = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption, image_url: imageUrl, target_platform: platform }),
+    })
+    if (!r.ok) { toast('Queue failed.', 'red'); return }
+    const { id } = await r.json()
+    const r2 = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}&platform=${platform}`, { method: 'POST' })
+    if (r2.ok) toast(`Posted to ${platform}!`, 'green')
+    else { const d = await r2.json(); toast(`Failed: ${d.detail}`, 'red') }
+  }
+
+  function i2iMakeVideo() {
+    const imageUrl = document.getElementById('i2i-url').value
+    const caption  = document.getElementById('i2i-caption').value
+    openVideoModal(0, imageUrl, caption)
   }
 
   // ── Video modal ───────────────────────────────────────────────────────────────

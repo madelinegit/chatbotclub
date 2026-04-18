@@ -407,6 +407,32 @@
         </div>
       </div>
 
+      <!-- Insert Maya into scene (img2img) -->
+      <div class="write-section">
+        <h3>Insert Maya into Scene</h3>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Upload any background photo — Maya will be composited in using the LoRA.</div>
+        <input type="file" id="i2i-m-file" accept="image/*" onchange="i2iMobilePreview()">
+        <img id="i2i-m-thumb" src="" alt="" style="display:none;width:100%;border-radius:10px;margin-bottom:10px;">
+        <textarea id="i2i-m-prompt" rows="2" placeholder="Describe Maya in the scene — e.g. 'leaning against the railing, looking back, golden hour'"></textarea>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="font-size:12px;color:var(--muted);">Scene</span>
+          <input type="range" id="i2i-m-strength" min="50" max="95" value="80" style="flex:1;" oninput="document.getElementById('i2i-m-val').textContent=this.value+'%'">
+          <span id="i2i-m-val" style="font-size:12px;color:var(--muted);width:36px;">80%</span>
+          <span style="font-size:12px;color:var(--muted);">Maya</span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-gen" id="i2i-m-btn" onclick="generateImg2ImgMobile()">Insert Maya</button>
+        </div>
+        <div id="i2i-m-result" style="display:none;margin-top:12px;">
+          <img id="i2i-m-output" src="" style="width:100%;border-radius:10px;margin-bottom:10px;" onclick="openImgOverlay(this.src)">
+          <textarea id="i2i-m-caption" rows="2" placeholder="Caption for this post…"></textarea>
+          <div class="actions" style="margin-top:8px;">
+            <button class="btn btn-threads" onclick="i2iMobilePost()">Post Now</button>
+            <button class="btn btn-save" onclick="i2iMobileMakeVideo()">🎬 Video</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Generate video -->
       <div class="write-section">
         <h3>Generate Video</h3>
@@ -789,6 +815,72 @@
     if (ok.length)  toast(`Posted to ${ok.join(', ')}!`, 'green')
     if (bad.length) toast(`Failed: ${bad.join(', ')}`, 'red')
     return ok.length > 0
+  }
+
+  // ── Write — img2img ──────────────────────────────────────────────────────────
+
+  function i2iMobilePreview() {
+    const f = document.getElementById('i2i-m-file').files[0]
+    if (!f) return
+    const img = document.getElementById('i2i-m-thumb')
+    img.src = URL.createObjectURL(f)
+    img.style.display = 'block'
+  }
+
+  async function generateImg2ImgMobile() {
+    const fileInput = document.getElementById('i2i-m-file')
+    if (!fileInput.files?.length) { toast('Upload a background image first.', 'red'); return }
+    const prompt   = document.getElementById('i2i-m-prompt').value.trim()
+    const strength = parseInt(document.getElementById('i2i-m-strength').value) / 100
+    const btn      = document.getElementById('i2i-m-btn')
+    btn.innerHTML  = '<span class="spinner"></span>Uploading…'
+    btn.disabled   = true
+    document.getElementById('i2i-m-result').style.display = 'none'
+    try {
+      const form = new FormData()
+      form.append('file', fileInput.files[0])
+      const up = await fetch(`/admin/upload-image?secret=${encodeURIComponent(SECRET)}`, { method: 'POST', body: form })
+      if (!up.ok) { toast('Upload failed.', 'red'); return }
+      const { url: imageUrl } = await up.json()
+
+      btn.innerHTML = '<span class="spinner"></span>Inserting Maya…'
+      const r = await fetch(`/admin/generate-img2img?secret=${encodeURIComponent(SECRET)}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ image_url: imageUrl, prompt, prompt_strength: strength }),
+      })
+      const data = await r.json()
+      if (!r.ok) { toast(`Failed: ${data.detail}`, 'red'); return }
+      document.getElementById('i2i-m-output').src = data.image_url
+      document.getElementById('i2i-m-output').dataset.url = data.image_url
+      document.getElementById('i2i-m-result').style.display = 'block'
+      toast('Done!', 'green')
+    } catch (e) { toast('Error: ' + e.message, 'red') }
+    finally { btn.innerHTML = 'Insert Maya'; btn.disabled = false }
+  }
+
+  async function i2iMobilePost() {
+    if (!_selected.size) { toast('Select at least one platform.', 'red'); return }
+    const imageUrl = document.getElementById('i2i-m-output').dataset.url
+    const caption  = document.getElementById('i2i-m-caption').value.trim()
+    if (!caption) { toast('Add a caption.', 'red'); return }
+    const r = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption, image_url: imageUrl, target_platform: _strategyPlatform() }),
+    })
+    if (!r.ok) { toast('Queue failed.', 'red'); return }
+    const { id } = await r.json()
+    await _postToAll(id)
+  }
+
+  function i2iMobileMakeVideo() {
+    const imageUrl = document.getElementById('i2i-m-output').dataset.url
+    const caption  = document.getElementById('i2i-m-caption').value
+    document.getElementById('v-image-url').value = imageUrl
+    document.getElementById('v-caption').value   = caption || ''
+    document.getElementById('v-prompt').value    = ''
+    document.getElementById('v-result').style.display = 'none'
+    document.getElementById('v-image-url').scrollIntoView({ behavior: 'smooth' })
+    toast('Scroll down to Generate Video.', '')
   }
 
   function mMakeVideo(imageUrl, caption) {

@@ -201,6 +201,26 @@ async def upload_image(secret: str = Query(...), file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Upload error: {e}")
 
 
+@router.post("/generate-img2img")
+async def generate_img2img(secret: str = Query(...), request: Request = None):
+    """
+    Insert Maya into a scene via Flux LoRA img2img.
+    Body: { image_url, prompt, prompt_strength (0.5-0.95) }
+    """
+    _check(secret)
+    body            = await request.json()
+    image_url       = body.get("image_url", "").strip()
+    prompt          = body.get("prompt", "").strip()
+    prompt_strength = float(body.get("prompt_strength", 0.8))
+    if not image_url:
+        raise HTTPException(status_code=400, detail="image_url required.")
+    from app.services.social_service import _generate_image_lora
+    url, err = _generate_image_lora(prompt or "in the scene, natural pose", image_url=image_url, prompt_strength=prompt_strength)
+    if err:
+        raise HTTPException(status_code=500, detail=err)
+    return {"image_url": url}
+
+
 @router.post("/write/chat")
 async def admin_write_chat(secret: str = Query(...), request: Request = None):
     """Chat with Maya in admin — she writes back in her voice."""

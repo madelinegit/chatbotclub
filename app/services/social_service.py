@@ -293,21 +293,29 @@ def _generate_caption(post_prompt: str, context: str = "", weekday_note: str = "
     return None
 
 
-def _generate_image_lora(prompt: str) -> tuple[str | None, str | None]:
-    """Flux LoRA inference via Replicate using the trained madelinegit/maya model."""
+def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: float = 0.8) -> tuple[str | None, str | None]:
+    """
+    Flux LoRA inference via Replicate.
+    Pass image_url for img2img (insert Maya into a scene).
+    prompt_strength: 0.6 = scene-dominant, 0.85 = Maya-dominant.
+    """
     if not REPLICATE_API_TOKEN:
         return None, "REPLICATE_API_TOKEN not set in Railway env vars"
     if not REPLICATE_LORA_VERSION:
         return None, "REPLICATE_LORA_VERSION not set in Railway env vars"
 
     full_prompt = "mayaselfie " + MAYA_CHARACTER + prompt
+    inp = {"prompt": full_prompt}
+    if image_url:
+        inp["image"]           = image_url
+        inp["prompt_strength"] = prompt_strength
 
     try:
         r = requests.post(
             "https://api.replicate.com/v1/predictions",
             json={
                 "version": REPLICATE_LORA_VERSION,
-                "input":   {"prompt": full_prompt},
+                "input":   inp,
             },
             headers={
                 "Authorization": f"Bearer {REPLICATE_API_TOKEN}",
