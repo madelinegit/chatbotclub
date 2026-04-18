@@ -16,8 +16,10 @@ MODELSLAB_EXPLICIT_MODEL  = os.getenv("MODELSLAB_EXPLICIT_MODEL",  os.getenv("MO
 MODELSLAB_LORA_MODEL      = os.getenv("MODELSLAB_LORA_MODEL")   # HuggingFace repo "user/repo" for trained LoRA
 MODELSLAB_FLUX_BASE       = os.getenv("MODELSLAB_FLUX_BASE", "flux")  # Flux base model for LoRA inference
 
-# Replicate — used for Flux LoRA inference (ModelsLab doesn't support external LoRAs)
+# Replicate — Flux LoRA inference
 REPLICATE_API_TOKEN       = os.getenv("REPLICATE_API_TOKEN")
+# Full model version string from Replicate training output
+REPLICATE_LORA_VERSION    = os.getenv("REPLICATE_LORA_VERSION")
 
 # Supabase
 SUPABASE_URL        = os.getenv("SUPABASE_URL")

@@ -18,8 +18,7 @@ from app.config import (
     MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL,
     MODELSLAB_IMAGE_URL,
     MODELSLAB_PORTRAIT_MODEL, MODELSLAB_SCENE_MODEL, MODELSLAB_EXPLICIT_MODEL,
-    MODELSLAB_LORA_MODEL,
-    REPLICATE_API_TOKEN,
+    REPLICATE_API_TOKEN, REPLICATE_LORA_VERSION,
     X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET,
 )
 from app.ai.persona import load_persona
@@ -230,37 +229,21 @@ def _generate_caption(post_prompt: str, context: str = "", weekday_note: str = "
 
 
 def _generate_image_lora(prompt: str) -> tuple[str | None, str | None]:
-    """
-    Flux LoRA inference via Replicate.
-    ModelsLab doesn't support external HuggingFace LoRAs on their Flux endpoint.
-    Uses lucataco/flux-dev-lora which accepts a HuggingFace repo directly.
-    """
+    """Flux LoRA inference via Replicate using the trained madelinegit/maya model."""
     if not REPLICATE_API_TOKEN:
         return None, "REPLICATE_API_TOKEN not set in Railway env vars"
-    if not MODELSLAB_LORA_MODEL:
-        return None, "MODELSLAB_LORA_MODEL not set in Railway env vars"
+    if not REPLICATE_LORA_VERSION:
+        return None, "REPLICATE_LORA_VERSION not set in Railway env vars"
 
-    # Normalise to "user/repo" format — strip full HF URL if present
-    hf_repo = MODELSLAB_LORA_MODEL
-    if hf_repo.startswith("https://huggingface.co/"):
-        hf_repo = hf_repo.replace("https://huggingface.co/", "").split("/resolve/")[0]
-
-    full_prompt = "mayavip " + MAYA_CHARACTER + prompt
+    full_prompt = "mayaselfie " + MAYA_CHARACTER + prompt
 
     try:
-        # POST to start prediction
         r = requests.post(
-            "https://api.replicate.com/v1/models/lucataco/flux-dev-lora/predictions",
-            json={"input": {
-                "prompt":       full_prompt,
-                "hf_lora":      hf_repo,
-                "lora_scale":   0.9,
-                "num_outputs":  1,
-                "aspect_ratio": "1:1",
-                "output_format": "webp",
-                "guidance_scale": 3.5,
-                "num_inference_steps": 28,
-            }},
+            "https://api.replicate.com/v1/predictions",
+            json={
+                "version": REPLICATE_LORA_VERSION,
+                "input":   {"prompt": full_prompt},
+            },
             headers={
                 "Authorization": f"Bearer {REPLICATE_API_TOKEN}",
                 "Content-Type":  "application/json",
@@ -272,12 +255,11 @@ def _generate_image_lora(prompt: str) -> tuple[str | None, str | None]:
         r.raise_for_status()
         data = r.json()
 
-        # "wait" header means we may get a completed prediction immediately
         if data.get("status") == "succeeded":
             output = data.get("output", [])
             return (output[0] if output else None), None
 
-        # Still processing — poll once more after 30s (best-effort)
+        # Poll once if still processing
         pred_id = data.get("id")
         if pred_id:
             import time
@@ -288,11 +270,11 @@ def _generate_image_lora(prompt: str) -> tuple[str | None, str | None]:
                 timeout=15,
             )
             data2 = r2.json()
-            print(f"REPLICATE LORA poll: status={data2.get('status')} output={data2.get('output')}")
+            print(f"REPLICATE LORA poll: status={data2.get('status')}")
             if data2.get("status") == "succeeded":
                 output = data2.get("output", [])
                 return (output[0] if output else None), None
-            return None, f"Replicate prediction {data2.get('status')}: {data2.get('error')}"
+            return None, f"Replicate {data2.get('status')}: {data2.get('error')}"
 
         return None, f"Replicate unexpected response: {data}"
     except requests.exceptions.Timeout:
