@@ -162,12 +162,9 @@ async def admin_write_chat(secret: str = Query(...), request: Request = None):
         raise HTTPException(status_code=500, detail=f"LLM error: {e}")
 
 
-@router.post("/write/image")
-async def admin_write_image(secret: str = Query(...), request: Request = None):
-    """
-    Take a simple idea, expand it into a full Maya image prompt via LLM,
-    then generate the image. Returns the expanded prompt + image URL.
-    """
+@router.post("/write/expand-prompt")
+async def admin_expand_prompt(secret: str = Query(...), request: Request = None):
+    """Expand a simple idea into a detailed Maya image prompt for review/editing."""
     _check(secret)
     body = await request.json()
     idea = body.get("idea", "").strip()
@@ -176,9 +173,7 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
 
     import requests as req
     from app.config import MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL
-    from app.services.social_service import _generate_image, MAYA_CHARACTER
 
-    # Step 1 — LLM expands the idea into a detailed image prompt
     system = (
         "You are generating image prompts for an AI image model. "
         "The subject is Maya: beautiful young woman, long beachy wavy blonde hair with natural highlights, "
@@ -201,10 +196,7 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
             {"role": "user",   "content": idea},
         ],
     }
-    headers = {
-        "Authorization": f"Bearer {MODELSLAB_API_KEY}",
-        "Content-Type":  "application/json",
-    }
+    headers = {"Authorization": f"Bearer {MODELSLAB_API_KEY}", "Content-Type": "application/json"}
     try:
         r = req.post(MODELSLAB_API_URL, json=payload, headers=headers, timeout=30)
         r.raise_for_status()
@@ -216,9 +208,32 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
             expanded = data["output"][0].strip().strip('"').strip("'")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM error: {e}")
-
     if not expanded:
         raise HTTPException(status_code=500, detail="LLM returned empty prompt.")
+    return {"expanded_prompt": expanded}
+
+
+@router.post("/write/image")
+async def admin_write_image(secret: str = Query(...), request: Request = None):
+    """
+    Take a simple idea, expand it into a full Maya image prompt via LLM,
+    then generate the image. Returns the expanded prompt + image URL.
+    """
+    _check(secret)
+    body = await request.json()
+    idea = body.get("idea", "").strip()
+    expanded = body.get("expanded_prompt", "").strip()
+
+    import requests as req
+    from app.config import MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL
+    from app.services.social_service import _generate_image, MAYA_CHARACTER
+
+    if not expanded and not idea:
+        raise HTTPException(status_code=400, detail="idea or expanded_prompt required.")
+
+    # If no pre-expanded prompt, this shouldn't happen (expand-prompt is called first)
+    if not expanded:
+        raise HTTPException(status_code=400, detail="expanded_prompt required.")
 
     # Step 2 — generate image from expanded prompt
     model_type = body.get("model_type", "portrait")

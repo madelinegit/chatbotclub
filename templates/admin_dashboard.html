@@ -201,6 +201,17 @@
       </div>
     </div>
 
+    <!-- Prompt preview/edit step -->
+    <div id="image-prompt-preview" style="display:none;margin-top:12px;">
+      <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Expanded prompt — edit before generating</div>
+      <textarea id="image-prompt-edit" rows="5"
+        style="width:100%;background:#111113;color:#ccc;border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px;font-size:12px;font-family:monospace;resize:vertical;outline:none;box-sizing:border-box;line-height:1.5;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn-gen" onclick="generateImageFromPrompt()" id="image-confirm-btn">Generate Image</button>
+        <button class="btn-reject" onclick="document.getElementById('image-prompt-preview').style.display='none'">Cancel</button>
+      </div>
+    </div>
+
     <!-- Result area -->
     <div id="image-result" style="display:none;">
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;">
@@ -416,7 +427,8 @@
             </div>
             <div class="post-actions" style="margin-top:0;padding-top:0;border-top:none;">
               <button class="btn-approve" onclick="savePost(${p.id})">Save edits</button>
-              <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Save & Post to Threads</button>
+              <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Post to Threads</button>
+              ${p.image_url ? `<button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="saveAndPost(${p.id}, 'instagram')">Post to Instagram</button>` : ''}
               <button class="btn-reject" onclick="rejectPost(${p.id})">Delete</button>
             </div>
           </div>
@@ -702,46 +714,100 @@
 
   let _lastImageUrl = null
   let _lastImagePrompt = null
+  let _lastModelType = 'portrait'
 
   async function generateImage() {
     const idea = document.getElementById('image-idea-input').value.trim()
     if (!idea) return
     const btn = document.getElementById('image-gen-btn')
-    const modelType = document.getElementById('image-model-type').value
-    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Generating…'
+    _lastModelType = document.getElementById('image-model-type').value
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Expanding…'
     document.getElementById('image-result').style.display = 'none'
-    document.getElementById('image-status').style.display = 'none'
+    document.getElementById('image-prompt-preview').style.display = 'none'
 
     try {
-      const res  = await fetch(`/admin/write/image?secret=${SECRET}`, {
+      const res  = await fetch(`/admin/write/expand-prompt?secret=${SECRET}`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ idea, model_type: modelType }),
+        body:    JSON.stringify({ idea }),
       })
       const data = await res.json()
-      if (!res.ok) { toast(data.detail || 'Generation failed.', 'red'); return }
+      if (!res.ok) { toast(data.detail || 'Expansion failed.', 'red'); return }
 
-      _lastImageUrl    = data.image_url
-      _lastImagePrompt = data.expanded_prompt
-
-      document.getElementById('image-expanded-prompt').textContent = data.expanded_prompt
-      if (data.image_url) {
-        document.getElementById('image-preview').src = data.image_url
-        document.getElementById('image-result').style.display = 'flex'
-      } else {
-        toast('Image is processing — check back in a minute and paste the URL manually.', 'orange')
-      }
+      document.getElementById('image-prompt-edit').value = data.expanded_prompt
+      document.getElementById('image-prompt-preview').style.display = 'block'
     } catch (e) {
-      toast('Error generating image.', 'red')
+      toast('Error expanding prompt.', 'red')
     } finally {
       btn.disabled = false; btn.innerHTML = 'Generate'
     }
   }
 
+  async function generateImageFromPrompt() {
+    const prompt = document.getElementById('image-prompt-edit').value.trim()
+    if (!prompt) return
+    const btn = document.getElementById('image-confirm-btn')
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Generating…'
+    document.getElementById('image-result').style.display = 'none'
+
+    try {
+      const res  = await fetch(`/admin/write/image?secret=${SECRET}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ expanded_prompt: prompt, model_type: _lastModelType }),
+      })
+      const data = await res.json()
+      if (!res.ok) { toast(data.detail || 'Generation failed.', 'red'); return }
+
+      _lastImageUrl    = data.image_url
+      _lastImagePrompt = prompt
+
+      document.getElementById('image-expanded-prompt').textContent = prompt
+      document.getElementById('image-result').style.display = 'flex'
+      document.getElementById('image-preview').style.display = 'block'
+      if (data.image_url) {
+        document.getElementById('image-preview').src = data.image_url
+      }
+      document.getElementById('image-prompt-preview').style.display = 'none'
+
+      // Auto-queue immediately so the image is never lost
+      const autoRes = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ caption: '(add caption)', image_url: data.image_url }),
+      })
+      if (autoRes.ok) {
+        const { id } = await autoRes.json()
+        document.getElementById('image-caption-input').dataset.postId = id
+        const notice = data.image_url
+          ? `Saved to queue as post #${id} — add a caption and post when ready.`
+          : `Image still rendering — saved as post #${id}. Add image URL in Posts tab when ready.`
+        toast(notice, 'green')
+      }
+    } catch (e) {
+      toast('Error generating image.', 'red')
+    } finally {
+      btn.disabled = false; btn.innerHTML = 'Generate Image'
+    }
+  }
+
   async function queueImagePost() {
-    const caption   = document.getElementById('image-caption-input').value.trim()
+    const captionEl = document.getElementById('image-caption-input')
+    const caption   = captionEl.value.trim()
     const image_url = _lastImageUrl
+    const postId    = captionEl.dataset.postId
     if (!caption) { toast('Add a caption first.', 'red'); return }
+    // Update the already-queued post with the real caption
+    if (postId) {
+      const res = await fetch(`/admin/posts/${postId}?secret=${SECRET}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ caption, image_url }),
+      })
+      if (res.ok) toast('Caption saved — go to Posts tab to review and post.', 'green')
+      else toast('Failed to save caption.', 'red')
+      return
+    }
     const res = await fetch(`/admin/write/queue?secret=${SECRET}`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
