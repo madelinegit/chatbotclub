@@ -90,7 +90,7 @@ def image_to_video(image_url: str, prompt: str = "", duration: int = 5) -> tuple
         )
         print(f"KLING i2v create: status={r.status_code} body={r.text[:300]}")
         if r.status_code == 429:
-            return None, "Kling rate limit hit — wait a minute and try again"
+            return None, f"Kling 429: {r.text[:300]}"
         r.raise_for_status()
         task_id = r.json().get("data", {}).get("task_id")
         if not task_id:
@@ -120,7 +120,7 @@ def text_to_video(prompt: str, duration: int = 5) -> tuple[str | None, str | Non
         )
         print(f"KLING t2v create: status={r.status_code} body={r.text[:300]}")
         if r.status_code == 429:
-            return None, "Kling rate limit hit — wait a minute and try again"
+            return None, f"Kling 429: {r.text[:300]}"
         r.raise_for_status()
         task_id = r.json().get("data", {}).get("task_id")
         if not task_id:
