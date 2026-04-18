@@ -60,10 +60,6 @@ INSTAGRAM_USER_ID = os.getenv("INSTAGRAM_USER_ID")
 # Cloudinary (free image hosting for text card uploads)
 CLOUDINARY_URL        = os.getenv("CLOUDINARY_URL")
 
-# Kling AI (video generation)
-KLING_ACCESS_KEY  = os.getenv("KLING_ACCESS_KEY")
-KLING_SECRET_KEY  = os.getenv("KLING_SECRET_KEY")
-
 # Email notifications (Gmail SMTP)
 NOTIFY_EMAIL      = os.getenv("NOTIFY_EMAIL", "ecodevwy@gmail.com")
 GMAIL_USER        = os.getenv("GMAIL_USER")
