@@ -18,6 +18,7 @@ from app.config import (
     MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL,
     MODELSLAB_IMAGE_URL,
     MODELSLAB_PORTRAIT_MODEL, MODELSLAB_SCENE_MODEL, MODELSLAB_EXPLICIT_MODEL,
+    MODELSLAB_LORA_MODEL, MODELSLAB_FLUX_BASE,
     X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET,
 )
 from app.ai.persona import load_persona
@@ -178,10 +179,16 @@ def _generate_caption(post_prompt: str, context: str = "", weekday_note: str = "
 
 def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None, str | None]:
     """Returns (image_url, error_message). One of them will be None."""
+    lora_weights = []
     if model_type == "portrait":
         model = MODELSLAB_PORTRAIT_MODEL
     elif model_type == "explicit":
         model = MODELSLAB_EXPLICIT_MODEL
+    elif model_type == "lora":
+        model = MODELSLAB_FLUX_BASE
+        if not MODELSLAB_LORA_MODEL:
+            return None, "MODELSLAB_LORA_MODEL not set in Railway env vars"
+        lora_weights = [MODELSLAB_LORA_MODEL]
     else:
         model = MODELSLAB_SCENE_MODEL
     if not MODELSLAB_API_KEY:
@@ -191,25 +198,33 @@ def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None,
     if not MODELSLAB_IMAGE_URL:
         return None, "MODELSLAB_IMAGE_URL not set in Railway env vars"
 
+    # LoRA uses Flux — different scheduler and steps
+    is_flux = model_type == "lora"
+    full_prompt = ("mayavip " if is_flux else "") + MAYA_CHARACTER + prompt
+
     payload = {
         "key":                 MODELSLAB_API_KEY,
         "model_id":            model,
-        "prompt":              MAYA_CHARACTER + prompt,
+        "prompt":              full_prompt,
         "negative_prompt":     "(worst quality:2), (low quality:2), (normal quality:2), (jpeg artifacts), (blurry), (duplicate), (morbid), (mutilated), (out of frame), (extra limbs), (bad anatomy), (disfigured), (deformed), (cross-eye), (glitch), (oversaturated), (overexposed), (underexposed), (bad proportions), (bad hands), (bad feet), (cloned face), (long neck), (missing arms), (missing legs), (extra fingers), (fused fingers), (poorly drawn hands), (poorly drawn face), (mutation), (deformed eyes), watermark, text, logo, signature, grainy, censored, ugly, noisy image, bad lighting, unnatural skin, asymmetry, man, male, old, wrinkles",
         "width":               "768",
         "height":              "768",
         "samples":             "1",
-        "num_inference_steps": "31",
-        "scheduler":           "DPMSolverMultistepScheduler",
-        "guidance_scale":      "7.5",
+        "num_inference_steps": "30" if is_flux else "31",
+        "scheduler":           "EulerDiscreteScheduler" if is_flux else "DPMSolverMultistepScheduler",
+        "guidance_scale":      3.5 if is_flux else 7.5,
         "enhance_prompt":      False,
         "safety_checker":      "no",
-        "lora_model":          [],
+        "lora_model":          lora_weights,
+        "lora_strength":       "0.9" if lora_weights else None,
     }
+    if not lora_weights:
+        del payload["lora_strength"]
+
     try:
-        print(f"IMAGE GEN: posting to {MODELSLAB_IMAGE_URL} model={model}")
+        print(f"IMAGE GEN: posting to {MODELSLAB_IMAGE_URL} model={model} lora={lora_weights}")
         r = requests.post(MODELSLAB_IMAGE_URL, json=payload,
-                          headers={"Content-Type": "application/json"}, timeout=75)
+                          headers={"Content-Type": "application/json"}, timeout=90)
         print(f"IMAGE GEN: status={r.status_code} response={r.text[:300]}")
         r.raise_for_status()
         data = r.json()
