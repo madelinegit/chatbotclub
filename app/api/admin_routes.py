@@ -251,7 +251,7 @@ async def admin_write_queue(secret: str = Query(...), request: Request = None):
     _check(secret)
     body      = await request.json()
     caption   = body.get("caption", "").strip()
-    image_url = body.get("image_url", "").strip() or None
+    image_url = (body.get("image_url") or "").strip() or None
     if not caption:
         raise HTTPException(status_code=400, detail="caption required.")
     from app.db.crud import create_social_post
