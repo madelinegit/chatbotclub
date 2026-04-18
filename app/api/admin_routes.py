@@ -469,6 +469,47 @@ def admin_delete_blog_post(post_id: int, secret: str = Query(...)):
 
 # ── Local Context API ─────────────────────────────────────────────────────────
 
+@router.get("/ig-debug")
+def ig_debug(secret: str = Query(...)):
+    """Return raw Facebook API responses to diagnose Instagram account linking."""
+    _check(secret)
+    import requests as req
+    from app.config import INSTAGRAM_ACCESS_TOKEN
+    GRAPH = "https://graph.facebook.com/v19.0"
+
+    if not INSTAGRAM_ACCESS_TOKEN:
+        return {"error": "INSTAGRAM_ACCESS_TOKEN not set"}
+
+    out = {}
+
+    # 1. Who does this token belong to?
+    r = req.get(f"{GRAPH}/me", params={"access_token": INSTAGRAM_ACCESS_TOKEN, "fields": "id,name"}, timeout=10)
+    out["me"] = r.json()
+
+    # 2. What pages does this token see?
+    r2 = req.get(f"{GRAPH}/me/accounts",
+                 params={"access_token": INSTAGRAM_ACCESS_TOKEN,
+                         "fields": "id,name,instagram_business_account"},
+                 timeout=10)
+    out["pages"] = r2.json()
+
+    # 3. Try fetching IG account directly on each page with page access token
+    ig_details = []
+    for page in r2.json().get("data", []):
+        page_token_r = req.get(f"{GRAPH}/{page['id']}",
+                               params={"access_token": INSTAGRAM_ACCESS_TOKEN,
+                                       "fields": "access_token,instagram_business_account"},
+                               timeout=10)
+        ig_details.append({"page_id": page["id"], "page_name": page.get("name"), "detail": page_token_r.json()})
+    out["page_details"] = ig_details
+
+    # 4. Check token permissions
+    r3 = req.get(f"{GRAPH}/me/permissions", params={"access_token": INSTAGRAM_ACCESS_TOKEN}, timeout=10)
+    out["permissions"] = r3.json()
+
+    return out
+
+
 @router.get("/local-context")
 def local_context_preview(secret: str = Query(...)):
     _check(secret)
