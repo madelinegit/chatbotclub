@@ -891,17 +891,16 @@
   // ── Add to Home Screen ───────────────────────────────────────────────────────
 
   function checkA2HS() {
-    // Only show on iOS Safari when NOT already installed as PWA
+    // Show on iOS Safari whenever NOT already installed as PWA
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
     const isStandalone = window.navigator.standalone === true
-    const dismissed = localStorage.getItem('a2hs_dismissed')
-    if (isIOS && !isStandalone && !dismissed) {
+    if (isIOS && !isStandalone) {
       document.getElementById('a2hs-bar').classList.remove('hidden')
     }
   }
 
   function dismissA2HS() {
-    localStorage.setItem('a2hs_dismissed', '1')
+    // Only hide for this session, not permanently
     document.getElementById('a2hs-bar').classList.add('hidden')
   }
 
