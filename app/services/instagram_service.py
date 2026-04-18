@@ -20,9 +20,8 @@ def _get_ig_user_id() -> str | None:
         print("INSTAGRAM: INSTAGRAM_ACCESS_TOKEN env var not set")
         return None
     try:
-        # First try direct IG account lookup
         r = requests.get(
-            f"{GRAPH_API}/me",
+            f"{GRAPH_API}/me/accounts",
             params={
                 "access_token": INSTAGRAM_ACCESS_TOKEN,
                 "fields": "id,name,instagram_business_account",
@@ -30,24 +29,10 @@ def _get_ig_user_id() -> str | None:
             timeout=10,
         )
         r.raise_for_status()
-        data = r.json()
-
-        # Check if the token IS already an IG user (some flows give an IG-scoped token)
-        if data.get("instagram_business_account", {}).get("id"):
-            return data["instagram_business_account"]["id"]
-
-        # Fall back to pages lookup
-        r2 = requests.get(
-            f"{GRAPH_API}/me/accounts",
-            params={
-                "access_token": INSTAGRAM_ACCESS_TOKEN,
-                "fields": "instagram_business_account",
-            },
-            timeout=10,
-        )
-        r2.raise_for_status()
-        pages = r2.json().get("data", [])
+        pages = r.json().get("data", [])
+        print(f"INSTAGRAM: found {len(pages)} pages")
         for page in pages:
+            print(f"INSTAGRAM: page {page.get('name')} ig={page.get('instagram_business_account')}")
             ig = page.get("instagram_business_account", {})
             if ig.get("id"):
                 return ig["id"]
