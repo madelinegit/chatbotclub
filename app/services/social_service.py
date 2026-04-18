@@ -328,7 +328,7 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
     if not REPLICATE_LORA_VERSION:
         return None, "REPLICATE_LORA_VERSION not set in Railway env vars"
 
-    full_prompt = "mayaselfie " + MAYA_CHARACTER + prompt
+    full_prompt = "mayaselfie " + prompt
     inp = {
         "prompt": full_prompt,
         "disable_safety_checker": True,
