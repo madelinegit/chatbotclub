@@ -66,6 +66,157 @@ def _get_ig_user_id() -> str | None:
     return None
 
 
+def post_carousel_to_instagram(post_id: int, caption: str, image_urls: list, hashtags: str = None) -> bool:
+    """
+    Publish a carousel (multi-image) post to Instagram.
+    image_urls: list of 2–10 publicly accessible image URLs.
+    """
+    if not INSTAGRAM_ACCESS_TOKEN:
+        mark_post_failed(post_id)
+        return False
+    if not image_urls or len(image_urls) < 2:
+        print("INSTAGRAM CAROUSEL: need at least 2 images")
+        mark_post_failed(post_id)
+        return False
+
+    try:
+        ig_user_id = INSTAGRAM_USER_ID or _get_ig_user_id()
+        if not ig_user_id:
+            mark_post_failed(post_id)
+            return False
+
+        ig_caption = caption
+        if hashtags:
+            ig_caption = f"{caption}\n\n{hashtags}"
+
+        # Step 1 — create a container for each image
+        child_ids = []
+        for url in image_urls[:10]:
+            r = requests.post(
+                f"{GRAPH_API}/{ig_user_id}/media",
+                params={
+                    "image_url":     url,
+                    "is_carousel_item": "true",
+                    "access_token":  INSTAGRAM_ACCESS_TOKEN,
+                },
+                timeout=30,
+            )
+            r.raise_for_status()
+            cid = r.json().get("id")
+            if cid:
+                child_ids.append(cid)
+
+        if not child_ids:
+            print("INSTAGRAM CAROUSEL: no child containers created")
+            mark_post_failed(post_id)
+            return False
+
+        # Step 2 — create carousel container
+        r = requests.post(
+            f"{GRAPH_API}/{ig_user_id}/media",
+            params={
+                "media_type":   "CAROUSEL",
+                "caption":      ig_caption,
+                "children":     ",".join(child_ids),
+                "access_token": INSTAGRAM_ACCESS_TOKEN,
+            },
+            timeout=30,
+        )
+        r.raise_for_status()
+        carousel_id = r.json().get("id")
+        if not carousel_id:
+            mark_post_failed(post_id)
+            return False
+
+        # Step 3 — publish
+        r = requests.post(
+            f"{GRAPH_API}/{ig_user_id}/media_publish",
+            params={"creation_id": carousel_id, "access_token": INSTAGRAM_ACCESS_TOKEN},
+            timeout=30,
+        )
+        r.raise_for_status()
+        media_id = r.json().get("id")
+        mark_post_posted(post_id, str(media_id))
+        print(f"INSTAGRAM CAROUSEL: posted {len(child_ids)} images — media id {media_id}")
+        return True
+
+    except Exception as e:
+        print(f"INSTAGRAM CAROUSEL ERROR: {e}")
+        mark_post_failed(post_id)
+        return False
+
+
+def post_reel_to_instagram(post_id: int, caption: str, video_url: str, hashtags: str = None) -> bool:
+    """Publish a Reel to Instagram from a video URL (e.g. from Kling)."""
+    if not INSTAGRAM_ACCESS_TOKEN:
+        mark_post_failed(post_id)
+        return False
+    if not video_url:
+        print("INSTAGRAM REEL: no video_url provided")
+        mark_post_failed(post_id)
+        return False
+
+    try:
+        ig_user_id = INSTAGRAM_USER_ID or _get_ig_user_id()
+        if not ig_user_id:
+            mark_post_failed(post_id)
+            return False
+
+        ig_caption = caption
+        if hashtags:
+            ig_caption = f"{caption}\n\n{hashtags}"
+
+        # Step 1 — create reel container
+        r = requests.post(
+            f"{GRAPH_API}/{ig_user_id}/media",
+            params={
+                "media_type":  "REELS",
+                "video_url":   video_url,
+                "caption":     ig_caption,
+                "access_token": INSTAGRAM_ACCESS_TOKEN,
+            },
+            timeout=30,
+        )
+        r.raise_for_status()
+        creation_id = r.json().get("id")
+        if not creation_id:
+            mark_post_failed(post_id)
+            return False
+
+        # Step 2 — wait for video to process then publish
+        import time
+        for _ in range(12):
+            time.sleep(10)
+            status_r = requests.get(
+                f"{GRAPH_API}/{creation_id}",
+                params={"fields": "status_code", "access_token": INSTAGRAM_ACCESS_TOKEN},
+                timeout=15,
+            )
+            status = status_r.json().get("status_code")
+            print(f"INSTAGRAM REEL: processing status={status}")
+            if status == "FINISHED":
+                break
+            if status == "ERROR":
+                mark_post_failed(post_id)
+                return False
+
+        r = requests.post(
+            f"{GRAPH_API}/{ig_user_id}/media_publish",
+            params={"creation_id": creation_id, "access_token": INSTAGRAM_ACCESS_TOKEN},
+            timeout=30,
+        )
+        r.raise_for_status()
+        media_id = r.json().get("id")
+        mark_post_posted(post_id, str(media_id))
+        print(f"INSTAGRAM REEL: posted — media id {media_id}")
+        return True
+
+    except Exception as e:
+        print(f"INSTAGRAM REEL ERROR: {e}")
+        mark_post_failed(post_id)
+        return False
+
+
 def post_to_instagram(post_id: int, caption: str, image_url: str = None, hashtags: str = None) -> bool:
     """
     Publish a post to Instagram.

@@ -140,6 +140,32 @@ def _post_reply(reply_to_id: str, text: str) -> str | None:
         return None
 
 
+SEARCH_KEYWORDS = [
+    "lake tahoe", "squaw valley", "snowboarding", "powder day",
+    "yoga", "tahoe", "burning man", "ski tahoe",
+]
+
+
+def _search_threads(keyword: str, limit: int = 10) -> list:
+    """Search public Threads posts by keyword."""
+    try:
+        r = requests.get(
+            f"{THREADS_API}/threads/search",
+            params={
+                "q":            keyword,
+                "fields":       "id,text,username,timestamp",
+                "limit":        limit,
+                "access_token": THREADS_ACCESS_TOKEN,
+            },
+            timeout=15,
+        )
+        r.raise_for_status()
+        return r.json().get("data", [])
+    except Exception as e:
+        print(f"ENGAGEMENT SEARCH ERROR ({keyword}): {e}")
+        return []
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def fetch_my_threads(limit: int = 20) -> list:
@@ -290,3 +316,50 @@ def post_outbound_comment(thread_id: str, topic: str = "", custom_text: str = ""
     )
     print(f"ENGAGEMENT OUTBOUND: commented on {thread_id} — {text[:60]}")
     return {"ok": True, "text": text, "platform_id": platform_id}
+
+
+def find_posts_to_comment(max_results: int = 10) -> list:
+    """
+    Search Threads for posts matching Maya's interests.
+    Returns a list of posts Maya hasn't already commented on.
+    """
+    if not THREADS_ACCESS_TOKEN:
+        return []
+
+    import random
+    keywords = random.sample(SEARCH_KEYWORDS, min(3, len(SEARCH_KEYWORDS)))
+    seen_ids = set()
+    candidates = []
+
+    for kw in keywords:
+        posts = _search_threads(kw, limit=10)
+        for post in posts:
+            pid = post.get("id")
+            if not pid or pid in seen_ids:
+                continue
+            if has_replied_to_comment("threads", pid):
+                continue
+            seen_ids.add(pid)
+            candidates.append({
+                "post_id":   pid,
+                "text":      post.get("text", ""),
+                "username":  post.get("username", ""),
+                "keyword":   kw,
+                "timestamp": post.get("timestamp", ""),
+            })
+
+    return candidates[:max_results]
+
+
+def preview_outbound_comments(max_results: int = 6) -> list:
+    """
+    Find posts and generate draft comments for each — returns list for review before posting.
+    """
+    posts = find_posts_to_comment(max_results=max_results)
+    previews = []
+    for post in posts:
+        topic   = post.get("text", "")[:120]
+        comment = _llm_comment(topic)
+        if comment:
+            previews.append({**post, "draft_comment": comment})
+    return previews

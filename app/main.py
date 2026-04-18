@@ -13,6 +13,7 @@ from app.api.profile_routes import router as profile_router
 from app.api.blog_routes import router as blog_router
 from app.api.admin_routes import router as admin_router
 from app.api.instagram_auth_routes import router as instagram_auth_router
+from app.api.threads_auth_routes import router as threads_auth_router
 from app.api.admin_app_routes import router as admin_app_router
 
 
@@ -70,6 +71,7 @@ app.include_router(profile_router)
 app.include_router(blog_router)
 app.include_router(admin_router)
 app.include_router(instagram_auth_router)
+app.include_router(threads_auth_router)
 app.include_router(admin_app_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

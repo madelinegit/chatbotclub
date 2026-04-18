@@ -146,6 +146,63 @@ POST_TYPES = [
 ]
 
 
+IG_POST_TYPES = [
+    {
+        "type":         "selfie_vibe",
+        "weight":       18,
+        "prompt":       "Write a 2–4 line Instagram caption as Maya for a photo of herself. Start with a short hook — one line that makes someone stop scrolling. Then 1–2 lines of personality. Confident, warm, a little mysterious. No hashtags in the caption itself. Lowercase is fine. Output only the caption.",
+        "with_image":   True,
+        "image_model":  "portrait",
+        "image_prompt": "mirror selfie or front camera selfie, wearing a low-cut fitted crop top showing subtle cleavage, hip tilted to the side showing off curves and butt, gold hoop earrings, subtle smoky eye makeup, glossy lips, South Lake Tahoe mountains in background, golden hour sunlight, warm amber tones, confident sultry expression, candid, High Detail, Perfect Composition, vibrant",
+    },
+    {
+        "type":         "lake_day",
+        "weight":       16,
+        "prompt":       "Write a 2–4 line Instagram caption as Maya for a lake photo. Visual, evocative — make someone feel like they're there. Warm and alive. No hashtags in caption. Output only the caption.",
+        "with_image":   True,
+        "image_model":  "scene",
+        "image_prompt": "standing on wooden dock at Lake Tahoe, wearing a small string bikini, hip tilted showing off curves and round butt, facing slightly away then glancing back over shoulder, crystal blue water and Sierra Nevada mountains behind her, golden hour warm light on skin, hair tousled by breeze, High Detail, Perfect Composition, vibrant, cinematic lighting",
+    },
+    {
+        "type":         "snowboarding",
+        "weight":       14,
+        "prompt":       "Write a 2–4 line Instagram caption as Maya for a snowboarding photo at Squaw (she calls it Squaw, never Palisades). Specific and real — conditions, feeling, mountain. No hashtags in caption. Output only the caption.",
+        "with_image":   True,
+        "image_model":  "scene",
+        "image_prompt": "snowboarding down steep powder run, fitted colorful ski jacket unzipped slightly, form-fitting snow pants, goggles pushed up on forehead, hair blowing in wind, Squaw Valley alpine peaks and blue sky behind her, action shot mid-turn, snow spray, dynamic pose, High Detail, Perfect Composition, vibrant colors, cinematic",
+    },
+    {
+        "type":       "travel",
+        "weight":     12,
+        "prompt":     "Write a 2–4 line Instagram caption as Maya about a place she's been. Specific, sensory, worldly without being a brag. Something that makes people want to ask where. No hashtags in caption. Output only the caption.",
+        "with_image": False,
+    },
+    {
+        "type":       "yoga_wellness",
+        "weight":     10,
+        "prompt":     "Write a 2–4 line Instagram caption as Maya about yoga or movement. Not preachy or influencer-y — real, a little dry, physically specific. Something that feels earned not performed. No hashtags in caption. Output only the caption.",
+        "with_image": False,
+    },
+    {
+        "type":       "day_to_day",
+        "weight":     10,
+        "prompt":     "Write a 2–4 line Instagram caption as Maya — a real moment from her day, a small observation, something that happened. Relatable but specific to her life in Tahoe. No hashtags in caption. Output only the caption.",
+        "with_image": False,
+    },
+    {
+        "type":       "desert_art",
+        "weight":     8,
+        "prompt":     "Write a 2–4 line Instagram caption as Maya hinting at something from her wilder past — a desert moment, a late-night conversation, something that changed her. Cryptic enough to make people comment and ask. No hashtags in caption. Output only the caption.",
+        "with_image": False,
+    },
+    {
+        "type":       "food_cooking",
+        "weight":     6,
+        "prompt":     "Write a 2–4 line Instagram caption as Maya about food — something she made or ate that was genuinely good. Specific ingredients or technique. No hashtags in caption. Output only the caption.",
+        "with_image": False,
+    },
+]
+
 X_POST_TYPES = [
     {
         "type":   "observation",
@@ -185,11 +242,19 @@ def _generate_caption(post_prompt: str, context: str = "", weekday_note: str = "
     persona = load_persona()
     system  = persona
     if context:
-        system += f"\n\n---\nCurrent local context (use naturally if relevant):\n{context}"
+        system += (
+            f"\n\n---\nLocal context for today — only reference this if the post topic calls for it. "
+            f"Do NOT force it in. If you do mention local news or conditions, be specific and direct, "
+            f"not vague ('beautiful outside' is too generic — mention the actual condition or event):\n{context}"
+        )
     system += (
         "\n\nYou are generating PUBLIC social media posts as Maya. Stay completely in character."
         "\nMaya's public persona is: adventurous, worldly, sharp, snarky, confident, and occasionally warm. She has lived — traveled, taught yoga in Asia, seen things. That depth shows without being announced."
         "\nThe audience she attracts is successful, curious, independent people. Not a party crowd."
+        "\n\nKnown local account handles (use when directly relevant — never forced):"
+        "\n- Heavenly Mountain Resort: @skiheavenly"
+        "\n- Squaw Valley / Palisades Tahoe: @palisadestahoe (Maya calls it Squaw in her own voice)"
+        "\n- Lake Tahoe: @laketahoe"
         "\n\nHARD RULES — never break these:"
         "\n- 1–3 lines maximum. One line is often better."
         "\n- Never use the word 'thirsty' in a post."
@@ -357,12 +422,13 @@ def generate_post_for_queue(local_context: str = "", platform: str = "threads", 
         post_cfg = {"type": "custom", "with_image": False}
     else:
         if platform == "x":
-            pool     = X_POST_TYPES
-            weights  = [p["weight"] for p in pool]
-            post_cfg = random.choices(pool, weights=weights, k=1)[0]
+            pool = X_POST_TYPES
+        elif platform == "instagram":
+            pool = IG_POST_TYPES
         else:
-            weights  = [p["weight"] for p in POST_TYPES]
-            post_cfg = random.choices(POST_TYPES, weights=weights, k=1)[0]
+            pool = POST_TYPES
+        weights  = [p["weight"] for p in pool]
+        post_cfg = random.choices(pool, weights=weights, k=1)[0]
         caption = _generate_caption(post_cfg["prompt"], context=local_context, weekday_note=weekday_note)
     if not caption:
         return None

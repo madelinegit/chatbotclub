@@ -210,6 +210,26 @@
     /* ── Write tab ── */
     #tab-write { display: none; }
 
+    /* ── Replies tab ── */
+    #tab-replies { display: none; }
+    .replies-header { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 14px; }
+    .replies-header h2 { font-size: 17px; font-weight: 500; }
+    .btn-run-all { background: rgba(74,222,128,.1); color: var(--green); border: 1px solid rgba(74,222,128,.2); border-radius: 8px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+    .reply-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+    .reply-post-ctx { font-size: 11px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; border-left: 2px solid var(--border); padding-left: 8px; }
+    .reply-comment { font-size: 14px; color: var(--text); margin-bottom: 10px; line-height: 1.5; }
+    .reply-comment strong { color: var(--accent); }
+    .reply-textarea { width: 100%; background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 14px; padding: 10px 12px; resize: vertical; min-height: 70px; font-family: inherit; margin-bottom: 10px; outline: none; display: none; }
+    .reply-textarea.loaded { display: block; }
+    .reply-textarea:focus { border-color: var(--accent); }
+    .reply-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-gen-reply { background: rgba(201,149,106,.15); color: var(--accent); border: 1px solid rgba(201,149,106,.3); border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
+    .btn-post-reply { background: var(--accent); color: #0a0a0b; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; display: none; }
+    .btn-post-reply.loaded { display: block; }
+    .btn-skip-reply { background: none; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px; cursor: pointer; }
+    .rh-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.5; }
+    .rh-meta { font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+
     .write-section {
       background: var(--card); border: 1px solid var(--border);
       border-radius: 14px; padding: 16px; margin-bottom: 14px;
@@ -218,6 +238,7 @@
       font-size: 11px; color: var(--muted);
       text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px;
     }
+    .write-section input[type=text] { margin-bottom: 10px; }
     .write-section textarea, .write-section input[type=text], .write-section input[type=datetime-local] {
       width: 100%; background: var(--surface);
       border: 1px solid var(--border); border-radius: 10px;
@@ -271,7 +292,7 @@
     }
 
     /* ── X button ── */
-    .btn-x { background: #000; color: #fff; border: 1px solid rgba(255,255,255,.15); }
+    .btn-x { background: #e7e7e7; color: #000; border: none; }
 
     /* ── Fullscreen image overlay ── */
     #img-overlay {
@@ -362,10 +383,20 @@
         </div>
       </div>
 
+      <!-- Quick text post -->
+      <div class="write-section">
+        <h3>Quick Post</h3>
+        <textarea id="q-text" rows="4" placeholder="Type exactly what you want to post…"></textarea>
+        <div class="actions">
+          <button class="btn btn-threads" onclick="quickPostNow()">Post Now</button>
+          <button class="btn btn-save" onclick="quickQueue()">Queue</button>
+        </div>
+      </div>
+
       <!-- Generate caption -->
       <div class="write-section">
         <h3>Generate Caption</h3>
-        <textarea id="w-idea" rows="3" placeholder="Topic or idea — Maya will write it in her voice"></textarea>
+        <textarea id="w-idea" rows="3" placeholder="Topic, idea, or event — e.g. 'Heavenly just got 2 feet of snow' or '@skiheavenly reopened today'"></textarea>
         <div id="w-expanded-wrap" style="display:none;">
           <textarea id="w-expanded" rows="4" placeholder="Caption — edit before posting"></textarea>
         </div>
@@ -373,6 +404,28 @@
           <button class="btn btn-gen" id="w-gen-btn" onclick="generateCaption()">Generate</button>
           <button class="btn btn-save" id="w-queue-btn" style="display:none;" onclick="queueGenerated()">Queue</button>
           <button class="btn btn-threads" id="w-post-btn" style="display:none;" onclick="postGeneratedNow()">Post Now</button>
+        </div>
+      </div>
+
+      <!-- Generate video -->
+      <div class="write-section">
+        <h3>Generate Video</h3>
+        <textarea id="v-prompt" rows="3" placeholder="Motion prompt — e.g. 'slow pan out, golden hour, hair blowing in wind'"></textarea>
+        <div id="v-img-wrap" style="margin-bottom:10px;">
+          <input type="text" id="v-image-url" placeholder="Image URL to animate (optional — leave blank for text-to-video)">
+        </div>
+        <div class="actions">
+          <button class="btn btn-gen" id="v-gen-btn" onclick="generateVideo()">Generate Video</button>
+        </div>
+        <div id="v-result" style="margin-top:12px;display:none;">
+          <video id="v-player" controls style="width:100%;border-radius:10px;background:#000;"></video>
+          <div style="margin-top:8px;">
+            <input type="text" id="v-caption" placeholder="Caption for this video…" style="margin-bottom:8px;">
+          </div>
+          <div class="actions">
+            <button class="btn btn-ig" onclick="postVideoAsReel()">Post as Reel</button>
+            <button class="btn btn-save" onclick="copyVideoUrl()">Copy URL</button>
+          </div>
         </div>
       </div>
 
@@ -389,6 +442,30 @@
         </div>
       </div>
     </div>
+
+    <!-- Replies tab -->
+    <div id="tab-replies">
+      <div class="replies-header">
+        <h2>Replies <span id="replies-count" style="color:var(--muted);font-size:13px;font-weight:400;"></span></h2>
+        <button class="btn-run-all" onclick="runAllReplies()">Auto-reply all</button>
+      </div>
+      <div id="replies-list"><div class="empty">Tap ↻ to load pending comments.</div></div>
+      <div style="text-align:center;margin:16px 0 4px;">
+        <button onclick="loadReplies()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:8px 20px;font-size:13px;cursor:pointer;">↻ Refresh</button>
+      </div>
+      <div style="margin-top:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Find Posts to Comment On</div>
+          <button class="btn-gen-reply" id="find-btn" onclick="findPosts()">Find</button>
+        </div>
+        <div id="find-posts-mobile"></div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;">Recent replies sent</div>
+        <div id="replies-history"><div class="empty" style="font-size:13px;">—</div></div>
+      </div>
+    </div>
   </div>
 
   <nav id="bottom-nav">
@@ -397,6 +474,9 @@
     </button>
     <button class="nav-btn" id="nav-write" onclick="showTab('write')">
       <span class="nav-icon">✏️</span>Write
+    </button>
+    <button class="nav-btn" id="nav-replies" onclick="showTab('replies')">
+      <span class="nav-icon">💬</span>Replies
     </button>
   </nav>
 </div>
@@ -478,10 +558,12 @@
   // ── Tabs ────────────────────────────────────────────────────────────────────
 
   function showTab(tab) {
-    document.getElementById('tab-posts').style.display = tab === 'posts' ? 'block' : 'none'
-    document.getElementById('tab-write').style.display = tab === 'write' ? 'block' : 'none'
+    document.getElementById('tab-posts').style.display   = tab === 'posts'   ? 'block' : 'none'
+    document.getElementById('tab-write').style.display   = tab === 'write'   ? 'block' : 'none'
+    document.getElementById('tab-replies').style.display = tab === 'replies' ? 'block' : 'none'
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'))
     document.getElementById(`nav-${tab}`).classList.add('active')
+    if (tab === 'replies') loadReplies()
   }
 
   function refresh() {
@@ -708,6 +790,88 @@
     return ok.length > 0
   }
 
+  // ── Write — Video ────────────────────────────────────────────────────────────
+
+  let _lastVideoUrl = null
+
+  async function generateVideo() {
+    const prompt   = document.getElementById('v-prompt').value.trim()
+    const imageUrl = document.getElementById('v-image-url').value.trim()
+    if (!prompt && !imageUrl) { toast('Enter a prompt or image URL.', 'red'); return }
+
+    const btn = document.getElementById('v-gen-btn')
+    btn.disabled = true
+    btn.innerHTML = '<span class="spinner"></span>Generating… (up to 3 min)'
+    document.getElementById('v-result').style.display = 'none'
+
+    const endpoint = imageUrl ? '/admin/video/image-to-video' : '/admin/video/text-to-video'
+    const body     = imageUrl ? { image_url: imageUrl, prompt } : { prompt }
+
+    try {
+      const r    = await fetch(`${endpoint}?secret=${encodeURIComponent(SECRET)}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(body),
+      })
+      const data = await r.json()
+      if (!r.ok) { toast(data.detail || 'Failed.', 'red'); return }
+      _lastVideoUrl = data.video_url
+      document.getElementById('v-player').src = data.video_url
+      document.getElementById('v-result').style.display = 'block'
+      toast('Video ready!', 'green')
+    } catch (e) {
+      toast('Error: ' + e.message, 'red')
+    } finally {
+      btn.disabled = false
+      btn.innerHTML = 'Generate Video'
+    }
+  }
+
+  function copyVideoUrl() {
+    if (!_lastVideoUrl) return
+    navigator.clipboard?.writeText(_lastVideoUrl)
+    toast('URL copied!', 'green')
+  }
+
+  async function postVideoAsReel() {
+    if (!_lastVideoUrl) return
+    const caption = document.getElementById('v-caption')?.value.trim()
+    if (!caption) { toast('Add a caption first.', 'red'); return }
+    toast('Posting Reel… (takes ~2 min to process)', '')
+    const r = await fetch(`/admin/posts/reel?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption, video_url: _lastVideoUrl }),
+    })
+    if (r.ok) toast('Reel posted to Instagram!', 'green')
+    else { const d = await r.json(); toast(`Failed: ${d.detail}`, 'red') }
+  }
+
+  // ── Write — Quick post ───────────────────────────────────────────────────────
+
+  async function quickPostNow() {
+    if (!_selected.size) { toast('Select at least one platform first.', 'red'); return }
+    const text = document.getElementById('q-text').value.trim()
+    if (!text) { toast('Enter your post text.', 'red'); return }
+    const r = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption: text, target_platform: _strategyPlatform() }),
+    })
+    if (!r.ok) { toast('Failed to create post.', 'red'); return }
+    const { id } = await r.json()
+    const success = await _postToAll(id)
+    if (success) { document.getElementById('q-text').value = ''; loadStats() }
+  }
+
+  async function quickQueue() {
+    const text = document.getElementById('q-text').value.trim()
+    if (!text) { toast('Enter your post text.', 'red'); return }
+    const r = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption: text, target_platform: _strategyPlatform() }),
+    })
+    if (r.ok) { toast('Queued!', 'green'); document.getElementById('q-text').value = '' }
+    else toast('Failed.', 'red')
+  }
+
   // ── Write — Generate caption ─────────────────────────────────────────────────
 
   async function generateCaption() {
@@ -799,11 +963,12 @@
   async function _queueUpload() {
     const url     = await _doUpload()
     if (!url) return null
-    const caption  = document.getElementById('w-caption').value.trim() || '(add caption)'
+    const caption  = document.getElementById('w-caption').value.trim() || ''
     const schedule = document.getElementById('w-schedule').value || null
+    if (!caption) { toast('Add a caption before queuing.', 'red'); return null }
     const r = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ caption, image_url: url, scheduled_at: schedule }),
+      body: JSON.stringify({ caption, image_url: url, scheduled_at: schedule, target_platform: _strategyPlatform() }),
     })
     if (!r.ok) { toast('Queue failed.', 'red'); return null }
     return (await r.json()).id
@@ -914,6 +1079,164 @@
   function closeImgOverlay() {
     document.getElementById('img-overlay').classList.remove('open')
     document.getElementById('img-overlay-src').src = ''
+  }
+
+  // ── Replies tab ──────────────────────────────────────────────────────────────
+
+  let _replyMap = {}
+
+  async function loadReplies() {
+    const list = document.getElementById('replies-list')
+    list.innerHTML = '<div class="empty">Loading…</div>'
+    try {
+      const r    = await fetch(`/admin/engagement/comments?secret=${encodeURIComponent(SECRET)}`)
+      if (!r.ok) { if (r.status === 403) { showLogin(); return } }
+      const data = await r.json()
+      const comments = data.comments || []
+      _replyMap = {}
+      comments.forEach(c => _replyMap[c.comment_id] = c)
+      document.getElementById('replies-count').textContent = comments.length ? `(${comments.length})` : ''
+      renderReplies(comments)
+    } catch { list.innerHTML = '<div class="empty">Failed to load.</div>' }
+    loadReplyHistory()
+  }
+
+  function renderReplies(comments) {
+    const list = document.getElementById('replies-list')
+    if (!comments.length) { list.innerHTML = '<div class="empty">No pending comments.</div>'; return }
+    list.innerHTML = comments.map(c => `
+      <div class="reply-card" id="rc-${c.comment_id}">
+        <div class="reply-post-ctx">${esc(c.post_caption?.slice(0,90) || '(your post)')}${(c.post_caption?.length > 90) ? '…' : ''}</div>
+        <div class="reply-comment"><strong>@${esc(c.username || 'user')}</strong>: ${esc(c.comment_text)}</div>
+        <textarea class="reply-textarea" id="rt-${c.comment_id}" placeholder="Maya's reply — edit before posting…" rows="3"></textarea>
+        <div class="reply-actions">
+          <button class="btn-gen-reply" id="rg-${c.comment_id}" onclick="genReply('${c.comment_id}')">Generate</button>
+          <button class="btn-post-reply" id="rp-${c.comment_id}" onclick="sendReply('${c.comment_id}')">Post Reply</button>
+          <button class="btn-skip-reply" onclick="document.getElementById('rc-${c.comment_id}').remove()">Skip</button>
+        </div>
+      </div>`).join('')
+  }
+
+  async function genReply(cid) {
+    const c   = _replyMap[cid]
+    if (!c) return
+    const btn = document.getElementById(`rg-${cid}`)
+    btn.textContent = '…'
+    btn.disabled = true
+    try {
+      const r = await fetch(`/admin/engagement/preview-reply?secret=${encodeURIComponent(SECRET)}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ comment_text: c.comment_text, post_caption: c.post_caption || '' }),
+      })
+      const data = await r.json()
+      if (!r.ok) { toast(data.detail || 'Failed.', 'red'); return }
+      const ta = document.getElementById(`rt-${cid}`)
+      ta.value = data.reply
+      ta.classList.add('loaded')
+      document.getElementById(`rp-${cid}`).classList.add('loaded')
+      btn.textContent = 'Regenerate'
+    } catch (e) {
+      toast('Error: ' + e.message, 'red')
+      btn.textContent = 'Generate'
+    } finally { btn.disabled = false }
+  }
+
+  async function sendReply(cid) {
+    const c         = _replyMap[cid]
+    const replyText = document.getElementById(`rt-${cid}`)?.value.trim()
+    if (!replyText) { toast('Generate or write a reply first.', 'red'); return }
+    const btn = document.getElementById(`rp-${cid}`)
+    btn.textContent = 'Posting…'
+    btn.disabled = true
+    try {
+      const r = await fetch(`/admin/engagement/reply?secret=${encodeURIComponent(SECRET)}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          comment_id:   cid,
+          post_id:      c.post_id,
+          post_caption: c.post_caption || '',
+          comment_text: c.comment_text,
+          reply_text:   replyText,
+        }),
+      })
+      const data = await r.json()
+      if (!r.ok) { toast(data.detail || 'Post failed.', 'red'); btn.textContent = 'Post Reply'; btn.disabled = false; return }
+      toast('Replied!', 'green')
+      document.getElementById(`rc-${cid}`)?.remove()
+      const n = Object.keys(_replyMap).length - 1
+      document.getElementById('replies-count').textContent = n > 0 ? `(${n})` : ''
+      delete _replyMap[cid]
+      loadReplyHistory()
+    } catch (e) {
+      toast('Error: ' + e.message, 'red')
+      btn.textContent = 'Post Reply'
+      btn.disabled = false
+    }
+  }
+
+  async function runAllReplies() {
+    if (!confirm('Auto-reply to all pending comments as Maya?')) return
+    toast('Running…', '')
+    try {
+      const r    = await fetch(`/admin/engagement/run?secret=${encodeURIComponent(SECRET)}`, { method: 'POST' })
+      const data = await r.json()
+      if (!r.ok) { toast(data.detail || 'Failed.', 'red'); return }
+      toast(`Replied: ${data.replied}  Skipped: ${data.skipped}  Errors: ${data.errors}`, data.errors ? 'red' : 'green')
+      loadReplies()
+    } catch (e) { toast('Error: ' + e.message, 'red') }
+  }
+
+  async function findPosts() {
+    const btn  = document.getElementById('find-btn')
+    const list = document.getElementById('find-posts-mobile')
+    btn.textContent = '…'
+    btn.disabled = true
+    list.innerHTML = '<div class="empty" style="font-size:13px;">Searching…</div>'
+    try {
+      const r    = await fetch(`/admin/engagement/find-posts?secret=${encodeURIComponent(SECRET)}`)
+      const data = await r.json()
+      const posts = data.posts || []
+      if (!posts.length) { list.innerHTML = '<div class="empty" style="font-size:13px;">No results.</div>'; return }
+      list.innerHTML = posts.map(p => `
+        <div class="reply-card" id="fp-${p.post_id}">
+          <div class="reply-post-ctx">@${esc(p.username)} · "${esc(p.keyword)}"</div>
+          <div class="reply-comment">${esc(p.text?.slice(0,100))}${p.text?.length > 100 ? '…' : ''}</div>
+          <textarea class="reply-textarea loaded" id="fpt-${p.post_id}" rows="2">${esc(p.draft_comment)}</textarea>
+          <div class="reply-actions">
+            <button class="btn-post-reply loaded" onclick="sendFoundMobile('${p.post_id}')">Post</button>
+            <button class="btn-skip-reply" onclick="document.getElementById('fp-${p.post_id}').remove()">Skip</button>
+          </div>
+        </div>`).join('')
+    } catch (e) { list.innerHTML = `<div class="empty" style="font-size:13px;">Error.</div>` }
+    finally { btn.textContent = 'Find'; btn.disabled = false }
+  }
+
+  async function sendFoundMobile(postId) {
+    const text = document.getElementById(`fpt-${postId}`)?.value.trim()
+    if (!text) return
+    const r = await fetch(`/admin/engagement/comment-on?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ thread_id: postId, custom_text: text }),
+    })
+    if (r.ok) { toast('Comment posted!', 'green'); document.getElementById(`fp-${postId}`)?.remove() }
+    else { const d = await r.json(); toast(`Failed: ${d.detail}`, 'red') }
+  }
+
+  async function loadReplyHistory() {
+    try {
+      const r    = await fetch(`/admin/engagement/history?secret=${encodeURIComponent(SECRET)}`)
+      const data = await r.json()
+      const hist = document.getElementById('replies-history')
+      const list = (data.replies || []).slice(0, 10)
+      if (!list.length) { hist.innerHTML = '<div class="empty" style="font-size:13px;">No replies sent yet.</div>'; return }
+      hist.innerHTML = list.map(r => `
+        <div class="rh-item">
+          <div class="rh-meta">${r.platform} · ${(r.replied_at || '').slice(0,10)}</div>
+          <div>${esc(r.reply_text)}</div>
+        </div>`).join('')
+    } catch {}
   }
 
   function urlBase64ToUint8Array(base64String) {

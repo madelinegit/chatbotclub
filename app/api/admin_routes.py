@@ -336,13 +336,14 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
 async def admin_write_queue(secret: str = Query(...), request: Request = None):
     """Queue a piece of text as a pending post."""
     _check(secret)
-    body      = await request.json()
-    caption   = body.get("caption", "").strip()
-    image_url = (body.get("image_url") or "").strip() or None
+    body            = await request.json()
+    caption         = body.get("caption", "").strip()
+    image_url       = (body.get("image_url") or "").strip() or None
+    target_platform = body.get("target_platform", "threads")
     if not caption:
         raise HTTPException(status_code=400, detail="caption required.")
     from app.db.crud import create_social_post
-    post_id = create_social_post(caption=caption, image_url=image_url)
+    post_id = create_social_post(caption=caption, image_url=image_url, target_platform=target_platform)
     return {"id": post_id, "caption": caption}
 
 
@@ -575,6 +576,22 @@ def engagement_run(secret: str = Query(...)):
     return result
 
 
+@router.post("/engagement/preview-reply")
+async def engagement_preview_reply(secret: str = Query(...), request: Request = None):
+    """Generate a reply in Maya's voice without posting it."""
+    _check(secret)
+    body         = await request.json()
+    comment_text = body.get("comment_text", "")
+    post_caption = body.get("post_caption", "")
+    if not comment_text:
+        raise HTTPException(status_code=400, detail="comment_text required.")
+    from app.services.social_engagement_service import _llm_reply
+    reply = _llm_reply(comment_text, post_caption)
+    if not reply:
+        raise HTTPException(status_code=500, detail="LLM generation failed.")
+    return {"reply": reply}
+
+
 @router.post("/engagement/reply")
 async def engagement_reply_one(secret: str = Query(...), request: Request = None):
     """Reply to a specific comment (optionally with custom text)."""
@@ -627,3 +644,114 @@ def engagement_history(secret: str = Query(...)):
     _check(secret)
     from app.db.crud import get_recent_comment_replies
     return {"replies": get_recent_comment_replies(limit=50)}
+
+
+@router.get("/engagement/x-mentions")
+def engagement_x_mentions(secret: str = Query(...)):
+    """Fetch recent @mentions on X that haven't been replied to."""
+    _check(secret)
+    try:
+        from app.services.x_service import get_mentions
+        mentions = get_mentions()
+        return {"mentions": mentions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/engagement/x-reply")
+async def engagement_x_reply(secret: str = Query(...), request: Request = None):
+    """Reply to a specific tweet as Maya."""
+    _check(secret)
+    body       = await request.json()
+    tweet_id   = body.get("tweet_id", "")
+    reply_text = body.get("reply_text", "")
+    if not tweet_id or not reply_text:
+        raise HTTPException(status_code=400, detail="tweet_id and reply_text required.")
+    try:
+        from app.services.x_service import post_reply
+        result = post_reply(reply_text, reply_to_id=tweet_id)
+        from app.db.crud import log_comment_reply
+        log_comment_reply(platform="x", comment_id=tweet_id, post_id=tweet_id, reply_text=reply_text, platform_reply_id=str(result["id"]))
+        return {"ok": True, "reply": reply_text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/engagement/find-posts")
+def engagement_find_posts(secret: str = Query(...)):
+    """Search Threads for posts Maya can comment on, with draft comments."""
+    _check(secret)
+    from app.services.social_engagement_service import preview_outbound_comments
+    previews = preview_outbound_comments(max_results=6)
+    return {"posts": previews}
+
+
+# ── Video (Kling) ─────────────────────────────────────────────────────────────
+
+@router.post("/video/image-to-video")
+async def video_image_to_video(secret: str = Query(...), request: Request = None):
+    """Animate an image URL into a video using Kling."""
+    _check(secret)
+    body      = await request.json()
+    image_url = body.get("image_url", "")
+    prompt    = body.get("prompt", "")
+    if not image_url:
+        raise HTTPException(status_code=400, detail="image_url required.")
+    from app.services.kling_service import image_to_video
+    url, err = image_to_video(image_url, prompt=prompt)
+    if err:
+        raise HTTPException(status_code=500, detail=err)
+    return {"video_url": url}
+
+
+@router.post("/video/text-to-video")
+async def video_text_to_video(secret: str = Query(...), request: Request = None):
+    """Generate a video from a text prompt using Kling."""
+    _check(secret)
+    body   = await request.json()
+    prompt = body.get("prompt", "")
+    if not prompt:
+        raise HTTPException(status_code=400, detail="prompt required.")
+    from app.services.kling_service import text_to_video
+    url, err = text_to_video(prompt)
+    if err:
+        raise HTTPException(status_code=500, detail=err)
+    return {"video_url": url}
+
+
+@router.post("/posts/carousel")
+async def post_carousel(secret: str = Query(...), request: Request = None):
+    """Post a carousel of images to Instagram."""
+    _check(secret)
+    body       = await request.json()
+    caption    = body.get("caption", "").strip()
+    image_urls = body.get("image_urls", [])
+    hashtags   = body.get("hashtags")
+    if not caption or len(image_urls) < 2:
+        raise HTTPException(status_code=400, detail="caption and at least 2 image_urls required.")
+    from app.db.crud import create_social_post
+    from app.services.instagram_service import post_carousel_to_instagram
+    post_id = create_social_post(caption=caption, target_platform="instagram")
+    ok = post_carousel_to_instagram(post_id, caption, image_urls, hashtags=hashtags)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Carousel post failed — check logs.")
+    return {"ok": True, "post_id": post_id}
+
+
+@router.post("/posts/reel")
+async def post_reel(secret: str = Query(...), request: Request = None):
+    """Post a Reel to Instagram from a video URL."""
+    _check(secret)
+    body      = await request.json()
+    caption   = body.get("caption", "").strip()
+    video_url = body.get("video_url", "").strip()
+    hashtags  = body.get("hashtags")
+    if not caption or not video_url:
+        raise HTTPException(status_code=400, detail="caption and video_url required.")
+    from app.db.crud import create_social_post
+    from app.services.instagram_service import post_reel_to_instagram
+    post_id = create_social_post(caption=caption, target_platform="instagram")
+    ok = post_reel_to_instagram(post_id, caption, video_url, hashtags=hashtags)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Reel post failed — check logs.")
+    return {"ok": True, "post_id": post_id}

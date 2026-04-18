@@ -13,7 +13,7 @@ generating them — if you generated tokens before enabling write,
 regenerate them.
 """
 from app.config import (
-    X_CONSUMER_KEY, X_CONSUMER_SECRET,
+    X_API_KEY, X_API_SECRET,
     X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET,
 )
 
@@ -21,8 +21,8 @@ from app.config import (
 def _client():
     import tweepy
     return tweepy.Client(
-        consumer_key=X_CONSUMER_KEY,
-        consumer_secret=X_CONSUMER_SECRET,
+        consumer_key=X_API_KEY,
+        consumer_secret=X_API_SECRET,
         access_token=X_ACCESS_TOKEN,
         access_token_secret=X_ACCESS_TOKEN_SECRET,
     )

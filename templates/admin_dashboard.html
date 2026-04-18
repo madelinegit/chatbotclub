@@ -270,7 +270,7 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn-approve" onclick="queueImagePost()">Update Caption in Queue</button>
         <button class="btn-post" onclick="postImageNow('threads')">Post to Threads</button>
-        <button class="btn-post" style="background:#000;" onclick="postImageNow('x')">Post to X</button>
+        <button class="btn-post" style="background:#e7e7e7;color:#000;" onclick="postImageNow('x')">Post to X</button>
         <button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="postImageNow('instagram')">Post to Instagram</button>
       </div>
     </div>
@@ -332,31 +332,44 @@
   <div class="section-header">
     <div class="section-title">Engagement</div>
     <div style="display:flex;gap:8px;">
+      <!-- Platform tabs -->
+      <button class="tab active" id="eng-tab-threads" onclick="switchEngPlatform('threads')" style="font-size:12px;padding:5px 12px;">Threads</button>
+      <button class="tab" id="eng-tab-x" onclick="switchEngPlatform('x')" style="font-size:12px;padding:5px 12px;">X</button>
       <button class="btn-approve" onclick="loadEngagement()">Refresh</button>
-      <button class="btn-gen" onclick="runEngagementPass()">Auto-Reply All</button>
+      <button class="btn-gen" id="eng-auto-reply-btn" onclick="runEngagementPass()">Auto-Reply All</button>
     </div>
   </div>
 
-  <!-- Outbound comment box -->
-  <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px;margin-bottom:20px;">
-    <div style="font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Comment on a Threads Post</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <input id="outbound-thread-id" type="text" placeholder="Threads post ID (numeric)"
-        style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;font-size:13px;outline:none;min-width:180px;">
-      <input id="outbound-topic" type="text" placeholder="Topic / context (optional)"
-        style="flex:2;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;font-size:13px;outline:none;min-width:180px;">
-      <button class="btn-post" onclick="postOutboundComment()">Comment</button>
+  <!-- Threads panel -->
+  <div id="eng-panel-threads">
+    <!-- Find & comment on posts -->
+    <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.08em;">Find Posts to Comment On</div>
+        <button class="btn-gen" onclick="findPostsToComment()" id="find-posts-btn">Find Posts</button>
+      </div>
+      <div id="find-posts-list" style="display:none;"></div>
     </div>
-    <div id="outbound-preview" style="font-size:12px;color:#6ac97a;margin-top:8px;display:none;"></div>
+    <!-- Pending comments -->
+    <div class="section-header" style="margin-bottom:10px;">
+      <div style="font-size:13px;color:#999;">Unanswered comments on Maya's Threads posts</div>
+    </div>
+    <div id="engagement-list"><div class="empty">Loading...</div></div>
   </div>
 
-  <!-- Pending comments -->
-  <div class="section-header" style="margin-bottom:10px;">
-    <div style="font-size:13px;color:#999;">Unanswered comments on Maya's posts</div>
+  <!-- X panel -->
+  <div id="eng-panel-x" style="display:none;">
+    <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.08em;">Mentions &amp; Replies</div>
+        <button class="btn-gen" onclick="loadXMentions()" id="x-mentions-btn">Load Mentions</button>
+      </div>
+      <div style="font-size:12px;color:#555;margin-bottom:10px;">X keyword search requires a paid API tier. Mentions and replies to your tweets are available on free tier.</div>
+      <div id="x-mentions-list"><div class="empty">Click Load Mentions to fetch recent @mentions.</div></div>
+    </div>
   </div>
-  <div id="engagement-list"><div class="empty">Loading...</div></div>
 
-  <!-- Reply history -->
+  <!-- Reply history (shared) -->
   <div class="section-header" style="margin-top:28px;margin-bottom:10px;">
     <div class="section-title" style="font-size:13px;color:#666;">Reply History</div>
   </div>
@@ -480,7 +493,7 @@
             <div class="post-actions" style="margin-top:0;padding-top:0;border-top:none;">
               <button class="btn-approve" onclick="savePost(${p.id})">Save edits</button>
               <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Post to Threads</button>
-              <button class="btn-post" style="background:#000;" onclick="saveAndPost(${p.id}, 'x')">Post to X</button>
+              <button class="btn-post" style="background:#e7e7e7;color:#000;" onclick="saveAndPost(${p.id}, 'x')">Post to X</button>
               ${p.image_url ? `<button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="saveAndPost(${p.id}, 'instagram')">Post to Instagram</button>` : ''}
               <button class="btn-reject" onclick="deletePost(${p.id})">Delete</button>
             </div>
@@ -499,7 +512,7 @@
               <button class="btn-approve" onclick="savePost(${p.id})">Save edits</button>
               <button class="btn-post" onclick="retryPost(${p.id})">↺ Retry</button>
               <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Post to Threads</button>
-              <button class="btn-post" style="background:#000;" onclick="saveAndPost(${p.id}, 'x')">Post to X</button>
+              <button class="btn-post" style="background:#e7e7e7;color:#000;" onclick="saveAndPost(${p.id}, 'x')">Post to X</button>
               ${p.image_url ? `<button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="saveAndPost(${p.id}, 'instagram')">Post to Instagram</button>` : ''}
               <button class="btn-reject" onclick="deletePost(${p.id})">Delete</button>
             </div>
@@ -1208,6 +1221,53 @@
     }
   }
 
+  async function findPostsToComment() {
+    const btn  = document.getElementById('find-posts-btn')
+    const list = document.getElementById('find-posts-list')
+    btn.textContent = 'Searching…'
+    btn.disabled = true
+    list.style.display = 'block'
+    list.innerHTML = '<div class="empty">Searching Threads for relevant posts…</div>'
+    try {
+      const res  = await fetch(`/admin/engagement/find-posts?secret=${SECRET}`)
+      const data = await res.json()
+      const posts = data.posts || []
+      if (!posts.length) { list.innerHTML = '<div class="empty">No results found — try again later.</div>'; return }
+      list.innerHTML = posts.map(p => `
+        <div style="border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:12px;margin-bottom:10px;">
+          <div style="font-size:11px;color:#666;margin-bottom:6px;">@${escH(p.username)} · "${escH(p.keyword)}"</div>
+          <div style="font-size:13px;color:#ccc;margin-bottom:8px;">${escH(p.text?.slice(0,120))}${p.text?.length > 120 ? '…' : ''}</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" value="${escH(p.draft_comment)}" id="fc-${p.post_id}"
+              style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:6px 10px;font-size:13px;outline:none;">
+            <button class="btn-post" style="white-space:nowrap;" onclick="sendFoundComment('${p.post_id}')">Post</button>
+            <button class="btn-delete" onclick="this.closest('div[style]').remove()">✕</button>
+          </div>
+        </div>`).join('')
+    } catch (e) {
+      list.innerHTML = `<div class="empty">Error: ${e.message}</div>`
+    } finally {
+      btn.textContent = 'Find Posts'
+      btn.disabled = false
+    }
+  }
+
+  async function sendFoundComment(postId) {
+    const text = document.getElementById(`fc-${postId}`)?.value.trim()
+    if (!text) return
+    const res = await fetch(`/admin/engagement/comment-on?secret=${SECRET}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ thread_id: postId, custom_text: text }),
+    })
+    if (res.ok) {
+      toast('Comment posted!', 'green')
+      document.getElementById(`fc-${postId}`)?.closest('div[style]')?.remove()
+    } else {
+      const d = await res.json()
+      toast(`Failed: ${d.detail}`, 'red')
+    }
+  }
+
   async function postOutboundComment() {
     const threadId  = document.getElementById('outbound-thread-id').value.trim()
     const topic     = document.getElementById('outbound-topic').value.trim()
@@ -1230,6 +1290,78 @@
       document.getElementById('outbound-topic').value = ''
     } else {
       const d = await res.json()
+      toast(`Failed: ${d.detail}`, 'red')
+    }
+  }
+
+  // ── Engagement platform switcher ─────────────────────────────────────────────
+
+  let _engPlatform = 'threads'
+
+  function switchEngPlatform(p) {
+    _engPlatform = p
+    document.getElementById('eng-panel-threads').style.display = p === 'threads' ? 'block' : 'none'
+    document.getElementById('eng-panel-x').style.display       = p === 'x'       ? 'block' : 'none'
+    document.getElementById('eng-tab-threads').classList.toggle('active', p === 'threads')
+    document.getElementById('eng-tab-x').classList.toggle('active', p === 'x')
+    document.getElementById('eng-auto-reply-btn').style.display = p === 'threads' ? '' : 'none'
+  }
+
+  // ── X Mentions ────────────────────────────────────────────────────────────────
+
+  async function loadXMentions() {
+    const btn  = document.getElementById('x-mentions-btn')
+    const list = document.getElementById('x-mentions-list')
+    btn.textContent = 'Loading…'
+    btn.disabled = true
+    list.innerHTML = '<div class="empty">Fetching mentions…</div>'
+    try {
+      const res  = await fetch(`/admin/engagement/x-mentions?secret=${SECRET}`)
+      const data = await res.json()
+      if (!res.ok) { list.innerHTML = `<div class="empty">${data.detail}</div>`; return }
+      const mentions = data.mentions || []
+      if (!mentions.length) { list.innerHTML = '<div class="empty">No recent mentions.</div>'; return }
+      list.innerHTML = mentions.map(m => `
+        <div style="background:#111113;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px;margin-bottom:8px;">
+          <div style="font-size:12px;color:#999;margin-bottom:6px;">Tweet ID: ${m.id}</div>
+          <div style="font-size:14px;color:#e0ddd8;margin-bottom:8px;">${escH(m.text)}</div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="xr-${m.id}" placeholder="Maya's reply…"
+              style="flex:1;background:#1a1a1e;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 10px;font-size:13px;outline:none;">
+            <button class="btn-gen" onclick="genXReply('${m.id}', ${JSON.stringify(m.text).replace(/"/g,'&quot;')})">Generate</button>
+            <button class="btn-post" onclick="sendXReply('${m.id}')">Reply</button>
+          </div>
+        </div>`).join('')
+    } catch (e) {
+      list.innerHTML = `<div class="empty">Error: ${e.message}</div>`
+    } finally {
+      btn.textContent = 'Refresh'
+      btn.disabled = false
+    }
+  }
+
+  async function genXReply(tweetId, tweetText) {
+    const r = await fetch(`/admin/engagement/preview-reply?secret=${SECRET}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ comment_text: tweetText, post_caption: '' }),
+    })
+    const data = await r.json()
+    if (r.ok) document.getElementById(`xr-${tweetId}`).value = data.reply
+    else toast('Generation failed.', 'red')
+  }
+
+  async function sendXReply(tweetId) {
+    const text = document.getElementById(`xr-${tweetId}`)?.value.trim()
+    if (!text) { toast('Enter a reply first.', 'red'); return }
+    const r = await fetch(`/admin/engagement/x-reply?secret=${SECRET}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ tweet_id: tweetId, reply_text: text }),
+    })
+    if (r.ok) {
+      toast('Replied on X!', 'green')
+      document.getElementById(`xr-${tweetId}`)?.closest('div[style]')?.remove()
+    } else {
+      const d = await r.json()
       toast(`Failed: ${d.detail}`, 'red')
     }
   }
