@@ -376,6 +376,37 @@
   <div id="engagement-history"><div class="empty">—</div></div>
 </div>
 
+<!-- Video Modal -->
+<div class="modal-overlay hidden" id="video-modal">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-title">🎬 Make Video</div>
+    <input type="hidden" id="vm-post-id">
+    <input type="hidden" id="vm-image-url">
+    <div class="field">
+      <label>Source Image</label>
+      <img id="vm-preview" src="" style="width:100%;border-radius:8px;margin-bottom:4px;display:none;">
+    </div>
+    <div class="field">
+      <label>Motion Prompt (optional)</label>
+      <input type="text" id="vm-prompt" placeholder="e.g. slow zoom out, hair blowing in wind, golden hour">
+    </div>
+    <div class="field">
+      <label>Caption for Reel</label>
+      <textarea id="vm-caption" rows="2"></textarea>
+    </div>
+    <div id="vm-result" style="display:none;margin-bottom:14px;">
+      <video id="vm-player" controls style="width:100%;border-radius:8px;background:#000;margin-bottom:8px;"></video>
+      <div style="font-size:12px;color:#6ac97a;">✓ Video ready — post as Reel or copy URL below.</div>
+      <input type="text" id="vm-video-url" readonly style="margin-top:6px;font-size:11px;color:#666;">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeVideoModal()">Close</button>
+      <button class="btn-approve" id="vm-gen-btn" onclick="generateFromModal()">Generate Video</button>
+      <button class="btn-post" id="vm-reel-btn" style="display:none;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="postModalReel()">Post as Reel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Blog Post Modal -->
 <div class="modal-overlay hidden" id="blog-modal">
   <div class="modal-box">
@@ -495,6 +526,7 @@
               <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Post to Threads</button>
               <button class="btn-post" style="background:#e7e7e7;color:#000;" onclick="saveAndPost(${p.id}, 'x')">Post to X</button>
               ${p.image_url ? `<button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="saveAndPost(${p.id}, 'instagram')">Post to Instagram</button>` : ''}
+              ${p.image_url ? `<button class="btn-approve" onclick="openVideoModal(${p.id}, '${esc(p.image_url)}', ${JSON.stringify(p.caption).replace(/"/g,'&quot;')})">🎬 Make Video</button>` : ''}
               <button class="btn-reject" onclick="deletePost(${p.id})">Delete</button>
             </div>
           </div>
@@ -514,6 +546,7 @@
               <button class="btn-post" onclick="saveAndPost(${p.id}, 'threads')">Post to Threads</button>
               <button class="btn-post" style="background:#e7e7e7;color:#000;" onclick="saveAndPost(${p.id}, 'x')">Post to X</button>
               ${p.image_url ? `<button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="saveAndPost(${p.id}, 'instagram')">Post to Instagram</button>` : ''}
+              ${p.image_url ? `<button class="btn-approve" onclick="openVideoModal(${p.id}, '${esc(p.image_url)}', ${JSON.stringify(p.caption).replace(/"/g,'&quot;')})">🎬 Make Video</button>` : ''}
               <button class="btn-reject" onclick="deletePost(${p.id})">Delete</button>
             </div>
           </div>
@@ -1292,6 +1325,68 @@
       const d = await res.json()
       toast(`Failed: ${d.detail}`, 'red')
     }
+  }
+
+  // ── Video modal ───────────────────────────────────────────────────────────────
+
+  function openVideoModal(postId, imageUrl, caption) {
+    document.getElementById('vm-post-id').value   = postId
+    document.getElementById('vm-image-url').value = imageUrl
+    document.getElementById('vm-caption').value   = caption || ''
+    document.getElementById('vm-prompt').value    = ''
+    document.getElementById('vm-result').style.display = 'none'
+    document.getElementById('vm-reel-btn').style.display = 'none'
+    document.getElementById('vm-gen-btn').textContent = 'Generate Video'
+    document.getElementById('vm-gen-btn').disabled = false
+    const img = document.getElementById('vm-preview')
+    img.src = imageUrl
+    img.style.display = 'block'
+    document.getElementById('video-modal').classList.remove('hidden')
+  }
+
+  function closeVideoModal() {
+    document.getElementById('video-modal').classList.add('hidden')
+    document.getElementById('vm-player').src = ''
+  }
+
+  async function generateFromModal() {
+    const imageUrl = document.getElementById('vm-image-url').value
+    const prompt   = document.getElementById('vm-prompt').value.trim()
+    const btn      = document.getElementById('vm-gen-btn')
+    btn.textContent = 'Generating… (up to 3 min)'
+    btn.disabled = true
+    document.getElementById('vm-result').style.display = 'none'
+
+    try {
+      const r    = await fetch(`/admin/video/image-to-video?secret=${SECRET}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ image_url: imageUrl, prompt }),
+      })
+      const data = await r.json()
+      if (!r.ok) { toast(`Failed: ${data.detail}`, 'red'); return }
+      document.getElementById('vm-player').src    = data.video_url
+      document.getElementById('vm-video-url').value = data.video_url
+      document.getElementById('vm-result').style.display = 'block'
+      document.getElementById('vm-reel-btn').style.display = ''
+      toast('Video ready!', 'green')
+    } catch (e) {
+      toast('Error: ' + e.message, 'red')
+    } finally {
+      btn.textContent = 'Regenerate'
+      btn.disabled = false
+    }
+  }
+
+  async function postModalReel() {
+    const caption   = document.getElementById('vm-caption').value.trim()
+    const videoUrl  = document.getElementById('vm-video-url').value
+    if (!caption) { toast('Add a caption first.', 'red'); return }
+    const r = await fetch(`/admin/posts/reel?secret=${SECRET}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption, video_url: videoUrl }),
+    })
+    if (r.ok) { toast('Reel posted to Instagram!', 'green'); closeVideoModal() }
+    else { const d = await r.json(); toast(`Failed: ${d.detail}`, 'red') }
   }
 
   // ── Engagement platform switcher ─────────────────────────────────────────────

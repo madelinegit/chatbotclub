@@ -648,6 +648,7 @@
           ${p.status === 'posted'           ? `<button class="btn btn-x" onclick="mCrossPost(${p.id},'x')">→ X</button>` : ''}
           ${p.status === 'posted' && p.image_url ? `<button class="btn btn-ig" onclick="mCrossPost(${p.id},'instagram')">→ IG</button>` : ''}
           ${editing ? `<button class="btn btn-save" onclick="mSave(${p.id})">Save</button>` : ''}
+          ${p.image_url ? `<button class="btn btn-save" style="background:rgba(201,149,106,.15);color:var(--accent);" onclick="mMakeVideo('${p.image_url}',${JSON.stringify(p.caption).replace(/"/g,'&quot;')})">🎬 Video</button>` : ''}
           <button class="btn btn-save" style="background:rgba(255,255,255,.06);" onclick="mDuplicate(${p.id})">⧉ Dupe</button>
           <button class="btn btn-del" onclick="mDelete(${p.id})">✕</button>
         </div>
@@ -788,6 +789,16 @@
     if (ok.length)  toast(`Posted to ${ok.join(', ')}!`, 'green')
     if (bad.length) toast(`Failed: ${bad.join(', ')}`, 'red')
     return ok.length > 0
+  }
+
+  function mMakeVideo(imageUrl, caption) {
+    showTab('write')
+    document.getElementById('v-image-url').value = imageUrl
+    document.getElementById('v-prompt').value    = ''
+    document.getElementById('v-caption').value   = caption || ''
+    document.getElementById('v-result').style.display = 'none'
+    document.getElementById('v-image-url').scrollIntoView({ behavior: 'smooth' })
+    toast('Image URL pre-filled — add a motion prompt and generate.', '')
   }
 
   // ── Write — Video ────────────────────────────────────────────────────────────
