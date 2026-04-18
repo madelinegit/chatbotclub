@@ -802,9 +802,9 @@
     } catch (e) {
       clearTimeout(timeout)
       if (e.name === 'AbortError') {
-        toast('Image generation timed out (90s). ModelsLab may be overloaded — try again in a minute.', 'red')
+        toast('Timed out after 90s. The /admin/write/image request never returned. Likely cause: ModelsLab API hung (no response within 75s backend timeout). Check Railway logs for SOCIAL IMAGE ERROR. Try again or switch MODELSLAB_SCENE_MODEL / MODELSLAB_PORTRAIT_MODEL env vars.', 'red')
       } else {
-        toast('Error generating image.', 'red')
+        toast(`Image generation error: ${e.message || e}`, 'red')
       }
     } finally {
       btn.disabled = false; btn.innerHTML = 'Generate Image'

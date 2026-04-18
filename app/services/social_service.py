@@ -172,7 +172,8 @@ def _generate_image(prompt: str, model_type: str = "scene") -> str | None:
         if data.get("status") == "processing":
             return data.get("future_links", [None])[0]
     except Exception as e:
-        print(f"SOCIAL IMAGE ERROR: {e}")
+        print(f"SOCIAL IMAGE ERROR: {type(e).__name__}: {e}")
+        print(f"SOCIAL IMAGE PAYLOAD model={model} prompt_len={len(payload['prompt'])}")
     return None
 
 
