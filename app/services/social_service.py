@@ -293,6 +293,31 @@ def _generate_caption(post_prompt: str, context: str = "", weekday_note: str = "
     return None
 
 
+def _upload_to_cloudinary(url: str, resource_type: str = "image") -> str:
+    """Upload a Replicate delivery URL to Cloudinary and return permanent URL. Falls back to original URL on any error."""
+    try:
+        from app.config import CLOUDINARY_URL
+        if not CLOUDINARY_URL:
+            return url
+        stripped   = CLOUDINARY_URL.replace("cloudinary://", "")
+        auth_part, cloud_name = stripped.rsplit("@", 1)
+        api_key, api_secret   = auth_part.split(":", 1)
+        r = requests.post(
+            f"https://api.cloudinary.com/v1_1/{cloud_name}/{resource_type}/upload",
+            data={"file": url, "upload_preset": "ml_default"},
+            auth=(api_key, api_secret),
+            timeout=60,
+        )
+        r.raise_for_status()
+        permanent = r.json().get("secure_url")
+        if permanent:
+            print(f"CLOUDINARY: saved {url[:60]} → {permanent[:60]}")
+            return permanent
+    except Exception as e:
+        print(f"CLOUDINARY upload error (falling back to original): {e}")
+    return url
+
+
 def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: float = 0.8) -> tuple[str | None, str | None]:
     """
     Flux LoRA inference via Replicate.
@@ -330,7 +355,8 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
 
         if data.get("status") == "succeeded":
             output = data.get("output", [])
-            return (output[0] if output else None), None
+            raw = output[0] if output else None
+            return (_upload_to_cloudinary(raw) if raw else None), None
 
         # Poll once if still processing
         pred_id = data.get("id")
@@ -346,7 +372,8 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
             print(f"REPLICATE LORA poll: status={data2.get('status')}")
             if data2.get("status") == "succeeded":
                 output = data2.get("output", [])
-                return (output[0] if output else None), None
+                raw = output[0] if output else None
+                return (_upload_to_cloudinary(raw) if raw else None), None
             return None, f"Replicate {data2.get('status')}: {data2.get('error')}"
 
         return None, f"Replicate unexpected response: {data}"

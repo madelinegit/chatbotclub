@@ -49,7 +49,8 @@ def image_to_video(image_url: str, prompt: str = "", duration: int = 5) -> tuple
             return None, f"REPLICATE i2v: empty output — model returned {output!r}"
 
         print(f"REPLICATE i2v: done — {video_url[:80]}")
-        return video_url, None
+        from app.services.social_service import _upload_to_cloudinary
+        return _upload_to_cloudinary(video_url, resource_type="video"), None
 
     except replicate.exceptions.ReplicateError as e:
         return None, f"REPLICATE i2v ReplicateError: {e.status} — {e}"
@@ -82,7 +83,8 @@ def text_to_video(prompt: str, duration: int = 5) -> tuple[str | None, str | Non
             return None, f"REPLICATE t2v: empty output — model returned {output!r}"
 
         print(f"REPLICATE t2v: done — {video_url[:80]}")
-        return video_url, None
+        from app.services.social_service import _upload_to_cloudinary
+        return _upload_to_cloudinary(video_url, resource_type="video"), None
 
     except replicate.exceptions.ReplicateError as e:
         return None, f"REPLICATE t2v ReplicateError: {e.status} — {e}"
