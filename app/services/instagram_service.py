@@ -8,7 +8,7 @@ Get one from: developers.facebook.com → Graph API Explorer
 Required scopes: instagram_basic, instagram_content_publish, pages_show_list
 """
 import requests
-from app.config import INSTAGRAM_ACCESS_TOKEN
+from app.config import INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_USER_ID
 from app.db.crud import mark_post_posted, mark_post_failed
 
 GRAPH_API = "https://graph.facebook.com/v19.0"
@@ -82,9 +82,10 @@ def post_to_instagram(post_id: int, caption: str, image_url: str = None) -> bool
         return False
 
     try:
-        ig_user_id = _get_ig_user_id()
+        ig_user_id = INSTAGRAM_USER_ID or _get_ig_user_id()
+        print(f"INSTAGRAM: using ig_user_id={ig_user_id} ({'env var' if INSTAGRAM_USER_ID else 'lookup'})")
         if not ig_user_id:
-            print("INSTAGRAM: could not resolve IG user ID — check token permissions")
+            print("INSTAGRAM: could not resolve IG user ID — set INSTAGRAM_USER_ID in Railway env vars")
             mark_post_failed(post_id)
             return False
 

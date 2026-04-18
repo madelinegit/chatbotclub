@@ -47,6 +47,8 @@ THREADS_ACCESS_TOKEN  = os.getenv("THREADS_ACCESS_TOKEN")
 
 # Instagram (separate Facebook User Access Token with instagram_content_publish scope)
 INSTAGRAM_ACCESS_TOKEN = os.getenv("INSTAGRAM_ACCESS_TOKEN")
+# Optional: set this directly to skip the /me/accounts lookup (get it from ig-debug or Graph API Explorer)
+INSTAGRAM_USER_ID = os.getenv("INSTAGRAM_USER_ID")
 
 # Cloudinary (free image hosting for text card uploads)
 CLOUDINARY_URL        = os.getenv("CLOUDINARY_URL")
