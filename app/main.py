@@ -13,6 +13,7 @@ from app.api.profile_routes import router as profile_router
 from app.api.blog_routes import router as blog_router
 from app.api.admin_routes import router as admin_router
 from app.api.instagram_auth_routes import router as instagram_auth_router
+from app.api.admin_app_routes import router as admin_app_router
 
 
 def _auto_post_job():
@@ -27,6 +28,17 @@ def _auto_post_job():
             print("CRON: post generation failed")
             return
         print(f"CRON: queued post #{result['id']} for approval — {result['caption'][:60]}")
+
+        try:
+            from app.services.push_service import send_push
+            send_push(
+                title="New post ready",
+                body=result["caption"][:100],
+                url="/admin/app",
+                tag="new-post",
+            )
+        except Exception as push_err:
+            print(f"CRON: push notification failed (non-fatal): {push_err}")
     except Exception as e:
         print(f"CRON ERROR: {e}")
 
@@ -58,6 +70,7 @@ app.include_router(profile_router)
 app.include_router(blog_router)
 app.include_router(admin_router)
 app.include_router(instagram_auth_router)
+app.include_router(admin_app_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")

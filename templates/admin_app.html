@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Maya Admin">
+  <link rel="manifest" href="/static/admin-manifest.json">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  <title>Maya Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0a0a0b;
+      --surface: #141416;
+      --card:    #1a1a1e;
+      --border:  rgba(255,255,255,0.08);
+      --text:    #e0ddd8;
+      --muted:   #666;
+      --accent:  #c9956a;
+      --green:   #4ade80;
+      --red:     #f87171;
+      --ig:      linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);
+      --safe-top:    env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      font-size: 15px;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+
+    /* ── Login screen ── */
+    #login-screen {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 32px;
+      padding-top: calc(40px + var(--safe-top));
+      background: var(--bg);
+      z-index: 100;
+    }
+    #login-screen h1 { font-size: 28px; font-weight: 300; letter-spacing: -.5px; margin-bottom: 8px; }
+    #login-screen p  { color: var(--muted); font-size: 14px; margin-bottom: 40px; }
+    #secret-input {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--text);
+      font-size: 16px;
+      padding: 16px 18px;
+      outline: none;
+      -webkit-appearance: none;
+      margin-bottom: 14px;
+    }
+    #secret-input:focus { border-color: var(--accent); }
+    .btn-primary {
+      width: 100%;
+      background: var(--accent);
+      color: #0a0a0b;
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 16px;
+      cursor: pointer;
+      -webkit-appearance: none;
+    }
+    .btn-primary:active { opacity: .8; }
+
+    /* ── Main app ── */
+    #app {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      padding-top: var(--safe-top);
+    }
+
+    /* ── Header ── */
+    #app-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px 10px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    #app-header .logo { font-size: 18px; font-weight: 500; letter-spacing: -.3px; }
+    #app-header .logo span { color: var(--accent); }
+    #refresh-btn {
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--text); border-radius: 10px;
+      padding: 7px 14px; font-size: 13px; cursor: pointer;
+    }
+    #refresh-btn:active { opacity: .7; }
+
+    /* ── Notification bar ── */
+    #notify-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px;
+      background: rgba(201,149,106,.08);
+      border-bottom: 1px solid rgba(201,149,106,.15);
+      font-size: 13px;
+    }
+    #notify-bar.hidden { display: none; }
+    #notify-bar .nb-text { flex: 1; color: var(--accent); }
+    #notify-btn {
+      background: var(--accent); color: #0a0a0b;
+      border: none; border-radius: 8px;
+      padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    #notify-btn:active { opacity: .8; }
+
+    /* ── Content area ── */
+    #content {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px 16px 8px;
+    }
+
+    /* ── Stats strip ── */
+    #stats-strip {
+      display: flex; gap: 10px; margin-bottom: 16px;
+    }
+    .stat-pill {
+      flex: 1; background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 8px; text-align: center;
+    }
+    .stat-pill .sv { font-size: 22px; font-weight: 600; color: var(--accent); }
+    .stat-pill .sl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+    /* ── Post cards ── */
+    .post-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px; margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .post-meta {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; color: var(--muted); margin-bottom: 10px;
+    }
+    .pill {
+      padding: 2px 8px; border-radius: 100px; font-size: 10px; font-weight: 600;
+    }
+    .pill-pending  { background: rgba(251,191,36,.15); color: #fbbf24; }
+    .pill-failed   { background: rgba(248,113,113,.15); color: var(--red); }
+    .pill-posted   { background: rgba(74,222,128,.12);  color: var(--green); }
+    .pill-approved { background: rgba(96,165,250,.15);  color: #60a5fa; }
+
+    .post-body {
+      display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px;
+    }
+    .post-thumb {
+      width: 72px; height: 72px; border-radius: 8px;
+      object-fit: cover; flex-shrink: 0;
+    }
+    .post-thumb-placeholder {
+      width: 72px; height: 72px; border-radius: 8px;
+      background: var(--surface); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; color: var(--muted);
+    }
+    .post-caption {
+      flex: 1; font-size: 14px; line-height: 1.5; color: var(--text);
+    }
+    .post-caption textarea {
+      width: 100%; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-size: 13px; font-family: inherit;
+      padding: 8px 10px; resize: vertical; outline: none;
+      -webkit-appearance: none;
+    }
+    .post-caption textarea:focus { border-color: var(--accent); }
+
+    /* ── Action buttons ── */
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      flex: 1; min-width: 80px;
+      padding: 11px 8px; border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      -webkit-appearance: none;
+    }
+    .btn:active { opacity: .75; transform: scale(.97); }
+    .btn-threads { background: rgba(255,255,255,.1); color: var(--text); }
+    .btn-ig      { background: var(--ig); color: #fff; }
+    .btn-retry   { background: rgba(96,165,250,.15); color: #60a5fa; }
+    .btn-del     { background: rgba(248,113,113,.12); color: var(--red); }
+    .btn-save    { background: rgba(201,149,106,.15); color: var(--accent); }
+    .btn-gen     { background: var(--accent); color: #0a0a0b; font-weight: 700; }
+
+    /* ── Write tab ── */
+    #tab-write { display: none; }
+
+    .write-section {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px; margin-bottom: 14px;
+    }
+    .write-section h3 {
+      font-size: 11px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px;
+    }
+    .write-section textarea, .write-section input[type=text], .write-section input[type=datetime-local] {
+      width: 100%; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 10px;
+      color: var(--text); font-size: 14px; font-family: inherit;
+      padding: 12px 14px; outline: none; -webkit-appearance: none; margin-bottom: 10px;
+    }
+    .write-section textarea:focus,
+    .write-section input:focus { border-color: var(--accent); }
+    .write-section input[type=datetime-local] { color-scheme: dark; }
+    .write-section input[type=file] {
+      width: 100%; color: var(--muted); font-size: 13px; margin-bottom: 10px;
+    }
+    #upload-thumb-preview {
+      width: 100%; max-height: 200px; border-radius: 10px; object-fit: cover;
+      margin-bottom: 10px; display: none;
+    }
+
+    /* ── Bottom nav ── */
+    #bottom-nav {
+      display: flex;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding-bottom: var(--safe-bottom);
+    }
+    .nav-btn {
+      flex: 1; padding: 12px 8px 10px;
+      background: none; border: none;
+      color: var(--muted); font-size: 11px; font-weight: 500;
+      cursor: pointer; display: flex; flex-direction: column;
+      align-items: center; gap: 4px; -webkit-appearance: none;
+      transition: color .15s;
+    }
+    .nav-btn .nav-icon { font-size: 22px; line-height: 1; }
+    .nav-btn.active { color: var(--accent); }
+    .nav-btn:active { opacity: .7; }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; color: var(--muted); padding: 48px 0; font-size: 14px; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: calc(80px + var(--safe-bottom));
+      left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #222; color: var(--text); border-radius: 10px;
+      padding: 10px 18px; font-size: 13px; white-space: nowrap;
+      opacity: 0; transition: opacity .2s, transform .2s;
+      pointer-events: none; z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.green { background: rgba(74,222,128,.2); color: var(--green); }
+    #toast.red   { background: rgba(248,113,113,.2); color: var(--red); }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.2); border-top-color: currentColor;
+      border-radius: 50%; animation: spin .7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login screen -->
+<div id="login-screen">
+  <h1>Maya <span style="color:#c9956a">Admin</span></h1>
+  <p>Enter your admin secret to continue</p>
+  <input id="secret-input" type="password" placeholder="Admin secret" autocomplete="current-password">
+  <button class="btn-primary" onclick="doLogin()">Sign In</button>
+</div>
+
+<!-- Main app -->
+<div id="app">
+  <div id="app-header">
+    <div class="logo">Maya <span>Admin</span></div>
+    <button id="refresh-btn" onclick="refresh()">↺ Refresh</button>
+  </div>
+
+  <div id="notify-bar" class="hidden">
+    <span class="nb-text">Enable push notifications</span>
+    <button id="notify-btn" onclick="enableNotifications()">Enable</button>
+  </div>
+
+  <div id="content">
+    <!-- Posts tab -->
+    <div id="tab-posts">
+      <div id="stats-strip">
+        <div class="stat-pill"><div class="sv" id="m-pending">—</div><div class="sl">Pending</div></div>
+        <div class="stat-pill"><div class="sv" id="m-posted">—</div><div class="sl">Today</div></div>
+        <div class="stat-pill"><div class="sv" id="m-users">—</div><div class="sl">Users</div></div>
+      </div>
+      <div id="m-post-list"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- Write tab -->
+    <div id="tab-write">
+      <!-- Generate -->
+      <div class="write-section">
+        <h3>Generate Post</h3>
+        <textarea id="w-idea" rows="3" placeholder="Describe the post idea… Maya will write it in her voice"></textarea>
+        <div id="w-expanded-wrap" style="display:none;">
+          <textarea id="w-expanded" rows="4" placeholder="Expanded caption — edit before queuing"></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn btn-gen" id="w-gen-btn" onclick="generateCaption()">Generate</button>
+          <button class="btn btn-save" id="w-queue-btn" style="display:none;" onclick="queueGenerated()">Queue</button>
+          <button class="btn btn-ig" id="w-post-btn" style="display:none;" onclick="postGeneratedNow('threads')">Post to Threads</button>
+        </div>
+      </div>
+
+      <!-- Upload photo -->
+      <div class="write-section">
+        <h3>Upload Photo</h3>
+        <input type="file" id="w-file" accept="image/*" onchange="previewUpload()">
+        <img id="upload-thumb-preview" src="" alt="">
+        <textarea id="w-caption" rows="2" placeholder="Caption (optional)"></textarea>
+        <input type="datetime-local" id="w-schedule" placeholder="Schedule for…">
+        <div class="actions">
+          <button class="btn btn-save" onclick="uploadAndQueue()">Upload &amp; Queue</button>
+          <button class="btn btn-ig" onclick="uploadAndPostIG()">Post to IG Now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav id="bottom-nav">
+    <button class="nav-btn active" id="nav-posts" onclick="showTab('posts')">
+      <span class="nav-icon">📋</span>Posts
+    </button>
+    <button class="nav-btn" id="nav-write" onclick="showTab('write')">
+      <span class="nav-icon">✏️</span>Write
+    </button>
+  </nav>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let SECRET = ''
+  let _currentFilter = 'pending'
+
+  // ── Auth ────────────────────────────────────────────────────────────────────
+
+  function doLogin() {
+    const s = document.getElementById('secret-input').value.trim()
+    if (!s) return
+    SECRET = s
+    fetch(`/admin/stats?secret=${encodeURIComponent(s)}`)
+      .then(r => {
+        if (r.ok) {
+          localStorage.setItem('admin_secret', s)
+          showApp()
+        } else {
+          shake(document.getElementById('secret-input'))
+          toast('Wrong secret.', 'red')
+        }
+      })
+      .catch(() => toast('Connection error.', 'red'))
+  }
+
+  function shake(el) {
+    el.style.transition = 'transform .1s'
+    el.style.transform = 'translateX(8px)'
+    setTimeout(() => el.style.transform = 'translateX(-8px)', 100)
+    setTimeout(() => el.style.transform = '', 200)
+  }
+
+  document.getElementById('secret-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin()
+  })
+
+  // ── Boot ────────────────────────────────────────────────────────────────────
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('admin_secret')
+    if (saved) {
+      SECRET = saved
+      fetch(`/admin/stats?secret=${encodeURIComponent(saved)}`)
+        .then(r => r.ok ? showApp() : showLogin())
+        .catch(() => showLogin())
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js')
+        .then(() => console.log('SW registered'))
+        .catch(e => console.error('SW error', e))
+    }
+  })
+
+  function showApp() {
+    document.getElementById('login-screen').style.display = 'none'
+    const app = document.getElementById('app')
+    app.style.display = 'flex'
+    loadStats()
+    loadPosts()
+    checkNotifyBar()
+  }
+
+  function showLogin() {
+    SECRET = ''
+    localStorage.removeItem('admin_secret')
+    document.getElementById('login-screen').style.display = 'flex'
+    document.getElementById('app').style.display = 'none'
+  }
+
+  // ── Tabs ────────────────────────────────────────────────────────────────────
+
+  function showTab(tab) {
+    document.getElementById('tab-posts').style.display = tab === 'posts' ? 'block' : 'none'
+    document.getElementById('tab-write').style.display = tab === 'write' ? 'block' : 'none'
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'))
+    document.getElementById(`nav-${tab}`).classList.add('active')
+  }
+
+  function refresh() {
+    loadStats()
+    loadPosts()
+    toast('Refreshed.', '')
+  }
+
+  // ── Stats ───────────────────────────────────────────────────────────────────
+
+  async function loadStats() {
+    try {
+      const r    = await fetch(`/admin/stats?secret=${encodeURIComponent(SECRET)}`)
+      if (!r.ok) { if (r.status === 403) showLogin(); return; }
+      const data = await r.json()
+      document.getElementById('m-pending').textContent = data.pending_posts ?? '—'
+      document.getElementById('m-posted').textContent  = data.posted_today  ?? '—'
+      document.getElementById('m-users').textContent   = data.total_users   ?? '—'
+    } catch {}
+  }
+
+  // ── Posts ───────────────────────────────────────────────────────────────────
+
+  async function loadPosts(filter) {
+    filter = filter || _currentFilter
+    _currentFilter = filter
+    const list = document.getElementById('m-post-list')
+    list.innerHTML = '<div class="empty">Loading…</div>'
+    try {
+      const r    = await fetch(`/admin/posts?secret=${encodeURIComponent(SECRET)}&status=${filter}`)
+      const data = await r.json()
+      renderPosts(data.posts || [])
+    } catch { list.innerHTML = '<div class="empty">Failed to load.</div>' }
+  }
+
+  function renderPosts(posts) {
+    const list = document.getElementById('m-post-list')
+    if (!posts.length) {
+      list.innerHTML = `<div class="empty">No ${_currentFilter} posts.</div>`
+      // Show filter toggle
+      list.innerHTML += `<div style="text-align:center;margin-top:12px;">
+        <button onclick="loadPosts('${_currentFilter === 'pending' ? 'all' : 'pending'}')"
+          style="background:none;border:1px solid rgba(255,255,255,.1);color:#888;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;">
+          Show ${_currentFilter === 'pending' ? 'all posts' : 'pending only'}
+        </button>
+      </div>`
+      return
+    }
+    list.innerHTML = posts.map(p => {
+      const editing = p.status === 'pending' || p.status === 'approved' || p.status === 'failed'
+      return `
+      <div class="post-card" id="mpc-${p.id}">
+        <div class="post-meta">
+          <span>#${p.id}</span>
+          <span class="pill pill-${p.status}">${p.status}</span>
+          <span>${(p.created_at || '').slice(0,10)}</span>
+        </div>
+        <div class="post-body">
+          ${p.image_url
+            ? `<img class="post-thumb" src="${p.image_url}" loading="lazy" onerror="this.style.display='none'">`
+            : `<div class="post-thumb-placeholder">no img</div>`
+          }
+          <div class="post-caption">
+            ${editing
+              ? `<textarea id="mc-${p.id}" rows="3">${esc(p.caption)}</textarea>`
+              : `<div style="font-size:14px;line-height:1.5;">${esc(p.caption)}</div>`
+            }
+          </div>
+        </div>
+        ${editing ? `
+        <div class="actions">
+          ${p.status !== 'failed' ? `<button class="btn btn-threads" onclick="mSaveAndPost(${p.id},'threads')">Threads</button>` : ''}
+          ${p.image_url ? `<button class="btn btn-ig" onclick="mSaveAndPost(${p.id},'instagram')">IG</button>` : ''}
+          ${p.status === 'failed' ? `<button class="btn btn-retry" onclick="mRetry(${p.id})">↺ Retry</button>` : ''}
+          <button class="btn btn-save" onclick="mSave(${p.id})">Save</button>
+          <button class="btn btn-del" onclick="mDelete(${p.id})">✕</button>
+        </div>` : ''}
+      </div>`
+    }).join('')
+
+    // Add filter toggle at bottom
+    list.innerHTML += `<div style="text-align:center;margin-top:4px;margin-bottom:8px;">
+      <button onclick="loadPosts('${_currentFilter === 'pending' ? 'all' : 'pending'}')"
+        style="background:none;border:1px solid rgba(255,255,255,.1);color:#888;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;">
+        ${_currentFilter === 'pending' ? 'Show all posts' : 'Show pending only'}
+      </button>
+    </div>`
+  }
+
+  function esc(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  }
+
+  async function mSave(id) {
+    const caption = document.getElementById(`mc-${id}`)?.value.trim()
+    if (!caption) return
+    const r = await fetch(`/admin/posts/${id}?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption }),
+    })
+    if (r.ok) toast('Saved.', 'green')
+    else toast('Save failed.', 'red')
+  }
+
+  async function mSaveAndPost(id, platform) {
+    const caption = document.getElementById(`mc-${id}`)?.value.trim()
+    if (caption) {
+      await fetch(`/admin/posts/${id}?secret=${encodeURIComponent(SECRET)}`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ caption }),
+      })
+    }
+    toast(`Posting to ${platform}…`, '')
+    const r = await fetch(`/admin/posts/${id}/post-now?secret=${encodeURIComponent(SECRET)}&platform=${platform}`, { method: 'POST' })
+    if (r.ok) {
+      toast(`Posted to ${platform}!`, 'green')
+      document.getElementById(`mpc-${id}`)?.remove()
+      loadStats()
+    } else {
+      const d = await r.json()
+      toast(`Failed: ${d.detail}`, 'red')
+    }
+  }
+
+  async function mRetry(id) {
+    const caption = document.getElementById(`mc-${id}`)?.value.trim()
+    if (caption) {
+      await fetch(`/admin/posts/${id}?secret=${encodeURIComponent(SECRET)}`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ caption }),
+      })
+    }
+    const r = await fetch(`/admin/posts/${id}/retry?secret=${encodeURIComponent(SECRET)}`, { method: 'POST' })
+    if (r.ok) { toast('Re-queued.', 'green'); loadPosts() }
+    else toast('Retry failed.', 'red')
+  }
+
+  async function mDelete(id) {
+    if (!confirm(`Delete #${id}?`)) return
+    const r = await fetch(`/admin/posts/${id}?secret=${encodeURIComponent(SECRET)}`, { method: 'DELETE' })
+    if (r.ok) {
+      document.getElementById(`mpc-${id}`)?.remove()
+      toast('Deleted.', '')
+      loadStats()
+    } else toast('Delete failed.', 'red')
+  }
+
+  // ── Write — Generate caption ─────────────────────────────────────────────────
+
+  let _generatedCaption = ''
+
+  async function generateCaption() {
+    const idea = document.getElementById('w-idea').value.trim()
+    if (!idea) { toast('Enter an idea first.', 'red'); return }
+    const btn = document.getElementById('w-gen-btn')
+    btn.disabled = true
+    btn.innerHTML = '<span class="spinner"></span>Writing…'
+
+    try {
+      const r = await fetch(`/admin/write/expand-prompt?secret=${encodeURIComponent(SECRET)}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ idea }),
+      })
+      const data = await r.json()
+      if (!r.ok) { toast(data.detail || 'Failed.', 'red'); return }
+      _generatedCaption = data.expanded_prompt
+      document.getElementById('w-expanded').value = _generatedCaption
+      document.getElementById('w-expanded-wrap').style.display = 'block'
+      document.getElementById('w-queue-btn').style.display = 'block'
+      document.getElementById('w-post-btn').style.display = 'block'
+    } catch (e) {
+      toast('Error: ' + e.message, 'red')
+    } finally {
+      btn.disabled = false
+      btn.innerHTML = 'Regenerate'
+    }
+  }
+
+  async function queueGenerated() {
+    const caption = document.getElementById('w-expanded').value.trim()
+    if (!caption) return
+    const r = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption }),
+    })
+    if (r.ok) {
+      toast('Queued!', 'green')
+      document.getElementById('w-idea').value = ''
+      document.getElementById('w-expanded-wrap').style.display = 'none'
+      document.getElementById('w-queue-btn').style.display = 'none'
+      document.getElementById('w-post-btn').style.display = 'none'
+      document.getElementById('w-gen-btn').innerHTML = 'Generate'
+    } else toast('Queue failed.', 'red')
+  }
+
+  async function postGeneratedNow(platform) {
+    const caption = document.getElementById('w-expanded').value.trim()
+    if (!caption) return
+    const qr = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption }),
+    })
+    if (!qr.ok) { toast('Queue failed.', 'red'); return }
+    const { id } = await qr.json()
+    toast(`Posting to ${platform}…`, '')
+    const pr = await fetch(`/admin/posts/${id}/post-now?secret=${encodeURIComponent(SECRET)}&platform=${platform}`, { method: 'POST' })
+    if (pr.ok) {
+      toast(`Posted!`, 'green')
+      document.getElementById('w-idea').value = ''
+      document.getElementById('w-expanded-wrap').style.display = 'none'
+      document.getElementById('w-queue-btn').style.display = 'none'
+      document.getElementById('w-post-btn').style.display = 'none'
+    } else {
+      const d = await pr.json()
+      toast(`Failed: ${d.detail}`, 'red')
+    }
+  }
+
+  // ── Write — Upload ───────────────────────────────────────────────────────────
+
+  function previewUpload() {
+    const f = document.getElementById('w-file').files[0]
+    if (!f) return
+    const img = document.getElementById('upload-thumb-preview')
+    img.src = URL.createObjectURL(f)
+    img.style.display = 'block'
+  }
+
+  async function _doUpload() {
+    const fileInput = document.getElementById('w-file')
+    if (!fileInput.files?.length) { toast('Select a photo first.', 'red'); return null }
+    const form = new FormData()
+    form.append('file', fileInput.files[0])
+    const r = await fetch(`/admin/upload-image?secret=${encodeURIComponent(SECRET)}`, { method: 'POST', body: form })
+    if (!r.ok) {
+      const d = await r.json()
+      toast(`Upload failed: ${d.detail}`, 'red')
+      return null
+    }
+    const data = await r.json()
+    return data.url
+  }
+
+  async function uploadAndQueue() {
+    toast('Uploading…', '')
+    const url = await _doUpload()
+    if (!url) return
+    const caption  = document.getElementById('w-caption').value.trim() || '(add caption)'
+    const schedule = document.getElementById('w-schedule').value || null
+    const r = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption, image_url: url, scheduled_at: schedule }),
+    })
+    if (r.ok) {
+      toast('Queued!', 'green')
+      resetUploadForm()
+    } else toast('Queue failed.', 'red')
+  }
+
+  async function uploadAndPostIG() {
+    toast('Uploading…', '')
+    const url = await _doUpload()
+    if (!url) return
+    const caption = document.getElementById('w-caption').value.trim() || '(add caption)'
+    const qr = await fetch(`/admin/write/queue?secret=${encodeURIComponent(SECRET)}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption, image_url: url }),
+    })
+    if (!qr.ok) { toast('Queue failed.', 'red'); return }
+    const { id } = await qr.json()
+    toast('Posting to Instagram…', '')
+    const pr = await fetch(`/admin/posts/${id}/post-now?secret=${encodeURIComponent(SECRET)}&platform=instagram`, { method: 'POST' })
+    if (pr.ok) {
+      toast('Posted to Instagram!', 'green')
+      resetUploadForm()
+    } else {
+      const d = await pr.json()
+      toast(`IG failed: ${d.detail}`, 'red')
+    }
+  }
+
+  function resetUploadForm() {
+    document.getElementById('w-file').value = ''
+    document.getElementById('w-caption').value = ''
+    document.getElementById('w-schedule').value = ''
+    document.getElementById('upload-thumb-preview').style.display = 'none'
+  }
+
+  // ── Push notifications ───────────────────────────────────────────────────────
+
+  async function checkNotifyBar() {
+    if (!('PushManager' in window)) return
+    if (Notification.permission === 'granted') {
+      const reg = await navigator.serviceWorker.ready
+      const existing = await reg.pushManager.getSubscription()
+      if (existing) return
+    }
+    if (Notification.permission !== 'denied') {
+      document.getElementById('notify-bar').classList.remove('hidden')
+    }
+  }
+
+  async function enableNotifications() {
+    const btn = document.getElementById('notify-btn')
+    btn.textContent = '…'
+    btn.disabled = true
+
+    try {
+      // Ensure VAPID keys exist
+      await fetch(`/admin/app/setup-vapid?secret=${encodeURIComponent(SECRET)}`, { method: 'POST' })
+
+      // Get public key
+      const kr = await fetch(`/admin/app/vapid-public-key?secret=${encodeURIComponent(SECRET)}`)
+      if (!kr.ok) { toast('VAPID setup failed.', 'red'); return }
+      const { public_key } = await kr.json()
+
+      // Request permission
+      const perm = await Notification.requestPermission()
+      if (perm !== 'granted') { toast('Notifications blocked.', 'red'); return }
+
+      // Subscribe
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(public_key),
+      })
+
+      // Send to server
+      const sr = await fetch(`/admin/app/subscribe?secret=${encodeURIComponent(SECRET)}`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(sub.toJSON()),
+      })
+      if (sr.ok) {
+        document.getElementById('notify-bar').classList.add('hidden')
+        toast('Notifications enabled!', 'green')
+      } else toast('Subscribe failed.', 'red')
+    } catch (e) {
+      toast(`Error: ${e.message}`, 'red')
+    } finally {
+      btn.textContent = 'Enable'
+      btn.disabled = false
+    }
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4)
+    const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+    const raw     = window.atob(base64)
+    return new Uint8Array([...raw].map(c => c.charCodeAt(0)))
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────────────────
+
+  let _toastTimer
+  function toast(msg, type) {
+    const el = document.getElementById('toast')
+    el.textContent = msg
+    el.className = 'show' + (type ? ` ${type}` : '')
+    clearTimeout(_toastTimer)
+    _toastTimer = setTimeout(() => el.className = '', 2800)
+  }
+</script>
+</body>
+</html>

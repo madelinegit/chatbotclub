@@ -11,3 +11,4 @@ email-validator
 Pillow
 apscheduler
 pytz
+pywebpush

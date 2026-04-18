@@ -30,3 +30,34 @@ self.addEventListener('fetch', e => {
       .catch(() => caches.match(e.request))
   );
 });
+
+// Push notification received
+self.addEventListener('push', e => {
+  if (!e.data) return;
+  let data = {};
+  try { data = e.data.json(); } catch { data = { title: 'Maya Admin', body: e.data.text() }; }
+
+  e.waitUntil(
+    self.registration.showNotification(data.title || 'Maya Admin', {
+      body:  data.body  || '',
+      icon:  '/static/icons/icon-192.png',
+      badge: '/static/icons/icon-192.png',
+      tag:   data.tag   || 'maya-admin',
+      data:  { url: data.url || '/admin/app' },
+    })
+  );
+});
+
+// Notification tapped — open or focus the admin app
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = e.notification.data?.url || '/admin/app';
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if (c.url.includes('/admin/app') && 'focus' in c) return c.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});

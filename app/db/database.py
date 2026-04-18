@@ -142,6 +142,16 @@ def init_db() -> None:
         )
     """)
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id         BIGSERIAL PRIMARY KEY,
+            endpoint   TEXT UNIQUE NOT NULL,
+            p256dh     TEXT NOT NULL,
+            auth       TEXT NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+    """)
+
     # Safe migrations
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_dev INTEGER DEFAULT 0")
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT")
