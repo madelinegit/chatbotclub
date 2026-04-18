@@ -135,6 +135,17 @@
     .btn-cancel { background: transparent; color: #999; border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; padding: 8px 18px; font-size: 13px; cursor: pointer; }
     .btn-save { background: #c9956a; color: #0a0a0b; font-weight: 700; border: none; border-radius: 999px; padding: 8px 20px; font-size: 13px; cursor: pointer; }
     .btn-save:hover { background: #d4a87a; }
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: #e0ddd8;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -477,7 +488,7 @@
   async function generatePost() {
     const btn = document.querySelector('.btn-gen')
     btn.disabled = true
-    btn.textContent = '⏳ Generating...'
+    btn.innerHTML = '<span class="spinner"></span>Generating…'
     toast('Generating post — this takes ~10 seconds...', '')
     try {
       const res = await fetch(`/admin/generate?secret=${SECRET}`, { method: 'POST' })
@@ -697,7 +708,7 @@
     if (!idea) return
     const btn = document.getElementById('image-gen-btn')
     const modelType = document.getElementById('image-model-type').value
-    btn.disabled = true; btn.textContent = 'Generating…'
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Generating…'
     document.getElementById('image-result').style.display = 'none'
     document.getElementById('image-status').style.display = 'none'
 
@@ -723,7 +734,7 @@
     } catch (e) {
       toast('Error generating image.', 'red')
     } finally {
-      btn.disabled = false; btn.textContent = 'Generate'
+      btn.disabled = false; btn.innerHTML = 'Generate'
     }
   }
 
@@ -770,7 +781,7 @@
     if (!msg) return
 
     const btn = document.getElementById('write-send-btn')
-    btn.disabled = true; btn.textContent = '...'
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'
     input.value = ''
 
     _appendWriteMsg('user', msg)
@@ -790,7 +801,7 @@
     } catch (e) {
       _appendWriteMsg('maya', 'Something went wrong — check logs.')
     } finally {
-      btn.disabled = false; btn.textContent = 'Send'
+      btn.disabled = false; btn.innerHTML = 'Send'
       input.focus()
     }
   }
