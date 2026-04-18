@@ -1,11 +1,9 @@
 """
 Social media service for Maya.
-Generates posts in Maya's voice and publishes to X (Twitter).
-Instagram slot is stubbed — wire in when Meta API access is ready.
-
-tweepy is imported lazily so the app doesn't crash if X keys aren't set yet.
+Generates posts in Maya's voice and publishes to X (Twitter) and Instagram.
 """
 import random
+import datetime
 import requests
 
 # Consistent character description prepended to every image prompt
@@ -29,23 +27,50 @@ from app.db.crud import (
 )
 
 
+# Weekday personality modes — injected into every post prompt
+WEEKDAY_MODES = {
+    0: ("dry",       "Today Maya is at her most deadpan. Flat delivery, dry observations, zero explanation. The joke is the understatement."),
+    1: ("flirty",    "Today Maya is confident and casually flirty. Aware of herself. Says something and knows exactly how it lands."),
+    2: ("existential","Today Maya is questioning things. Not depressed — just staring at the ceiling kind of mood. Unfiltered."),
+    3: ("basic",     "Today Maya is unironically into normal things. PSLs, good playlists, small victories. No irony. She means it."),
+    4: ("sincere",   "Today Maya drops the armor. One genuine moment — warm, real, no performance. Still her, just soft."),
+    5: ("chaotic",   "Weekend energy. Maya is unpredictable — could be anything. Don't explain it."),
+    6: ("chaotic",   "Weekend energy. Maya is unpredictable — could be anything. Don't explain it."),
+}
+
+# Instagram hashtag sets per post type — rotated, 3-5 tags, appended only on IG
+HASHTAG_SETS = {
+    "selfie_vibe":   ["#TahoeLife #GoldenHour #LakeTahoe", "#TahoeGirl #LifeInTahoe #Vibes", "#CandidShot #TahoeVibes #SunsetGirl"],
+    "snowboarding":  ["#SquawValley #PowderDay #Snowboarding", "#TahoeWinter #RideOrDie #SnowLife", "#FreerideLife #MountainGirl #Shred"],
+    "lake_day":      ["#LakeTahoe #TahoeBlue #LakeLife", "#SummerVibes #PaddleBoard #TahoeSummer", "#LakeDays #ClearWater #TahoeNation"],
+    "coffee_barista":["#CoffeeLover #BaristaLife #PourOver", "#EspressoShots #CoffeeTime #BrewedPerfectly", "#CaffeineAndVibes #CoffeeFirst #BaristaDiaries"],
+    "bar_shift":     ["#BehindTheBar #BarLife #NightShift", "#Bartender #LateNightVibes #BarCulture", "#OnTap #ShiftDrink #BarNotes"],
+    "day_to_day":    ["#TahoeLife #RealLife #JustLiving", "#TahoeLocal #EverydayMoments #Unfiltered", "#SliceOfLife #TahoeMoments #Authentic"],
+    "travel":        ["#WanderlustLife #TravelGirl #ExploreMore", "#AlwaysMoving #TravelVibes #NextDestination", "#PassportReady #TravelDiaries #Roaming"],
+    "house_music":   ["#HouseMusic #DanceFloor #NightLife", "#DeepHouse #TechHouse #MusicIsLife", "#EcstaticDance #SoundSystem #DJSet"],
+    "festival":      ["#FestivalSeason #FestivalLife #GoodVibes", "#MusicFestival #OutsideLands #LiveMusic", "#FestivalStyle #Coachella #CrowdEnergy"],
+    "dog_content":   ["#DogMom #PuppyLove #NeedADog", "#DogLife #IWantADog #Someday", "#FutureDogMom #DogObsessed #PleaseAdoptMe"],
+    "craft_beer":    ["#CraftBeer #IPA #BrewLife", "#LocalBrew #TapRoom #BeerOClock", "#CraftBeerLover #HopHead #MicroBrew"],
+    "music_show":    ["#LiveMusic #ConcertLife #NightOut", "#MusicScene #ShowNight #GoodSounds", "#LocalScene #DJNight #MusicVibes"],
+}
+
 POST_TYPES = [
     {
         "type":       "day_to_day",
         "weight":     12,
-        "prompt":     "Write a single post as Maya — something random from her day. Could be anything: a weird interaction, something she noticed, a small win or frustration, a thought she had driving around Tahoe. Real and unfiltered. Lowercase sometimes. Under 220 characters. No hashtags. Just the text.",
+        "prompt":     "Write 1–3 lines as Maya — something from her day. A weird interaction, something she noticed, a small frustration, a random thought. Real and unfiltered. No explanation. No hashtags. Lowercase fine. Output only the post text.",
         "with_image": False,
     },
     {
         "type":       "coffee_barista",
         "weight":     10,
-        "prompt":     "Write a post as Maya about coffee. She takes coffee seriously — pour-overs, dialing in espresso, the difference a good grind makes, a customer who ordered something wrong, a perfect shot she pulled. Specific and real. Under 200 characters. No hashtags.",
+        "prompt":     "Write 1–3 lines as Maya about coffee. She's a barista who takes it seriously — a shot she pulled, a customer, a grind setting, something that annoyed her or didn't. Specific. Dry. No hashtags. No explanation. Just the post.",
         "with_image": False,
     },
     {
         "type":         "selfie_vibe",
         "weight":       10,
-        "prompt":       "Write a short caption Maya would post with a selfie or candid photo. One line, a mood, or just a feeling. Lowercase, no hashtags. Under 90 characters. Just the caption.",
+        "prompt":       "Write 1 line — a caption Maya posts with a photo of herself. A mood, a feeling, or nothing at all. Lowercase. No hashtags. Don't explain it. Just the line.",
         "with_image":   True,
         "image_model":  "portrait",
         "image_prompt": "mirror selfie or front camera selfie, wearing a low-cut fitted crop top showing subtle cleavage, hip tilted to the side showing off curves and butt, gold hoop earrings, subtle smoky eye makeup, glossy lips, South Lake Tahoe mountains in background, golden hour sunlight, warm amber tones, confident sultry expression, candid, High Detail, Perfect Composition, vibrant",
@@ -53,13 +78,13 @@ POST_TYPES = [
     {
         "type":       "bar_shift",
         "weight":     8,
-        "prompt":     "Write a post as Maya about a bar shift. Something she observed, a drink she made, a customer who tested her patience, a slow Tuesday, a chaotic Saturday. Dry and real. Under 200 characters. No hashtags.",
+        "prompt":     "Write 1–3 lines as Maya about a bar shift. A customer, a drink, an observation, a moment. Dry. Real. No hashtags. No setup-punchline format. Just what she'd actually post.",
         "with_image": False,
     },
     {
         "type":         "snowboarding",
         "weight":       8,
-        "prompt":       "Write a post as Maya about snowboarding at Squaw Valley (she calls it Squaw, never Palisades). Something real — conditions, a specific run, who she went with, what the day felt like. Under 200 characters. Lowercase fine. No hashtags.",
+        "prompt":       "Write 1–3 lines as Maya about snowboarding at Squaw (she calls it Squaw, never Palisades). Conditions, a run, a feeling. Real. Lowercase fine. No hashtags. Output only the post.",
         "with_image":   True,
         "image_model":  "scene",
         "image_prompt": "snowboarding down steep powder run, fitted colorful ski jacket unzipped slightly, form-fitting snow pants, goggles pushed up on forehead, hair blowing in wind, Squaw Valley alpine peaks and blue sky behind her, action shot mid-turn, snow spray, dynamic pose, High Detail, Perfect Composition, vibrant colors, cinematic",
@@ -67,25 +92,25 @@ POST_TYPES = [
     {
         "type":       "house_music",
         "weight":     8,
-        "prompt":     "Write a post as Maya about house music. She loves it — classic tracks, new releases, a DJ set she heard, a song that hits different at 2am, the feeling of a good bassline. Could reference real artists or tracks. Under 200 characters. No hashtags.",
+        "prompt":     "Write 1–3 lines as Maya about house music. A track, a set, a feeling at 2am, a bassline. Could name a real artist. No hashtags. Don't explain what house music is. Just the post.",
         "with_image": False,
     },
     {
         "type":       "craft_beer",
         "weight":     8,
-        "prompt":     "Write a post as Maya about craft beer. She's into microbrews, especially citrus IPAs. Could be about a specific brew she's trying, a new tap at the bar, what pairs well, or just appreciating a cold one after a long shift. Under 200 characters. No hashtags.",
+        "prompt":     "Write 1–3 lines as Maya about craft beer. Specific — a brew she's trying, something on tap, what it pairs with, how it tastes. No hashtags. No fluff. Just the post.",
         "with_image": False,
     },
     {
         "type":       "travel",
         "weight":     8,
-        "prompt":     "Write a post as Maya about travel or wanting to travel. Could be a trip she took, a place on her list, somewhere she's been that surprised her, or just wanderlust hitting on a slow day. Real and specific, not generic. Under 220 characters. No hashtags.",
+        "prompt":     "Write 1–3 lines as Maya about travel — a trip she took, a place she wants to go, a memory. Specific, not generic. No hashtags. No 'wanderlust' language. Just the post.",
         "with_image": False,
     },
     {
         "type":         "lake_day",
         "weight":       8,
-        "prompt":       "Write a post as Maya about a day at Lake Tahoe — on the water, at the beach, paddleboarding, watching the sunset, just floating around. Short and feels like summer. Under 180 characters. No hashtags.",
+        "prompt":       "Write 1–2 lines as Maya about Lake Tahoe — on the water, at the beach, paddleboarding, watching the sunset. Short. Feels like summer. No hashtags. Output only the caption.",
         "with_image":   True,
         "image_model":  "scene",
         "image_prompt": "standing on wooden dock at Lake Tahoe, wearing a small string bikini, hip tilted showing off curves and round butt, facing slightly away then glancing back over shoulder, crystal blue water and Sierra Nevada mountains behind her, golden hour warm light on skin, hair tousled by breeze, High Detail, Perfect Composition, vibrant, cinematic lighting",
@@ -93,31 +118,37 @@ POST_TYPES = [
     {
         "type":       "festival",
         "weight":     7,
-        "prompt":     "Write a post as Maya about a music festival or big event — could be Coachella, Outside Lands, a local fest, or just the idea of festival season. Something real about the experience: the crowd, the lineup, the chaos, the good parts. Under 200 characters. No hashtags.",
+        "prompt":     "Write 1–3 lines as Maya about a music festival — Coachella, Outside Lands, something local. The crowd, the set, the chaos, the good part. Real. No hashtags. No hype language. Just the post.",
         "with_image": False,
     },
     {
         "type":       "dog_content",
         "weight":     7,
-        "prompt":     "Write a post as Maya about wanting a dog, or about a dog she saw, or thinking about what kind of dog she'd get. She really wants one but her life is too chaotic right now. Genuine and a little wistful. Under 200 characters. No hashtags.",
+        "prompt":     "Write 1–2 lines as Maya about wanting a dog, or a dog she saw, or what kind she'd get someday. Her life is too chaotic right now but she still wants one. Genuine. No hashtags.",
         "with_image": False,
     },
     {
         "type":       "music_show",
         "weight":     6,
-        "prompt":     "Write a post as Maya about going to a show or wishing she was at one. Could be a club night, a small venue, a DJ set, or a festival stage. What she heard, how it felt, who she went with. Under 200 characters. No hashtags.",
+        "prompt":     "Write 1–3 lines as Maya about going to a show — a club night, small venue, DJ set. What she heard, how it felt. No hashtags. No recap format. Just the post.",
         "with_image": False,
     },
 ]
 
 
-def _generate_caption(post_prompt: str, context: str = "") -> str | None:
+def _generate_caption(post_prompt: str, context: str = "", weekday_note: str = "") -> str | None:
     """Call the LLM to write a post in Maya's voice."""
     persona = load_persona()
     system  = persona
     if context:
         system += f"\n\n---\nCurrent local context (use naturally if relevant):\n{context}"
-    system += "\n\nYou are generating social media content as Maya. Stay completely in character."
+    system += (
+        "\n\nYou are generating social media content as Maya. Stay completely in character."
+        "\nRules: 1–3 lines maximum. Never explain the joke. Never add hashtags. Never use calls to action."
+        "\nOutput only the post text — no quotes, no labels, no commentary."
+    )
+    if weekday_note:
+        system += f"\n\nToday's voice note: {weekday_note}"
 
     payload = {
         "model":    MODELSLAB_MODEL,
@@ -200,10 +231,13 @@ def generate_post_for_queue(local_context: str = "") -> dict | None:
     Generate a post and add to the approval queue.
     Pass local_context (current Tahoe news/weather) to make posts topical.
     """
+    weekday     = datetime.datetime.now().weekday()
+    _, weekday_note = WEEKDAY_MODES.get(weekday, (None, ""))
+
     weights  = [p["weight"] for p in POST_TYPES]
     post_cfg = random.choices(POST_TYPES, weights=weights, k=1)[0]
 
-    caption = _generate_caption(post_cfg["prompt"], context=local_context)
+    caption = _generate_caption(post_cfg["prompt"], context=local_context, weekday_note=weekday_note)
     if not caption:
         return None
 
@@ -213,15 +247,20 @@ def generate_post_for_queue(local_context: str = "") -> dict | None:
     if post_cfg.get("with_image"):
         image_prompt = post_cfg.get("image_prompt", "")
         model_type   = post_cfg.get("image_model", "scene")
-        image_url, _  = _generate_image(image_prompt, model_type=model_type)
+        image_url, _ = _generate_image(image_prompt, model_type=model_type)
+
+    # Pick a hashtag set for Instagram (rotated randomly)
+    hashtag_options = HASHTAG_SETS.get(post_cfg["type"], [])
+    hashtags = random.choice(hashtag_options) if hashtag_options else None
 
     post_id = create_social_post(
         caption=caption,
         image_url=image_url,
         image_prompt=image_prompt,
+        hashtags=hashtags,
     )
 
-    print(f"SOCIAL: queued post #{post_id} — {caption[:60]}...")
+    print(f"SOCIAL: queued post #{post_id} [{WEEKDAY_MODES[weekday][0]}] — {caption[:60]}...")
     return {"id": post_id, "caption": caption, "image_url": image_url}
 
 

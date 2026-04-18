@@ -115,6 +115,7 @@ def post_now(post_id: int, secret: str = Query(...), platform: str = Query("thre
             post_id=post_id,
             caption=row["caption"],
             image_url=row["image_url"],
+            hashtags=row.get("hashtags"),
         )
     else:
         success = post_to_threads(

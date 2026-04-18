@@ -66,7 +66,7 @@ def _get_ig_user_id() -> str | None:
     return None
 
 
-def post_to_instagram(post_id: int, caption: str, image_url: str = None) -> bool:
+def post_to_instagram(post_id: int, caption: str, image_url: str = None, hashtags: str = None) -> bool:
     """
     Publish a post to Instagram.
     Instagram Graph API always requires an image — text-only is not supported.
@@ -89,12 +89,17 @@ def post_to_instagram(post_id: int, caption: str, image_url: str = None) -> bool
             mark_post_failed(post_id)
             return False
 
+        # Append hashtags for Instagram only
+        ig_caption = caption
+        if hashtags:
+            ig_caption = f"{caption}\n\n{hashtags}"
+
         # Step 1 — create media container
         r = requests.post(
             f"{GRAPH_API}/{ig_user_id}/media",
             params={
                 "image_url":    image_url,
-                "caption":      caption,
+                "caption":      ig_caption,
                 "access_token": INSTAGRAM_ACCESS_TOKEN,
             },
             timeout=30,
