@@ -10,8 +10,7 @@ import requests
 MAYA_CHARACTER = (
     "beautiful young woman, long beachy wavy blonde hair with natural highlights, "
     "bright blue-green eyes, sun-kissed golden skin, defined cheekbones, full lips, "
-    "thin waist, toned fit body, voluptuous figure, large round butt, ample cleavage, "
-    "hourglass curves, subtly sexy confident pose, "
+    "toned athletic fit body, confident natural pose, "
     "High Detail, Perfect Composition, cinematic lighting, photorealistic, 8k, "
 )
 from app.config import (
@@ -330,7 +329,10 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
         return None, "REPLICATE_LORA_VERSION not set in Railway env vars"
 
     full_prompt = "mayaselfie " + MAYA_CHARACTER + prompt
-    inp = {"prompt": full_prompt}
+    inp = {
+        "prompt": full_prompt,
+        "disable_safety_checker": True,
+    }
     if image_url:
         inp["image"]           = image_url
         inp["prompt_strength"] = prompt_strength
