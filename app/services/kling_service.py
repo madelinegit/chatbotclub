@@ -32,9 +32,13 @@ def image_to_video(image_url: str, prompt: str = "", duration: int = 5) -> tuple
         return None, "image_to_video: image_url is required"
 
     try:
-        inp = {"first_frame_image": image_url}
-        if prompt:
-            inp["prompt"] = prompt
+        inp = {
+            "first_frame_image": image_url,
+            "prompt":     prompt or "cinematic motion, smooth camera movement",
+            "model":      "MiniMax-Hailuo-2.3",
+            "duration":   duration,
+            "resolution": "1080P",
+        }
 
         print(f"REPLICATE i2v: model={IMAGE_TO_VIDEO_MODEL} prompt={prompt!r} image={image_url[:80]}")
         output = replicate.run(IMAGE_TO_VIDEO_MODEL, input=inp)
@@ -66,7 +70,12 @@ def text_to_video(prompt: str, duration: int = 5) -> tuple[str | None, str | Non
 
     try:
         print(f"REPLICATE t2v: model={TEXT_TO_VIDEO_MODEL} prompt={prompt!r}")
-        output = replicate.run(TEXT_TO_VIDEO_MODEL, input={"prompt": prompt})
+        output = replicate.run(TEXT_TO_VIDEO_MODEL, input={
+            "prompt":     prompt,
+            "model":      "MiniMax-Hailuo-2.3",
+            "duration":   duration,
+            "resolution": "1080P",
+        })
 
         video_url = str(output) if output else None
         if not video_url:
