@@ -242,6 +242,37 @@
     .nav-btn.active { color: var(--accent); }
     .nav-btn:active { opacity: .7; }
 
+    /* ── Add to home screen banner ── */
+    #a2hs-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 20px;
+      background: rgba(96,165,250,.08);
+      border-bottom: 1px solid rgba(96,165,250,.15);
+      font-size: 13px;
+    }
+    #a2hs-bar.hidden { display: none; }
+    #a2hs-bar .a2hs-text { flex: 1; color: #60a5fa; line-height: 1.4; }
+    #a2hs-dismiss {
+      background: none; border: 1px solid rgba(96,165,250,.3);
+      color: #60a5fa; border-radius: 8px;
+      padding: 5px 10px; font-size: 12px; cursor: pointer; white-space: nowrap;
+    }
+
+    /* ── X button ── */
+    .btn-x { background: #000; color: #fff; border: 1px solid rgba(255,255,255,.15); }
+
+    /* ── Fullscreen image overlay ── */
+    #img-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.92);
+      align-items: center; justify-content: center;
+    }
+    #img-overlay.open { display: flex; }
+    #img-overlay img {
+      max-width: 95vw; max-height: 90vh;
+      border-radius: 8px; object-fit: contain;
+    }
+
     /* ── Empty state ── */
     .empty { text-align: center; color: var(--muted); padding: 48px 0; font-size: 14px; }
 
@@ -285,6 +316,11 @@
     <button id="refresh-btn" onclick="refresh()">↺ Refresh</button>
   </div>
 
+  <div id="a2hs-bar" class="hidden">
+    <span class="a2hs-text">Tap <strong>⬆ Share</strong> then <strong>"Add to Home Screen"</strong> to install this app</span>
+    <button class="a2hs-dismiss" onclick="dismissA2HS()">Got it</button>
+  </div>
+
   <div id="notify-bar" class="hidden">
     <span class="nb-text">Enable push notifications</span>
     <button id="notify-btn" onclick="enableNotifications()">Enable</button>
@@ -313,7 +349,8 @@
         <div class="actions">
           <button class="btn btn-gen" id="w-gen-btn" onclick="generateCaption()">Generate</button>
           <button class="btn btn-save" id="w-queue-btn" style="display:none;" onclick="queueGenerated()">Queue</button>
-          <button class="btn btn-ig" id="w-post-btn" style="display:none;" onclick="postGeneratedNow('threads')">Post to Threads</button>
+          <button class="btn btn-threads" id="w-post-threads-btn" style="display:none;" onclick="postGeneratedNow('threads')">→ Threads</button>
+          <button class="btn btn-x" id="w-post-x-btn" style="display:none;" onclick="postGeneratedNow('x')">→ X</button>
         </div>
       </div>
 
@@ -342,6 +379,9 @@
   </nav>
 </div>
 
+<div id="img-overlay" onclick="closeImgOverlay()">
+  <img id="img-overlay-src" src="" alt="">
+</div>
 <div id="toast"></div>
 
 <script>
@@ -403,6 +443,7 @@
     loadStats()
     loadPosts()
     checkNotifyBar()
+    checkA2HS()
   }
 
   function showLogin() {
@@ -478,7 +519,7 @@
         </div>
         <div class="post-body">
           ${p.image_url
-            ? `<img class="post-thumb" src="${p.image_url}" loading="lazy" onerror="this.style.display='none'">`
+            ? `<img class="post-thumb" src="${p.image_url}" loading="lazy" onerror="this.style.display='none'" onclick="openImgOverlay('${p.image_url}')" style="cursor:pointer;">`
             : `<div class="post-thumb-placeholder">no img</div>`
           }
           <div class="post-caption">
@@ -491,8 +532,11 @@
         ${editing ? `
         <div class="actions">
           ${p.status !== 'failed' ? `<button class="btn btn-threads" onclick="mSaveAndPost(${p.id},'threads')">Threads</button>` : ''}
+          ${p.status !== 'failed' ? `<button class="btn btn-x" onclick="mSaveAndPost(${p.id},'x')">X</button>` : ''}
           ${p.image_url ? `<button class="btn btn-ig" onclick="mSaveAndPost(${p.id},'instagram')">IG</button>` : ''}
           ${p.status === 'failed' ? `<button class="btn btn-retry" onclick="mRetry(${p.id})">↺ Retry</button>` : ''}
+          ${p.status === 'failed' ? `<button class="btn btn-threads" onclick="mSaveAndPost(${p.id},'threads')">Threads</button>` : ''}
+          ${p.status === 'failed' ? `<button class="btn btn-x" onclick="mSaveAndPost(${p.id},'x')">X</button>` : ''}
           <button class="btn btn-save" onclick="mSave(${p.id})">Save</button>
           <button class="btn btn-del" onclick="mDelete(${p.id})">✕</button>
         </div>` : ''}
@@ -592,7 +636,8 @@
       document.getElementById('w-expanded').value = _generatedCaption
       document.getElementById('w-expanded-wrap').style.display = 'block'
       document.getElementById('w-queue-btn').style.display = 'block'
-      document.getElementById('w-post-btn').style.display = 'block'
+      document.getElementById('w-post-threads-btn').style.display = 'block'
+      document.getElementById('w-post-x-btn').style.display = 'block'
     } catch (e) {
       toast('Error: ' + e.message, 'red')
     } finally {
@@ -614,7 +659,8 @@
       document.getElementById('w-idea').value = ''
       document.getElementById('w-expanded-wrap').style.display = 'none'
       document.getElementById('w-queue-btn').style.display = 'none'
-      document.getElementById('w-post-btn').style.display = 'none'
+      document.getElementById('w-post-threads-btn').style.display = 'none'
+      document.getElementById('w-post-x-btn').style.display = 'none'
       document.getElementById('w-gen-btn').innerHTML = 'Generate'
     } else toast('Queue failed.', 'red')
   }
@@ -636,7 +682,8 @@
       document.getElementById('w-idea').value = ''
       document.getElementById('w-expanded-wrap').style.display = 'none'
       document.getElementById('w-queue-btn').style.display = 'none'
-      document.getElementById('w-post-btn').style.display = 'none'
+      document.getElementById('w-post-threads-btn').style.display = 'none'
+      document.getElementById('w-post-x-btn').style.display = 'none'
     } else {
       const d = await pr.json()
       toast(`Failed: ${d.detail}`, 'red')
@@ -770,6 +817,35 @@
       btn.textContent = 'Enable'
       btn.disabled = false
     }
+  }
+
+  // ── Add to Home Screen ───────────────────────────────────────────────────────
+
+  function checkA2HS() {
+    // Only show on iOS Safari when NOT already installed as PWA
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    const isStandalone = window.navigator.standalone === true
+    const dismissed = localStorage.getItem('a2hs_dismissed')
+    if (isIOS && !isStandalone && !dismissed) {
+      document.getElementById('a2hs-bar').classList.remove('hidden')
+    }
+  }
+
+  function dismissA2HS() {
+    localStorage.setItem('a2hs_dismissed', '1')
+    document.getElementById('a2hs-bar').classList.add('hidden')
+  }
+
+  // ── Image fullscreen ─────────────────────────────────────────────────────────
+
+  function openImgOverlay(url) {
+    document.getElementById('img-overlay-src').src = url
+    document.getElementById('img-overlay').classList.add('open')
+  }
+
+  function closeImgOverlay() {
+    document.getElementById('img-overlay').classList.remove('open')
+    document.getElementById('img-overlay-src').src = ''
   }
 
   function urlBase64ToUint8Array(base64String) {
