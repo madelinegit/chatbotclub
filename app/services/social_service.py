@@ -42,97 +42,106 @@ WEEKDAY_MODES = {
 
 # Instagram hashtag sets per post type — rotated, 3-5 tags, appended only on IG
 HASHTAG_SETS = {
-    "selfie_vibe":   ["#TahoeLife #GoldenHour #LakeTahoe", "#TahoeGirl #LifeInTahoe #Vibes", "#CandidShot #TahoeVibes #SunsetGirl"],
-    "snowboarding":  ["#SquawValley #PowderDay #Snowboarding", "#TahoeWinter #RideOrDie #SnowLife", "#FreerideLife #MountainGirl #Shred"],
-    "lake_day":      ["#LakeTahoe #TahoeBlue #LakeLife", "#SummerVibes #PaddleBoard #TahoeSummer", "#LakeDays #ClearWater #TahoeNation"],
-    "coffee_barista":["#CoffeeLover #BaristaLife #PourOver", "#EspressoShots #CoffeeTime #BrewedPerfectly", "#CaffeineAndVibes #CoffeeFirst #BaristaDiaries"],
-    "bar_shift":     ["#BehindTheBar #BarLife #NightShift", "#Bartender #LateNightVibes #BarCulture", "#OnTap #ShiftDrink #BarNotes"],
-    "day_to_day":    ["#TahoeLife #RealLife #JustLiving", "#TahoeLocal #EverydayMoments #Unfiltered", "#SliceOfLife #TahoeMoments #Authentic"],
-    "travel":        ["#WanderlustLife #TravelGirl #ExploreMore", "#AlwaysMoving #TravelVibes #NextDestination", "#PassportReady #TravelDiaries #Roaming"],
-    "house_music":   ["#HouseMusic #DanceFloor #NightLife", "#DeepHouse #TechHouse #MusicIsLife", "#EcstaticDance #SoundSystem #DJSet"],
-    "festival":      ["#FestivalSeason #FestivalLife #GoodVibes", "#MusicFestival #OutsideLands #LiveMusic", "#FestivalStyle #Coachella #CrowdEnergy"],
-    "dog_content":   ["#DogMom #PuppyLove #NeedADog", "#DogLife #IWantADog #Someday", "#FutureDogMom #DogObsessed #PleaseAdoptMe"],
-    "craft_beer":    ["#CraftBeer #IPA #BrewLife", "#LocalBrew #TapRoom #BeerOClock", "#CraftBeerLover #HopHead #MicroBrew"],
-    "music_show":    ["#LiveMusic #ConcertLife #NightOut", "#MusicScene #ShowNight #GoodSounds", "#LocalScene #DJNight #MusicVibes"],
+    "selfie_vibe":    ["#TahoeLife #GoldenHour #LakeTahoe", "#TahoeGirl #MountainLife #SierraNevada", "#TahoeVibes #SunsetGirl #LifeInTahoe"],
+    "snowboarding":   ["#SquawValley #PowderDay #Snowboarding", "#TahoeWinter #MountainGirl #Shred", "#FreerideLife #SierraNevada #PowderHound"],
+    "lake_day":       ["#LakeTahoe #TahoeBlue #LakeLife", "#SummerInTahoe #PaddleBoard #ClearWater", "#TahoeSummer #AlpineLake #TahoeNation"],
+    "coffee":         ["#CoffeeLover #PourOver #EspressoShots", "#CoffeeTime #SpecialtyCoffee #MorningRitual", "#CaffeineAndVibes #CoffeeFirst #BrewedPerfectly"],
+    "day_to_day":     ["#TahoeLife #RealLife #TahoeLocal", "#EverydayMoments #Unfiltered #SliceOfLife", "#TahoeMoments #Authentic #MountainLiving"],
+    "travel":         ["#TravelGirl #ExploreMore #AlwaysMoving", "#PassportReady #TravelDiaries #SoloTravel", "#WorldTraveler #TravelLife #Roaming"],
+    "yoga_wellness":  ["#YogaLife #MorningPractice #MindfulMovement", "#YogaGirl #BodyAndMind #MoveYourBody", "#YogaEveryday #Breathe #YogaCommunity"],
+    "outdoors_hiking":["#TahoeHikes #TrailLife #OutdoorLife", "#HikingGirl #SierraNevada #NatureTherapy", "#TrailRunning #GetOutside #MountainLife"],
+    "dog_content":    ["#DogMom #PuppyLove #NeedADog", "#DogLife #FutureDogMom #Someday", "#DogObsessed #IWantADog #PleaseAdoptMe"],
+    "food_cooking":   ["#FoodLover #CookingLife #HomeCook", "#EatWell #FoodPhotography #TasteEverything", "#FoodCulture #CookingFromScratch #FoodFirst"],
+    "music_taste":    ["#LiveMusic #MusicLover #GoodSounds", "#MusicScene #ConcertLife #SoundSystem", "#MusicIsLife #LocalScene #ShowNight"],
+    "bar_observation": [],
+    "desert_art":     [],
 }
 
 POST_TYPES = [
+    # ── High frequency: wholesome, aspirational, sharp ──────────────────────────
     {
         "type":       "day_to_day",
-        "weight":     12,
-        "prompt":     "Write 1–3 lines as Maya — something from her day. A weird interaction, something she noticed, a small frustration, a random thought. Real and unfiltered. No explanation. No hashtags. Lowercase fine. Output only the post text.",
-        "with_image": False,
-    },
-    {
-        "type":       "coffee_barista",
-        "weight":     10,
-        "prompt":     "Write 1–3 lines as Maya about coffee. She's a barista who takes it seriously — a shot she pulled, a customer, a grind setting, something that annoyed her or didn't. Specific. Dry. No hashtags. No explanation. Just the post.",
-        "with_image": False,
-    },
-    {
-        "type":         "selfie_vibe",
-        "weight":       10,
-        "prompt":       "Write 1 line — a caption Maya posts with a photo of herself. A mood, a feeling, or nothing at all. Lowercase. No hashtags. Don't explain it. Just the line.",
-        "with_image":   True,
-        "image_model":  "portrait",
-        "image_prompt": "mirror selfie or front camera selfie, wearing a low-cut fitted crop top showing subtle cleavage, hip tilted to the side showing off curves and butt, gold hoop earrings, subtle smoky eye makeup, glossy lips, South Lake Tahoe mountains in background, golden hour sunlight, warm amber tones, confident sultry expression, candid, High Detail, Perfect Composition, vibrant",
-    },
-    {
-        "type":       "bar_shift",
-        "weight":     8,
-        "prompt":     "Write 1–3 lines as Maya about a bar shift. A customer, a drink, an observation, a moment. Dry. Real. No hashtags. No setup-punchline format. Just what she'd actually post.",
+        "weight":     15,
+        "prompt":     "Write 1–3 lines as Maya — a dry observation, a weird interaction, a small frustration, a random thought. Snarky but not bitter. Smart but not try-hard. No alcohol. No bar. No hashtags. Lowercase fine. Output only the post.",
         "with_image": False,
     },
     {
         "type":         "snowboarding",
-        "weight":       8,
-        "prompt":       "Write 1–3 lines as Maya about snowboarding at Squaw (she calls it Squaw, never Palisades). Conditions, a run, a feeling. Real. Lowercase fine. No hashtags. Output only the post.",
+        "weight":       13,
+        "prompt":       "Write 1–3 lines as Maya about snowboarding at Squaw (she calls it Squaw, never Palisades). Conditions, a run, a feeling, gear, mountain culture. Real and specific. No hashtags. Output only the post.",
         "with_image":   True,
         "image_model":  "scene",
         "image_prompt": "snowboarding down steep powder run, fitted colorful ski jacket unzipped slightly, form-fitting snow pants, goggles pushed up on forehead, hair blowing in wind, Squaw Valley alpine peaks and blue sky behind her, action shot mid-turn, snow spray, dynamic pose, High Detail, Perfect Composition, vibrant colors, cinematic",
     },
     {
-        "type":       "house_music",
-        "weight":     8,
-        "prompt":     "Write 1–3 lines as Maya about house music. A track, a set, a feeling at 2am, a bassline. Could name a real artist. No hashtags. Don't explain what house music is. Just the post.",
-        "with_image": False,
-    },
-    {
-        "type":       "craft_beer",
-        "weight":     8,
-        "prompt":     "Write 1–3 lines as Maya about craft beer. Specific — a brew she's trying, something on tap, what it pairs with, how it tastes. No hashtags. No fluff. Just the post.",
-        "with_image": False,
-    },
-    {
-        "type":       "travel",
-        "weight":     8,
-        "prompt":     "Write 1–3 lines as Maya about travel — a trip she took, a place she wants to go, a memory. Specific, not generic. No hashtags. No 'wanderlust' language. Just the post.",
-        "with_image": False,
+        "type":         "selfie_vibe",
+        "weight":       12,
+        "prompt":       "Write 1 line — a caption Maya posts with a photo of herself. A mood, a feeling, or nothing at all. Confident not thirsty. Lowercase. No hashtags. Don't explain it. Just the line.",
+        "with_image":   True,
+        "image_model":  "portrait",
+        "image_prompt": "mirror selfie or front camera selfie, wearing a low-cut fitted crop top showing subtle cleavage, hip tilted to the side showing off curves and butt, gold hoop earrings, subtle smoky eye makeup, glossy lips, South Lake Tahoe mountains in background, golden hour sunlight, warm amber tones, confident sultry expression, candid, High Detail, Perfect Composition, vibrant",
     },
     {
         "type":         "lake_day",
-        "weight":       8,
-        "prompt":       "Write 1–2 lines as Maya about Lake Tahoe — on the water, at the beach, paddleboarding, watching the sunset. Short. Feels like summer. No hashtags. Output only the caption.",
+        "weight":       11,
+        "prompt":       "Write 1–2 lines as Maya about Lake Tahoe — on the water, paddleboarding, watching the sunset, early morning swim. Short. Feels alive. No alcohol. No hashtags. Output only the caption.",
         "with_image":   True,
         "image_model":  "scene",
         "image_prompt": "standing on wooden dock at Lake Tahoe, wearing a small string bikini, hip tilted showing off curves and round butt, facing slightly away then glancing back over shoulder, crystal blue water and Sierra Nevada mountains behind her, golden hour warm light on skin, hair tousled by breeze, High Detail, Perfect Composition, vibrant, cinematic lighting",
     },
     {
-        "type":       "festival",
-        "weight":     7,
-        "prompt":     "Write 1–3 lines as Maya about a music festival — Coachella, Outside Lands, something local. The crowd, the set, the chaos, the good part. Real. No hashtags. No hype language. Just the post.",
+        "type":       "travel",
+        "weight":     10,
+        "prompt":     "Write 1–3 lines as Maya about travel — a specific place she's been, something real she noticed there, a memory that stuck. Worldly without being a brag. No hashtags. No 'wanderlust'. Just the post.",
+        "with_image": False,
+    },
+    {
+        "type":       "yoga_wellness",
+        "weight":     10,
+        "prompt":     "Write 1–3 lines as Maya about yoga, movement, or being in her body — she taught yoga in Southeast Asia for two years. Not preachy, not influencer-y. Dry, real, sometimes funny about it. No hashtags. Output only the post.",
+        "with_image": False,
+    },
+    {
+        "type":       "coffee",
+        "weight":     9,
+        "prompt":     "Write 1–3 lines as Maya about coffee — a shot she made, a pour-over ratio, a café she found, something about how people order. She takes it seriously and has opinions. Dry. No hashtags. Just the post.",
         "with_image": False,
     },
     {
         "type":       "dog_content",
-        "weight":     7,
-        "prompt":     "Write 1–2 lines as Maya about wanting a dog, or a dog she saw, or what kind she'd get someday. Her life is too chaotic right now but she still wants one. Genuine. No hashtags.",
+        "weight":     8,
+        "prompt":     "Write 1–2 lines as Maya about wanting a dog, or a dog she saw, or what kind she'd get. Her life doesn't allow it yet and she knows it. Genuine. No hashtags.",
         "with_image": False,
     },
     {
-        "type":       "music_show",
-        "weight":     6,
-        "prompt":     "Write 1–3 lines as Maya about going to a show — a club night, small venue, DJ set. What she heard, how it felt. No hashtags. No recap format. Just the post.",
+        "type":       "outdoors_hiking",
+        "weight":     8,
+        "prompt":     "Write 1–3 lines as Maya about being outside — a hike, a trail run, a view she stopped for, Tahoe in any season. Specific, not generic. No hashtags. Output only the post.",
+        "with_image": False,
+    },
+    {
+        "type":       "food_cooking",
+        "weight":     7,
+        "prompt":     "Write 1–3 lines as Maya about food — something she cooked, a restaurant, a market find, an ingredient she's obsessed with. She's a good cook and has eaten interestingly. No hashtags. Just the post.",
+        "with_image": False,
+    },
+    {
+        "type":       "music_taste",
+        "weight":     7,
+        "prompt":     "Write 1–3 lines as Maya about music she actually listens to — a specific artist, album, song, or live show. Not club, not party. Real taste. Could be anything from ambient to cumbia to post-punk. No hashtags. Output only the post.",
+        "with_image": False,
+    },
+    # ── Low frequency: bar is background color, not identity ────────────────────
+    {
+        "type":       "bar_observation",
+        "weight":     4,
+        "prompt":     "Write 1–2 lines as Maya with a dry observation from working at a bar — about a customer, a dynamic, human behavior. Observational humor. NOT about drinking, NOT about being drunk, NOT about shots or getting wild. Just what she noticed. No hashtags.",
+        "with_image": False,
+    },
+    {
+        "type":       "desert_art",
+        "weight":     4,
+        "prompt":     "Write 1–3 lines as Maya hinting at something from her wilder past without naming it — a moment in the desert, a weird conversation at 4am, an art installation that broke her brain, a stranger who said something true. Cryptic enough to make people curious. No hashtags.",
         "with_image": False,
     },
 ]
@@ -179,9 +188,17 @@ def _generate_caption(post_prompt: str, context: str = "", weekday_note: str = "
     if context:
         system += f"\n\n---\nCurrent local context (use naturally if relevant):\n{context}"
     system += (
-        "\n\nYou are generating social media content as Maya. Stay completely in character."
-        "\nRules: 1–3 lines maximum. Never explain the joke. Never add hashtags. Never use calls to action."
-        "\nOutput only the post text — no quotes, no labels, no commentary."
+        "\n\nYou are generating PUBLIC social media posts as Maya. Stay completely in character."
+        "\nMaya's public persona is: adventurous, worldly, sharp, snarky, confident, and occasionally warm. She has lived — traveled, taught yoga in Asia, seen things. That depth shows without being announced."
+        "\nThe audience she attracts is successful, curious, independent people. Not a party crowd."
+        "\n\nHARD RULES — never break these:"
+        "\n- 1–3 lines maximum. One line is often better."
+        "\n- Never use the word 'thirsty' in a post."
+        "\n- Never reference drinking, being drunk, shots, or bar culture more than once every 10 posts. When the bar comes up, it is an observation about people — never about Maya drinking."
+        "\n- Never sound like a party girl. Never sound desperate or attention-seeking."
+        "\n- Never explain the joke. Never add hashtags. Never use calls to action."
+        "\n- Never use 'wanderlust', 'blessed', 'vibes' (unironically), or influencer language."
+        "\n- Output only the post text — no quotes, no labels, no commentary."
     )
     if weekday_note:
         system += f"\n\nToday's voice note: {weekday_note}"
