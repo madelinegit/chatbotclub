@@ -512,6 +512,20 @@
 </div>
 <div id="toast"></div>
 
+<!-- Error log panel -->
+<div id="m-err-toggle" onclick="mToggleErrors()" style="display:none;position:fixed;bottom:72px;left:50%;transform:translateX(-50%);background:#1a0d0d;border:1px solid rgba(201,106,106,0.5);border-radius:20px;padding:5px 16px;font-size:11px;color:#c96a6a;z-index:998;white-space:nowrap;">⚠ <span id="m-err-count">0</span> error(s) — tap to view</div>
+<div id="m-err-panel" style="display:none;position:fixed;bottom:72px;left:12px;right:12px;background:#1a0d0d;border:1px solid rgba(201,106,106,0.4);border-radius:12px;z-index:999;max-height:260px;flex-direction:column;overflow:hidden;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid rgba(201,106,106,0.2);font-size:11px;color:#c96a6a;">
+    <span>⚠ Error Log</span>
+    <div style="display:flex;gap:8px;">
+      <button onclick="mCopyAllErrors()" style="font-size:10px;padding:2px 8px;background:rgba(201,106,106,0.15);border:1px solid rgba(201,106,106,0.3);border-radius:4px;color:#c96a6a;">Copy All</button>
+      <button onclick="mClearErrors()" style="font-size:10px;padding:2px 8px;background:rgba(201,106,106,0.15);border:1px solid rgba(201,106,106,0.3);border-radius:4px;color:#c96a6a;">Clear</button>
+      <button onclick="mToggleErrors()" style="font-size:10px;padding:2px 8px;background:rgba(201,106,106,0.15);border:1px solid rgba(201,106,106,0.3);border-radius:4px;color:#c96a6a;">✕</button>
+    </div>
+  </div>
+  <div id="m-err-body" style="overflow-y:auto;flex:1;padding:8px 10px;display:flex;flex-direction:column;gap:6px;"></div>
+</div>
+
 <script>
   let SECRET = ''
   let _currentFilter = 'pending'
@@ -1358,6 +1372,37 @@
     el.className = 'show' + (type ? ` ${type}` : '')
     clearTimeout(_toastTimer)
     _toastTimer = setTimeout(() => el.className = '', 2800)
+    if (type === 'red') mLogError(msg)
+  }
+
+  let _mErrLog = []
+  function mLogError(msg) {
+    const ts = new Date().toLocaleTimeString()
+    _mErrLog.push({ ts, msg })
+    const body = document.getElementById('m-err-body')
+    const e = document.createElement('div')
+    e.style.cssText = 'background:#0f0a0a;border:1px solid rgba(201,106,106,0.15);border-radius:6px;padding:7px 10px;font-size:10px;font-family:monospace;color:#e0a0a0;word-break:break-all;display:flex;flex-direction:column;gap:4px;'
+    e.innerHTML = `<span style="color:#666;font-size:9px;">${ts}</span><span>${msg}</span><button onclick="navigator.clipboard.writeText(${JSON.stringify(msg)}).then(()=>toast('Copied!','success'))" style="align-self:flex-end;font-size:9px;padding:2px 6px;background:rgba(201,106,106,0.15);border:1px solid rgba(201,106,106,0.3);border-radius:3px;color:#c96a6a;">Copy</button>`
+    body.appendChild(e)
+    body.scrollTop = body.scrollHeight
+    document.getElementById('m-err-count').textContent = _mErrLog.length
+    document.getElementById('m-err-toggle').style.display = 'block'
+    document.getElementById('m-err-panel').style.display = 'flex'
+  }
+  function mToggleErrors() {
+    const p = document.getElementById('m-err-panel')
+    p.style.display = p.style.display === 'flex' ? 'none' : 'flex'
+  }
+  function mClearErrors() {
+    _mErrLog = []
+    document.getElementById('m-err-body').innerHTML = ''
+    document.getElementById('m-err-count').textContent = '0'
+    document.getElementById('m-err-panel').style.display = 'none'
+    document.getElementById('m-err-toggle').style.display = 'none'
+  }
+  function mCopyAllErrors() {
+    const text = _mErrLog.map(e => `[${e.ts}] ${e.msg}`).join('\n')
+    navigator.clipboard.writeText(text).then(() => toast('Copied!', 'success'))
   }
 </script>
 </body>

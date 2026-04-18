@@ -94,6 +94,43 @@
     }
     .toast.show { opacity: 1; }
 
+    /* Error log */
+    #error-log-panel {
+      position: fixed; bottom: 70px; right: 24px; width: 420px;
+      background: #1a0d0d; border: 1px solid rgba(201,106,106,0.4);
+      border-radius: 10px; z-index: 998; display: none;
+      flex-direction: column; max-height: 340px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    }
+    #error-log-panel.visible { display: flex; }
+    #error-log-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-bottom: 1px solid rgba(201,106,106,0.2);
+      font-size: 11px; color: #c96a6a; text-transform: uppercase; letter-spacing: .08em;
+    }
+    #error-log-body {
+      overflow-y: auto; flex: 1; padding: 8px 10px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .error-entry {
+      background: #0f0a0a; border: 1px solid rgba(201,106,106,0.15);
+      border-radius: 6px; padding: 7px 10px; font-size: 11px;
+      font-family: monospace; color: #e0a0a0; word-break: break-all;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .error-entry-time { color: #666; font-size: 10px; }
+    .error-entry-copy {
+      align-self: flex-end; font-size: 10px; padding: 2px 8px;
+      background: rgba(201,106,106,0.15); border: 1px solid rgba(201,106,106,0.3);
+      border-radius: 4px; color: #c96a6a; cursor: pointer;
+    }
+    #error-log-toggle {
+      position: fixed; bottom: 70px; right: 24px;
+      background: #1a0d0d; border: 1px solid rgba(201,106,106,0.4);
+      border-radius: 8px; padding: 6px 12px; font-size: 11px;
+      color: #c96a6a; cursor: pointer; z-index: 997; display: none;
+    }
+
     .empty { color: #555; font-size: 13px; padding: 24px 0; }
 
     /* Blog styles */
@@ -482,6 +519,19 @@
 
 <div class="toast" id="toast"></div>
 
+<button id="error-log-toggle" onclick="toggleErrorLog()">⚠ Errors (<span id="error-count">0</span>)</button>
+<div id="error-log-panel">
+  <div id="error-log-header">
+    <span>⚠ Error Log (<span id="error-count2">0</span>)</span>
+    <div style="display:flex;gap:8px;">
+      <button class="error-entry-copy" onclick="copyAllErrors()">Copy All</button>
+      <button class="error-entry-copy" onclick="clearErrors()">Clear</button>
+      <button class="error-entry-copy" onclick="toggleErrorLog()">✕</button>
+    </div>
+  </div>
+  <div id="error-log-body"></div>
+</div>
+
 <script>
   const SECRET = new URLSearchParams(window.location.search).get('secret') || ''
   if (!SECRET) window.location.href = '/admin'
@@ -503,6 +553,44 @@
     t.style.borderColor = color === 'green' ? 'rgba(106,201,122,0.3)' : color === 'red' ? 'rgba(201,106,106,0.3)' : 'rgba(255,255,255,0.1)'
     t.classList.add('show')
     setTimeout(() => t.classList.remove('show'), 3000)
+    if (color === 'red') logError(msg)
+  }
+
+  let _errorLog = []
+  function logError(msg) {
+    const ts = new Date().toLocaleTimeString()
+    _errorLog.push({ ts, msg })
+    const body = document.getElementById('error-log-body')
+    const entry = document.createElement('div')
+    entry.className = 'error-entry'
+    entry.innerHTML = `
+      <span class="error-entry-time">${ts}</span>
+      <span>${msg}</span>
+      <button class="error-entry-copy" onclick="navigator.clipboard.writeText(${JSON.stringify(msg)}).then(()=>toast('Copied!','green'))">Copy</button>
+    `
+    body.appendChild(entry)
+    body.scrollTop = body.scrollHeight
+    const n = _errorLog.length
+    document.getElementById('error-count').textContent = n
+    document.getElementById('error-count2').textContent = n
+    document.getElementById('error-log-toggle').style.display = 'block'
+    document.getElementById('error-log-panel').classList.add('visible')
+  }
+  function toggleErrorLog() {
+    const p = document.getElementById('error-log-panel')
+    p.classList.toggle('visible')
+  }
+  function clearErrors() {
+    _errorLog = []
+    document.getElementById('error-log-body').innerHTML = ''
+    document.getElementById('error-count').textContent = '0'
+    document.getElementById('error-count2').textContent = '0'
+    document.getElementById('error-log-panel').classList.remove('visible')
+    document.getElementById('error-log-toggle').style.display = 'none'
+  }
+  function copyAllErrors() {
+    const text = _errorLog.map(e => `[${e.ts}] ${e.msg}`).join('\n')
+    navigator.clipboard.writeText(text).then(() => toast('All errors copied!', 'green'))
   }
 
   // ── Posts ──────────────────────────────────────────────────────────────────
