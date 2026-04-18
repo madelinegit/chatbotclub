@@ -43,8 +43,17 @@ def _poll(endpoint: str, task_id: str, max_wait: int = 300) -> str | None:
     deadline = time.time() + max_wait
     while time.time() < deadline:
         time.sleep(10)
-        r = requests.get(f"{KLING_API}{endpoint}/{task_id}", headers=_headers(), timeout=15)
-        r.raise_for_status()
+        try:
+            r = requests.get(f"{KLING_API}{endpoint}/{task_id}", headers=_headers(), timeout=15)
+            if r.status_code == 429:
+                print("KLING poll: rate limited, waiting 30s")
+                time.sleep(30)
+                continue
+            r.raise_for_status()
+        except Exception as e:
+            print(f"KLING poll error: {e}")
+            time.sleep(15)
+            continue
         data   = r.json().get("data", {})
         status = data.get("task_status")
         print(f"KLING poll: status={status}")
@@ -80,6 +89,8 @@ def image_to_video(image_url: str, prompt: str = "", duration: int = 5) -> tuple
             json=payload, headers=_headers(), timeout=30,
         )
         print(f"KLING i2v create: status={r.status_code} body={r.text[:300]}")
+        if r.status_code == 429:
+            return None, "Kling rate limit hit — wait a minute and try again"
         r.raise_for_status()
         task_id = r.json().get("data", {}).get("task_id")
         if not task_id:
@@ -108,6 +119,8 @@ def text_to_video(prompt: str, duration: int = 5) -> tuple[str | None, str | Non
             headers=_headers(), timeout=30,
         )
         print(f"KLING t2v create: status={r.status_code} body={r.text[:300]}")
+        if r.status_code == 429:
+            return None, "Kling rate limit hit — wait a minute and try again"
         r.raise_for_status()
         task_id = r.json().get("data", {}).get("task_id")
         if not task_id:
