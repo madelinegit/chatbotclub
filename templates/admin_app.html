@@ -855,10 +855,27 @@
   let _cModel = 'lora'
   let _cBgUrl = null
 
+  // Set LoRA defaults on load
+  window.addEventListener('DOMContentLoaded', () => {
+    const scene = document.getElementById('c-scene')
+    if (scene && !scene.value) scene.value = 'mayaselfie '
+    scene.placeholder = 'mayaselfie poolside, golden hour, looking back at camera'
+  })
+
   function setModel(m) {
     _cModel = m
     document.querySelectorAll('.model-chip').forEach(b => b.classList.remove('active'))
     document.getElementById('m-' + m).classList.add('active')
+    const scene = document.getElementById('c-scene')
+    if (m === 'lora') {
+      if (!scene.value.startsWith('mayaselfie ')) {
+        scene.value = 'mayaselfie ' + scene.value
+      }
+      scene.placeholder = 'mayaselfie poolside, golden hour, looking back at camera'
+    } else {
+      scene.value = scene.value.replace(/^mayaselfie\s*/, '')
+      scene.placeholder = 'Describe the scene — e.g. \'poolside at Tahoe, golden hour, wearing a string bikini\''
+    }
   }
 
   function cBgPreview() {
