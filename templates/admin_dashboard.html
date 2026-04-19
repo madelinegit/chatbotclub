@@ -84,6 +84,16 @@
     .verified-yes { color: #6ac97a; font-size: 11px; }
     .verified-no  { color: #c96a6a; font-size: 11px; }
 
+    /* Image lightbox */
+    #img-overlay {
+      display: none; position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.92); align-items: center; justify-content: center;
+      cursor: zoom-out;
+    }
+    #img-overlay.open { display: flex; }
+    #img-overlay img { max-width: 90vw; max-height: 90vh; border-radius: 10px; object-fit: contain; }
+    .post-img { cursor: zoom-in; }
+
     /* Toast */
     .toast {
       position: fixed; bottom: 24px; right: 24px;
@@ -519,6 +529,9 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="img-overlay" onclick="closeImgOverlay()">
+  <img id="img-overlay-src" src="" alt="">
+</div>
 
 <button id="error-log-toggle" onclick="toggleErrorLog()">⚠ Errors (<span id="error-count">0</span>)</button>
 <div id="error-log-panel">
@@ -547,6 +560,16 @@
     if (name === 'blog')       loadBlogPosts()
     if (name === 'engagement') loadEngagement()
   }
+
+  function openImgOverlay(url) {
+    document.getElementById('img-overlay-src').src = url
+    document.getElementById('img-overlay').classList.add('open')
+  }
+  function closeImgOverlay() {
+    document.getElementById('img-overlay').classList.remove('open')
+    document.getElementById('img-overlay-src').src = ''
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImgOverlay() })
 
   function toast(msg, color) {
     const t = document.getElementById('toast')
@@ -651,7 +674,7 @@
             ${p.image_prompt ? `<div class="post-prompt">img: ${esc(p.image_prompt)}</div>` : ''}
           </div>
           ${p.image_url
-            ? `<img class="post-img" src="${p.image_url}" loading="lazy">`
+            ? `<img class="post-img" src="${p.image_url}" loading="lazy" onclick="openImgOverlay('${p.image_url}')" title="Click to enlarge">`
             : `<div class="post-img-placeholder">text only</div>`
           }
         </div>
