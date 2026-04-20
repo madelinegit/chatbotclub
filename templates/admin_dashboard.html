@@ -1150,10 +1150,18 @@
     if (!idea) return
     const btn = document.getElementById('image-gen-btn')
     _lastModelType = document.getElementById('image-model-type').value
-    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Expanding…'
     document.getElementById('image-result').style.display = 'none'
     document.getElementById('image-prompt-preview').style.display = 'none'
 
+    // LoRA: skip expansion, generate directly
+    if (_lastModelType === 'lora') {
+      document.getElementById('image-prompt-edit').value = idea
+      await generateImageFromPrompt()
+      return
+    }
+
+    // ModelsLab models: expand first, show preview for editing
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Expanding…'
     try {
       const res  = await fetch(`/admin/write/expand-prompt?secret=${SECRET}`, {
         method:  'POST',
@@ -1162,7 +1170,6 @@
       })
       const data = await res.json()
       if (!res.ok) { toast(data.detail || 'Expansion failed.', 'red'); return }
-
       document.getElementById('image-prompt-edit').value = data.expanded_prompt
       document.getElementById('image-prompt-preview').style.display = 'block'
     } catch (e) {
