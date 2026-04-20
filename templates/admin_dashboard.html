@@ -1203,15 +1203,15 @@
     const timeout = setTimeout(() => controller.abort(), 90000)
 
     try {
-      const res  = await fetch(`/admin/write/image?secret=${SECRET}`, {
+      const res = await safeFetch(`/admin/write/image?secret=${SECRET}`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ expanded_prompt: prompt, model_type: _lastModelType, character: _lastCharacter }),
         signal:  controller.signal,
       })
       clearTimeout(timeout)
-      const data = await res.json()
-      if (!res.ok) { toast(data.detail || 'Generation failed.', 'red'); return }
+      if (!res.ok) { toast(res.data?.detail || res.text?.slice(0, 200) || 'Generation failed.', 'red'); return }
+      const data = res.data
 
       _lastImageUrl    = data.image_url
       _lastImagePrompt = prompt
@@ -1230,14 +1230,13 @@
       document.getElementById('image-prompt-preview').style.display = 'none'
 
       // Auto-queue immediately so the image is never lost
-      const autoRes = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+      const autoQ = await safeFetch(`/admin/write/queue?secret=${SECRET}`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ caption: '(add caption)', image_url: data.image_url }),
       })
-      if (autoRes.ok) {
-        const { id } = await autoRes.json()
-        document.getElementById('image-caption-input').dataset.postId = id
+      if (autoQ.ok) {
+        const id = autoQ.data?.id
         const notice = data.image_url
           ? `Saved to queue as post #${id} — add a caption and post when ready.`
           : `Image still rendering — saved as post #${id}. Add image URL in Posts tab when ready.`
@@ -1246,7 +1245,7 @@
     } catch (e) {
       clearTimeout(timeout)
       if (e.name === 'AbortError') {
-        toast('Timed out after 90s. The /admin/write/image request never returned. Likely cause: ModelsLab API hung (no response within 75s backend timeout). Check Railway logs for SOCIAL IMAGE ERROR. Try again or switch MODELSLAB_SCENE_MODEL / MODELSLAB_PORTRAIT_MODEL env vars.', 'red')
+        toast('Timed out after 90s — check Railway logs for the actual error.', 'red')
       } else {
         toast(`Image generation error: ${e.message || e}`, 'red')
       }
