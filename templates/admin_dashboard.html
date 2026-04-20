@@ -1155,8 +1155,13 @@
 
     // LoRA: skip expansion, generate directly
     if (_lastModelType === 'lora') {
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Generating…'
       document.getElementById('image-prompt-edit').value = idea
-      await generateImageFromPrompt()
+      try {
+        await generateImageFromPrompt()
+      } finally {
+        btn.disabled = false; btn.innerHTML = 'Generate'
+      }
       return
     }
 
