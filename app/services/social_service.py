@@ -17,7 +17,7 @@ from app.config import (
     MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL,
     MODELSLAB_IMAGE_URL,
     MODELSLAB_PORTRAIT_MODEL, MODELSLAB_SCENE_MODEL, MODELSLAB_EXPLICIT_MODEL,
-    REPLICATE_API_TOKEN, REPLICATE_LORA_VERSION,
+    REPLICATE_API_TOKEN, REPLICATE_LORA_VERSION, REPLICATE_TRIGGER_WORD,
     X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET,
 )
 from app.ai.persona import load_persona
@@ -328,7 +328,7 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
     if not REPLICATE_LORA_VERSION:
         return None, "REPLICATE_LORA_VERSION not set in Railway env vars"
 
-    full_prompt = "mayaselfie " + prompt
+    full_prompt = f"{REPLICATE_TRIGGER_WORD} " + prompt
     inp = {
         "prompt": full_prompt,
         "disable_safety_checker": True,

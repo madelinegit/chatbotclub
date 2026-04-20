@@ -398,7 +398,7 @@
 
         <!-- Model selector -->
         <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <button id="m-lora"     class="model-chip active" onclick="setModel('lora')">LoRA (Maya)</button>
+          <button id="m-lora"     class="model-chip active" onclick="setModel('lora')">Mayaleja (LoRA)</button>
           <button id="m-portrait" class="model-chip"        onclick="setModel('portrait')">Portrait</button>
           <button id="m-scene"    class="model-chip"        onclick="setModel('scene')">Scene</button>
         </div>
@@ -858,8 +858,8 @@
   // Set LoRA defaults on load
   window.addEventListener('DOMContentLoaded', () => {
     const scene = document.getElementById('c-scene')
-    if (scene && !scene.value) scene.value = 'mayaselfie '
-    scene.placeholder = 'mayaselfie poolside, golden hour, looking back at camera'
+    if (scene && !scene.value) scene.value = 'mayaleja'
+    scene.placeholder = 'mayalejapoolside, golden hour, looking back at camera'
   })
 
   function setModel(m) {
@@ -868,10 +868,10 @@
     document.getElementById('m-' + m).classList.add('active')
     const scene = document.getElementById('c-scene')
     if (m === 'lora') {
-      if (!scene.value.startsWith('mayaselfie ')) {
-        scene.value = 'mayaselfie ' + scene.value
+      if (!scene.value.startsWith('mayaleja')) {
+        scene.value = 'mayaleja' + scene.value
       }
-      scene.placeholder = 'mayaselfie poolside, golden hour, looking back at camera'
+      scene.placeholder = 'mayalejapoolside, golden hour, looking back at camera'
     } else {
       scene.value = scene.value.replace(/^mayaselfie\s*/, '')
       scene.placeholder = 'Describe the scene — e.g. \'poolside at Tahoe, golden hour, wearing a string bikini\''

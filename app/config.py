@@ -19,7 +19,9 @@ MODELSLAB_FLUX_BASE       = os.getenv("MODELSLAB_FLUX_BASE", "flux")  # Flux bas
 # Replicate — Flux LoRA inference
 REPLICATE_API_TOKEN       = os.getenv("REPLICATE_API_TOKEN")
 # Full model version string from Replicate training output
-REPLICATE_LORA_VERSION    = os.getenv("REPLICATE_LORA_VERSION")
+REPLICATE_LORA_VERSION    = os.getenv("REPLICATE_LORA_VERSION", "69503441154494c241cd3253a7050366677e1ee36c265be9fc22f7dd5f68ab7d")
+# Trigger word for the active LoRA
+REPLICATE_TRIGGER_WORD    = os.getenv("REPLICATE_TRIGGER_WORD", "mayaleja")
 
 # Supabase
 SUPABASE_URL        = os.getenv("SUPABASE_URL")
