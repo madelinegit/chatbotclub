@@ -17,7 +17,10 @@ from app.config import (
     MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL,
     MODELSLAB_IMAGE_URL,
     MODELSLAB_PORTRAIT_MODEL, MODELSLAB_SCENE_MODEL, MODELSLAB_EXPLICIT_MODEL,
-    REPLICATE_API_TOKEN, REPLICATE_LORA_VERSION, REPLICATE_TRIGGER_WORD,
+    REPLICATE_API_TOKEN,
+    REPLICATE_LORA_VERSION,
+    REPLICATE_LORA_VERSION_MAYA, REPLICATE_LORA_VERSION_MAYALEJA,
+    REPLICATE_TRIGGER_WORD_MAYA, REPLICATE_TRIGGER_WORD_MAYALEJA,
     X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_TOKEN_SECRET,
 )
 from app.ai.persona import load_persona
@@ -317,18 +320,26 @@ def _upload_to_cloudinary(url: str, resource_type: str = "image") -> str:
     return url
 
 
-def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: float = 0.8) -> tuple[str | None, str | None]:
+def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: float = 0.8, character: str = "mayaleja") -> tuple[str | None, str | None]:
     """
     Flux LoRA inference via Replicate.
-    Pass image_url for img2img (insert Maya into a scene).
-    prompt_strength: 0.6 = scene-dominant, 0.85 = Maya-dominant.
+    character: 'mayaleja' (default) or 'maya'
+    Pass image_url for img2img (insert character into a scene).
     """
     if not REPLICATE_API_TOKEN:
         return None, "REPLICATE_API_TOKEN not set in Railway env vars"
-    if not REPLICATE_LORA_VERSION:
-        return None, "REPLICATE_LORA_VERSION not set in Railway env vars"
 
-    full_prompt = f"{REPLICATE_TRIGGER_WORD} " + prompt
+    if character == "maya":
+        lora_version  = REPLICATE_LORA_VERSION_MAYA or REPLICATE_LORA_VERSION
+        trigger_word  = REPLICATE_TRIGGER_WORD_MAYA
+    else:
+        lora_version  = REPLICATE_LORA_VERSION_MAYALEJA or REPLICATE_LORA_VERSION
+        trigger_word  = REPLICATE_TRIGGER_WORD_MAYALEJA
+
+    if not lora_version:
+        return None, f"REPLICATE_LORA_VERSION_{character.upper()} not set in Railway env vars"
+
+    full_prompt = f"{trigger_word} " + prompt
     inp = {
         "prompt": full_prompt,
         "disable_safety_checker": True,
@@ -341,7 +352,7 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
         r = requests.post(
             "https://api.replicate.com/v1/predictions",
             json={
-                "version": REPLICATE_LORA_VERSION,
+                "version": lora_version,
                 "input":   inp,
             },
             headers={
@@ -385,10 +396,10 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
         return None, f"Replicate error: {type(e).__name__}: {e}"
 
 
-def _generate_image(prompt: str, model_type: str = "scene") -> tuple[str | None, str | None]:
+def _generate_image(prompt: str, model_type: str = "scene", character: str = "mayaleja") -> tuple[str | None, str | None]:
     """Returns (image_url, error_message). One of them will be None."""
     if model_type == "lora":
-        return _generate_image_lora(prompt)
+        return _generate_image_lora(prompt, character=character)
 
     if model_type == "portrait":
         model = MODELSLAB_PORTRAIT_MODEL

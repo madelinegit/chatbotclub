@@ -212,10 +212,11 @@ async def generate_img2img(secret: str = Query(...), request: Request = None):
     image_url       = body.get("image_url", "").strip()
     prompt          = body.get("prompt", "").strip()
     prompt_strength = float(body.get("prompt_strength", 0.8))
+    character       = body.get("character", "mayaleja")
     if not image_url:
         raise HTTPException(status_code=400, detail="image_url required.")
     from app.services.social_service import _generate_image_lora
-    url, err = _generate_image_lora(prompt or "in the scene, natural pose", image_url=image_url, prompt_strength=prompt_strength)
+    url, err = _generate_image_lora(prompt or "in the scene, natural pose", image_url=image_url, prompt_strength=prompt_strength, character=character)
     if err:
         raise HTTPException(status_code=500, detail=err)
     return {"image_url": url}
@@ -341,7 +342,8 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
 
     # Step 2 — generate image from expanded prompt
     model_type = body.get("model_type", "lora")
-    image_url, img_error = _generate_image(expanded, model_type=model_type)
+    character  = body.get("character", "mayaleja")
+    image_url, img_error = _generate_image(expanded, model_type=model_type, character=character)
 
     if img_error and not image_url:
         raise HTTPException(status_code=500, detail=f"ModelsLab error: {img_error}")
@@ -369,6 +371,7 @@ async def admin_write_create(secret: str = Query(...), request: Request = None):
     body         = await request.json()
     scene_prompt = body.get("scene_prompt", "").strip()
     model_type   = body.get("model_type", "lora")
+    character    = body.get("character", "mayaleja")
     bg_image_url = (body.get("bg_image_url") or "").strip() or None
     blend        = float(body.get("blend", 0.8))
     caption_hint = (body.get("caption_hint") or "").strip() or None
@@ -388,9 +391,10 @@ async def admin_write_create(secret: str = Query(...), request: Request = None):
             scene_prompt,
             image_url=bg_image_url,
             prompt_strength=blend,
+            character=character,
         )
     else:
-        image_url, img_err = _generate_image(scene_prompt, model_type=model_type)
+        image_url, img_err = _generate_image(scene_prompt, model_type=model_type, character=character)
 
     if not image_url:
         raise HTTPException(status_code=500, detail=f"Image generation failed: {img_err}")
