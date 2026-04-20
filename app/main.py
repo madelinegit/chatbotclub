@@ -48,18 +48,9 @@ def _auto_post_job():
 async def lifespan(app: FastAPI):
     init_db()
 
-    from apscheduler.schedulers.background import BackgroundScheduler
-    import pytz
-    scheduler = BackgroundScheduler(timezone=pytz.timezone("US/Pacific"))
-    # Post at 10:00 AM and 7:00 PM Pacific every day
-    scheduler.add_job(_auto_post_job, "cron", hour=10, minute=0)
-    scheduler.add_job(_auto_post_job, "cron", hour=19, minute=0)
-    scheduler.start()
-    print("CRON: scheduler started — posting at 10:00 AM and 7:00 PM Pacific")
+    print("CRON: scheduler disabled — posts are manual only")
 
     yield
-
-    scheduler.shutdown()
 
 
 app = FastAPI(title="Maya AI", redirect_slashes=False, lifespan=lifespan)
