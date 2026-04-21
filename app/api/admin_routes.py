@@ -442,6 +442,73 @@ async def admin_write_create(secret: str = Query(...), request: Request = None):
     return {"image_url": image_url, "caption": caption}
 
 
+PLATFORM_GUIDE = {
+    "instagram": (
+        "Instagram — strong hook on first line (no 'I' opener), warm and personal tone, "
+        "2-3 sentences max, end with a question or soft CTA. Add 3-5 niche hashtags on a new line. "
+        "Emojis OK but not excessive."
+    ),
+    "threads": (
+        "Threads — 1-3 lines, conversational, dry wit or genuine moment works best. "
+        "No hashtags. Lowercase is fine. No CTA. Should feel like a real thought, not a post."
+    ),
+    "x": (
+        "X/Twitter — punchy, under 220 chars. Hook in the first 5 words. "
+        "No hashtags unless very relevant. Can be provocative, funny, or insightful."
+    ),
+}
+
+
+@router.post("/write/caption")
+async def admin_write_caption(secret: str = Query(...), request: Request = None):
+    """
+    Generate or optimise a caption for a specific platform.
+    Body: { platform, hint (optional), scene_prompt (optional), image_url (optional) }
+    Returns: { caption }
+    """
+    _check(secret)
+    body         = await request.json()
+    platform     = body.get("platform", "instagram")
+    hint         = (body.get("hint") or "").strip() or None
+    scene_prompt = (body.get("scene_prompt") or "").strip() or None
+
+    from app.config import MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL
+    from app.ai.persona import load_persona
+    import requests as req
+
+    guide = PLATFORM_GUIDE.get(platform, PLATFORM_GUIDE["instagram"])
+
+    if hint:
+        user_msg = f"Rewrite this caption optimised for {guide}\n\nOriginal:\n{hint}"
+    elif scene_prompt:
+        user_msg = f"Write a caption for this image for {guide}\n\nImage scene: {scene_prompt}"
+    else:
+        user_msg = f"Write a short caption for {guide}"
+
+    persona = load_persona()
+    try:
+        r = req.post(
+            MODELSLAB_API_URL,
+            json={
+                "model": MODELSLAB_MODEL,
+                "messages": [
+                    {"role": "system", "content": persona + "\n\nWrite only the caption. No explanation, no quotes around it."},
+                    {"role": "user",   "content": user_msg},
+                ],
+            },
+            headers={"Authorization": f"Bearer {MODELSLAB_API_KEY}", "Content-Type": "application/json"},
+            timeout=30,
+        )
+        r.raise_for_status()
+        d = r.json()
+        caption = (d.get("choices", [{}])[0].get("message", {}).get("content") or
+                   (d.get("output") or [""])[0]).strip()
+    except Exception:
+        caption = hint or ""
+
+    return {"caption": caption}
+
+
 @router.post("/write/queue")
 async def admin_write_queue(secret: str = Query(...), request: Request = None):
     """Queue a piece of text as a pending post."""
