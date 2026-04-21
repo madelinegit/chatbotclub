@@ -68,12 +68,15 @@ def generate_reply(user_id: str, message: str) -> str:
         return reply
 
     # Build system prompt: persona + user profile + local context if relevant
+    history  = get_history(user_id)
+    turn     = len([m for m in history if m["role"] == "user"]) + 1
+
     persona       = load_persona()
     user_context  = _build_user_context(user_id)
-    system_prompt = persona + user_context
+    turn_context  = f"\n\n---\nThis is message {turn} in your conversation with this person." if turn <= 12 else ""
+    system_prompt = persona + user_context + turn_context
     system_prompt = inject_context_into_chat(user_id, message, system_prompt)
 
-    history  = get_history(user_id)
     messages = [{"role": "system", "content": system_prompt}]
     messages.extend(history)
     messages.append({"role": "user", "content": message})
