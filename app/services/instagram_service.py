@@ -270,6 +270,24 @@ def post_to_instagram(post_id: int, caption: str, image_url: str = None, hashtag
             mark_post_failed(post_id)
             return False, msg
 
+        # Wait for container to be ready
+        import time
+        for attempt in range(10):
+            time.sleep(3)
+            status_r = requests.get(
+                f"{GRAPH_API}/{creation_id}",
+                params={"fields": "status_code", "access_token": INSTAGRAM_ACCESS_TOKEN},
+                timeout=15,
+            )
+            status = status_r.json().get("status_code")
+            print(f"INSTAGRAM: container status={status} (attempt {attempt+1})")
+            if status == "FINISHED":
+                break
+            if status == "ERROR":
+                msg = f"Container processing error: {status_r.text[:200]}"
+                mark_post_failed(post_id)
+                return False, msg
+
         # Step 2 — publish
         r = requests.post(
             f"{GRAPH_API}/{ig_user_id}/media_publish",
