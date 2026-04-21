@@ -329,24 +329,24 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
     idea = body.get("idea", "").strip()
     expanded = body.get("expanded_prompt", "").strip()
 
-    import requests as req
-    from app.config import MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL
-    from app.services.social_service import _generate_image, MAYA_CHARACTER
+    from app.services.social_service import _generate_image
 
     if not expanded and not idea:
         raise HTTPException(status_code=400, detail="idea or expanded_prompt required.")
-
-    # If no pre-expanded prompt, this shouldn't happen (expand-prompt is called first)
     if not expanded:
         raise HTTPException(status_code=400, detail="expanded_prompt required.")
 
-    # Step 2 — generate image from expanded prompt
     model_type = body.get("model_type", "lora")
     character  = body.get("character", "mayaleja")
-    image_url, img_error = _generate_image(expanded, model_type=model_type, character=character)
+
+    try:
+        image_url, img_error = _generate_image(expanded, model_type=model_type, character=character)
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=f"Unhandled error in _generate_image: {type(e).__name__}: {e}\n{traceback.format_exc()}")
 
     if img_error and not image_url:
-        raise HTTPException(status_code=500, detail=f"ModelsLab error: {img_error}")
+        raise HTTPException(status_code=500, detail=img_error)
 
     return {
         "expanded_prompt": expanded,
