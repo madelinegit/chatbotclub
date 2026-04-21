@@ -217,30 +217,33 @@ def post_reel_to_instagram(post_id: int, caption: str, video_url: str, hashtags:
         return False
 
 
-def post_to_instagram(post_id: int, caption: str, image_url: str = None, hashtags: str = None) -> bool:
+def post_to_instagram(post_id: int, caption: str, image_url: str = None, hashtags: str = None) -> tuple[bool, str]:
     """
     Publish a post to Instagram.
+    Returns (success, error_message). error_message is empty string on success.
     Instagram Graph API always requires an image — text-only is not supported.
     """
     if not INSTAGRAM_ACCESS_TOKEN:
-        print("INSTAGRAM: INSTAGRAM_ACCESS_TOKEN not set — add it to Railway env vars")
+        msg = "INSTAGRAM_ACCESS_TOKEN not set in Railway env vars"
+        print(f"INSTAGRAM: {msg}")
         mark_post_failed(post_id)
-        return False
+        return False, msg
 
     if not image_url:
-        print("INSTAGRAM: skipping — Instagram requires an image, no image_url provided")
+        msg = "Instagram requires an image — no image_url on this post"
+        print(f"INSTAGRAM: {msg}")
         mark_post_failed(post_id)
-        return False
+        return False, msg
 
     try:
         ig_user_id = INSTAGRAM_USER_ID or _get_ig_user_id()
         print(f"INSTAGRAM: using ig_user_id={ig_user_id} ({'env var' if INSTAGRAM_USER_ID else 'lookup'})")
         if not ig_user_id:
-            print("INSTAGRAM: could not resolve IG user ID — set INSTAGRAM_USER_ID in Railway env vars")
+            msg = "Could not resolve Instagram user ID — set INSTAGRAM_USER_ID in Railway env vars"
+            print(f"INSTAGRAM: {msg}")
             mark_post_failed(post_id)
-            return False
+            return False, msg
 
-        # Append hashtags for Instagram only
         ig_caption = caption
         if hashtags:
             ig_caption = f"{caption}\n\n{hashtags}"
@@ -255,12 +258,17 @@ def post_to_instagram(post_id: int, caption: str, image_url: str = None, hashtag
             },
             timeout=30,
         )
-        r.raise_for_status()
+        if not r.ok:
+            msg = f"Instagram media container failed: {r.status_code} {r.text[:300]}"
+            print(f"INSTAGRAM ERROR: {msg}")
+            mark_post_failed(post_id)
+            return False, msg
         creation_id = r.json().get("id")
         if not creation_id:
-            print(f"INSTAGRAM: no creation_id returned — {r.text}")
+            msg = f"No creation_id returned: {r.text[:200]}"
+            print(f"INSTAGRAM: {msg}")
             mark_post_failed(post_id)
-            return False
+            return False, msg
 
         # Step 2 — publish
         r = requests.post(
@@ -268,15 +276,21 @@ def post_to_instagram(post_id: int, caption: str, image_url: str = None, hashtag
             params={"creation_id": creation_id, "access_token": INSTAGRAM_ACCESS_TOKEN},
             timeout=30,
         )
-        r.raise_for_status()
+        if not r.ok:
+            msg = f"Instagram publish failed: {r.status_code} {r.text[:300]}"
+            print(f"INSTAGRAM ERROR: {msg}")
+            mark_post_failed(post_id)
+            return False, msg
         media_id = r.json().get("id")
         mark_post_posted(post_id, str(media_id))
         print(f"INSTAGRAM: posted — media id {media_id}")
-        return True
+        return True, ""
 
     except Exception as e:
-        print(f"INSTAGRAM ERROR: {e}")
+        resp_text = ""
         if hasattr(e, 'response') and e.response is not None:
-            print(f"INSTAGRAM RESPONSE: {e.response.text}")
+            resp_text = e.response.text[:300]
+        msg = f"{type(e).__name__}: {e} {resp_text}".strip()
+        print(f"INSTAGRAM ERROR: {msg}")
         mark_post_failed(post_id)
-        return False
+        return False, msg

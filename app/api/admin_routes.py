@@ -134,9 +134,10 @@ def post_now(post_id: int, secret: str = Query(...), platform: str = Query("thre
 
     approve_post(post_id)
 
+    err_msg = ""
     if platform == "instagram":
         from app.services.instagram_service import post_to_instagram
-        success = post_to_instagram(
+        success, err_msg = post_to_instagram(
             post_id=post_id,
             caption=row["caption"],
             image_url=row["image_url"],
@@ -157,11 +158,8 @@ def post_now(post_id: int, secret: str = Query(...), platform: str = Query("thre
         )
 
     if not success:
-        if platform == "instagram":
-            from app.config import INSTAGRAM_ACCESS_TOKEN
-            if not INSTAGRAM_ACCESS_TOKEN:
-                raise HTTPException(status_code=422, detail="INSTAGRAM_ACCESS_TOKEN is not set. Add it to Railway env vars.")
-        raise HTTPException(status_code=500, detail=f"Failed to post to {platform}. Check Railway logs.")
+        detail = err_msg or f"Failed to post to {platform} — check Railway logs."
+        raise HTTPException(status_code=500, detail=detail)
     return {"status": "posted", "platform": platform}
 
 
