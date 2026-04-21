@@ -339,7 +339,11 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
     if not lora_version:
         return None, f"REPLICATE_LORA_VERSION_{character.upper()} not set in Railway env vars"
 
-    full_prompt = f"{trigger_word} " + prompt
+    # Strip redundant trigger/character words so the base model doesn't generate two people
+    import re
+    clean = re.sub(r'\b(maya|mayaselfie|mayaleja)\b', '', prompt, flags=re.IGNORECASE).strip()
+    clean = re.sub(r'\s{2,}', ' ', clean)
+    full_prompt = f"{trigger_word} {clean}"
     inp = {
         "prompt": full_prompt,
         "disable_safety_checker": True,
