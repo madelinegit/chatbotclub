@@ -206,6 +206,7 @@
     <button class="tab" onclick="showPage('engagement', this)">Engagement</button>
     <button class="tab" onclick="showPage('users', this)">Users</button>
     <button class="tab" onclick="showPage('context', this)">Local Context</button>
+    <button class="tab" onclick="showPage('playbook', this)">Playbook</button>
   </div>
   <div class="topbar-right" style="display:flex;gap:8px;align-items:center;">
     <select id="gen-platform" style="background:#1a1a1e;color:#e0ddd8;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;font-size:13px;outline:none;">
@@ -419,6 +420,199 @@
     </thead>
     <tbody id="user-table-body"><tr><td colspan="5" style="color:#555;padding:24px 12px;">Loading...</td></tr></tbody>
   </table>
+</div>
+
+<!-- PLAYBOOK PAGE -->
+<div class="page" id="page-playbook">
+  <div style="max-width:860px;margin:0 auto;padding:32px 24px;display:flex;flex-direction:column;gap:32px;">
+
+    <div style="font-size:22px;font-weight:700;color:#e0ddd8;">Platform Playbook</div>
+
+    <!-- INSTAGRAM -->
+    <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);"></div>
+        <div style="font-size:15px;font-weight:700;">Instagram</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Posting</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>📅 Best days: Tuesday, Wednesday, Friday</li>
+            <li>🕐 Best times: 6–9am, 11am–1pm, 7–9pm (local)</li>
+            <li>📸 Feed posts: 3–7x per week</li>
+            <li>🎬 Reels: 3–5x per week (highest reach)</li>
+            <li>📖 Stories: daily (doesn't affect feed algorithm)</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Captions</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>✍️ Hook in first line (shows before "more")</li>
+            <li>📏 125–150 chars for casual, up to 2,200 max</li>
+            <li>#️⃣ 3–5 niche hashtags (not 30)</li>
+            <li>❓ End with question to drive comments</li>
+            <li>🚫 Don't put hashtags in comments — caption only</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Algorithm</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>💬 Comments in first 30 min = huge boost</li>
+            <li>🔁 Saves outrank likes (saves = "worth revisiting")</li>
+            <li>👀 Reels shown to non-followers first</li>
+            <li>🔗 Links in bio only — captions can't link out</li>
+            <li>⚠️ Shadowban risk: buying follows, spam hashtags</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Content that converts</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>🪝 Carousel posts get 3x more reach than single images</li>
+            <li>🎭 Personality > perfection — authentic performs</li>
+            <li>📲 CTA to "link in bio" for paid content</li>
+            <li>💡 Astrology content: chart breakdowns do well</li>
+            <li>🕯️ Aesthetic consistency builds profile followers</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- THREADS -->
+    <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:#e0ddd8;"></div>
+        <div style="font-size:15px;font-weight:700;">Threads</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Posting</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>📅 Best days: Tuesday–Thursday</li>
+            <li>🕐 Best times: 9am–11am, 7pm–9pm</li>
+            <li>📝 1–3x per day optimal</li>
+            <li>📏 500 char limit per post</li>
+            <li>🧵 Thread chains boost visibility</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Tone &amp; Style</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>💬 Conversational, real — not polished</li>
+            <li>🚫 No hashtags (don't work on Threads)</li>
+            <li>😂 Dry wit and opinions perform best</li>
+            <li>🔥 Hot takes get shared most</li>
+            <li>📸 Image + short caption outperforms text only</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Algorithm</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>🔁 Reposts = primary distribution signal</li>
+            <li>💬 Replies keep post alive longer</li>
+            <li>🌍 Fediverse integration = broader reach</li>
+            <li>📊 Still early — organic reach is high right now</li>
+            <li>⚡ Post when your IG audience is active</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">What works for Maya</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>🔮 Astrology takes — specific, not vague</li>
+            <li>☕ Casual Tahoe/mountain life moments</li>
+            <li>💬 Reply to comments to boost your own post</li>
+            <li>🪐 "Your [sign] this week" thread chains</li>
+            <li>🖼️ Drop an image with a one-liner</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- X / TWITTER -->
+    <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:24px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:#1d9bf0;"></div>
+        <div style="font-size:15px;font-weight:700;">X (Twitter)</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Posting</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>📅 Best days: Wednesday, Thursday, Friday</li>
+            <li>🕐 Best times: 8–10am, 12–1pm, 5–6pm ET</li>
+            <li>📝 3–5x per day for growth</li>
+            <li>📏 Under 280 chars — under 100 chars gets more RT</li>
+            <li>🧵 Threads still perform well for long-form</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Tone &amp; Style</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>⚡ Punchy — hook in first 5 words</li>
+            <li>#️⃣ 1–2 hashtags max (more = fewer impressions)</li>
+            <li>🔥 Opinions and takes get amplified</li>
+            <li>📸 Images get 35% more RT than text only</li>
+            <li>🤝 Replies to big accounts = free exposure</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Algorithm (post-Elon)</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>✅ Verified (Premium) gets more reach</li>
+            <li>💬 Replies from followers boost immediately</li>
+            <li>🔗 External links suppressed in feed</li>
+            <li>📌 Pin your best post to profile</li>
+            <li>💰 Premium+ removes ads from your feed/followers</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">What works for Maya</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>🔮 Specific astrology callouts by sign</li>
+            <li>🌊 Lifestyle one-liners (Tahoe, bartending)</li>
+            <li>💬 Reply to astrology &amp; wellness accounts</li>
+            <li>🖼️ Image + short caption for profile visits</li>
+            <li>🔁 Quote-tweet trending astrology content</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- GENERAL STRATEGY -->
+    <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:24px;">
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px;">Cross-Platform Strategy</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Content Funnel</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>🆓 Free: Threads + X (awareness)</li>
+            <li>📸 Mid: Instagram feed (build following)</li>
+            <li>🔐 Paid: OnlyFans/Fansly (convert)</li>
+            <li>🪝 Hook on free → CTA to paid</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Posting Cadence</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>📆 Consistency &gt; volume</li>
+            <li>🗓️ Same time daily builds habit in followers</li>
+            <li>🔁 Repurpose: one image → 3 captions</li>
+            <li>📊 Check analytics weekly, adjust</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Revenue Levers</div>
+          <ul style="font-size:13px;color:#bbb;line-height:2;list-style:none;padding:0;">
+            <li>💬 Paid DMs (chart readings)</li>
+            <li>🔓 PPV content drops</li>
+            <li>💌 Subscription tiers</li>
+            <li>🌙 Monthly horoscope drops (recurring)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- LOCAL CONTEXT PAGE -->
