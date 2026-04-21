@@ -132,6 +132,14 @@ def post_now(post_id: int, secret: str = Query(...), platform: str = Query("thre
     if not row:
         raise HTTPException(status_code=404, detail="Post not found.")
 
+    # Record which platform we're actually posting to
+    conn2 = get_connection()
+    cur2  = conn2.cursor()
+    cur2.execute("UPDATE social_posts SET target_platform = %s WHERE id = %s", (platform, post_id))
+    conn2.commit()
+    cur2.close()
+    conn2.close()
+
     approve_post(post_id)
 
     err_msg = ""
