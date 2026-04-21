@@ -346,6 +346,9 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
     full_prompt = f"{trigger_word} solo {clean}"
     inp = {
         "prompt": full_prompt,
+        "lora_scale": 1.2,
+        "num_inference_steps": 28,
+        "guidance_scale": 3.5,
         "disable_safety_checker": True,
     }
     if negative_prompt:
