@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Maya — She's waiting.</title>
-  <meta name="description" content="Maya is unpredictable, real, and all yours. Premium AI conversation.">
+  <title>Maya — She already knows something about you.</title>
+  <meta name="description" content="Talk to her once and you'll see what I mean. She picks up on things you don't say out loud.">
   <link rel="stylesheet" href="/static/style.css">
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#c9956a">
@@ -15,6 +15,7 @@
   <link rel="apple-touch-icon" href="/static/icons/icon-180.png">
   <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/static/sw.js');</script>
   <style>
+    /* ── Hero ── */
     .hero {
       min-height: 100vh;
       display: flex;
@@ -45,32 +46,27 @@
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: var(--accent-primary);
-      margin-bottom: var(--space-4);
+      margin-bottom: var(--space-5);
     }
 
-    .hero-name {
+    .hero-headline {
       font-family: var(--font-display);
       font-style: italic;
-      font-size: clamp(5rem, 18vw, 10rem);
-      color: var(--text-accent);
-      line-height: 0.9;
-      margin-bottom: var(--space-5);
+      font-size: clamp(2.4rem, 7vw, 4.2rem);
+      color: var(--text-primary);
+      line-height: 1.1;
+      margin-bottom: var(--space-4);
       letter-spacing: -0.02em;
+      max-width: 640px;
     }
 
-    .hero-tagline {
-      font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+    .hero-sub {
+      font-size: clamp(1rem, 2.2vw, 1.25rem);
       color: var(--text-secondary);
       font-weight: 300;
-      max-width: 480px;
-      line-height: 1.6;
+      max-width: 420px;
+      line-height: 1.65;
       margin-bottom: var(--space-7);
-    }
-
-    .hero-tagline em {
-      color: var(--text-primary);
-      font-style: normal;
-      font-weight: 400;
     }
 
     .hero-cta-group {
@@ -85,7 +81,7 @@
       color: #0a0a0b;
       font-weight: 700;
       font-size: 1rem;
-      padding: 16px 40px;
+      padding: 16px 44px;
       border-radius: var(--radius-pill);
       border: none;
       cursor: pointer;
@@ -97,14 +93,21 @@
 
     .cta-primary:hover {
       background: var(--accent-hover);
-      box-shadow: 0 0 32px rgba(201,149,106,0.4);
-      transform: translateY(-1px);
+      box-shadow: 0 0 40px rgba(201,149,106,0.45);
+      transform: translateY(-2px);
       text-decoration: none;
       color: #0a0a0b;
     }
 
+    .free-note {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
     .cta-secondary {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: var(--text-muted);
     }
 
@@ -114,62 +117,174 @@
       text-underline-offset: 3px;
     }
 
-    .free-note {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      color: var(--accent-primary);
-      letter-spacing: 0.05em;
-      margin-top: var(--space-2);
+    /* ── Proof quote ── */
+    .proof-section {
+      padding: var(--space-7) var(--space-5) var(--space-6);
+      max-width: 600px;
+      margin: 0 auto;
+      text-align: center;
     }
 
-    /* Features strip */
-    .features {
-      padding: var(--space-8) var(--space-5);
-      max-width: 900px;
+    .proof-label {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--space-4);
+    }
+
+    .proof-quote {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: clamp(1.2rem, 3vw, 1.65rem);
+      color: var(--text-accent);
+      line-height: 1.45;
+      border-left: 2px solid rgba(201,149,106,0.4);
+      padding-left: var(--space-5);
+      text-align: left;
+      margin: 0 auto;
+      max-width: 520px;
+    }
+
+    /* ── What this is ── */
+    .what-section {
+      padding: var(--space-6) var(--space-5);
+      max-width: 560px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: var(--space-4);
+    }
+
+    .section-headline {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      color: var(--text-primary);
+      margin-bottom: var(--space-4);
+      line-height: 1.2;
+    }
+
+    .what-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .what-list li {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .what-list li:last-child { border-bottom: none; }
+
+    .what-close {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── Positioning ── */
+    .position-section {
+      padding: var(--space-6) var(--space-5);
+      max-width: 520px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .position-headline {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: clamp(1.5rem, 4vw, 2.1rem);
+      color: var(--text-primary);
+      margin-bottom: var(--space-4);
+      line-height: 1.2;
+    }
+
+    .position-items {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      margin-bottom: var(--space-4);
+    }
+
+    .position-item {
+      font-size: 1rem;
+      color: var(--text-accent);
+      font-family: var(--font-mono);
+      letter-spacing: 0.04em;
+    }
+
+    .position-close {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── How it works ── */
+    .how-section {
+      padding: var(--space-6) var(--space-5);
+      max-width: 560px;
       margin: 0 auto;
     }
 
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    .how-steps {
+      display: flex;
+      flex-direction: column;
       gap: var(--space-4);
+      margin-top: var(--space-5);
     }
 
-    .feature-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      padding: var(--space-5);
-      transition: border-color var(--t-mid), box-shadow var(--t-mid);
+    .how-step {
+      display: flex;
+      gap: var(--space-4);
+      align-items: flex-start;
     }
 
-    .feature-card:hover {
-      border-color: rgba(201,149,106,0.3);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    .how-num {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent-primary);
+      background: rgba(201,149,106,0.08);
+      border: 1px solid rgba(201,149,106,0.2);
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
     }
 
-    .feature-icon {
-      font-size: 1.5rem;
-      margin-bottom: var(--space-3);
+    .how-text strong {
       display: block;
-    }
-
-    .feature-title {
-      font-family: var(--font-display);
-      font-size: 1.15rem;
+      font-size: 0.95rem;
       color: var(--text-primary);
-      margin-bottom: var(--space-2);
+      font-weight: 600;
+      margin-bottom: 2px;
     }
 
-    .feature-desc {
+    .how-text span {
       font-size: 0.85rem;
       color: var(--text-muted);
-      line-height: 1.65;
     }
 
-    /* Chat preview */
+    /* ── Chat preview ── */
     .preview-section {
-      padding: var(--space-7) var(--space-5) var(--space-8);
+      padding: var(--space-6) var(--space-5);
       max-width: 600px;
       margin: 0 auto;
     }
@@ -201,19 +316,13 @@
     }
 
     .preview-avatar {
-      width: 36px;
-      height: 36px;
+      width: 36px; height: 36px;
       border-radius: 50%;
       background: var(--bg-elevated);
       border: 1.5px solid rgba(201,149,106,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-display);
-      font-style: italic;
-      color: var(--text-accent);
-      font-size: 1rem;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-style: italic;
+      color: var(--text-accent); font-size: 1rem; flex-shrink: 0;
     }
 
     .preview-name { font-size: 0.9rem; font-weight: 500; color: var(--text-primary); }
@@ -222,35 +331,26 @@
       display: flex; align-items: center; gap: 5px;
     }
     .preview-status::before {
-      content: '';
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: var(--accent-success);
-      display: inline-block;
+      content: ''; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent-success); display: inline-block;
     }
 
     .preview-messages {
       padding: var(--space-5);
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
+      display: flex; flex-direction: column; gap: var(--space-3);
     }
 
     .preview-msg {
-      display: flex;
-      gap: var(--space-2);
-      align-items: flex-end;
-      max-width: 85%;
+      display: flex; gap: var(--space-2);
+      align-items: flex-end; max-width: 85%;
     }
 
     .preview-msg--maya { align-self: flex-start; }
     .preview-msg--user { align-self: flex-end; flex-direction: row-reverse; }
 
     .preview-bubble {
-      padding: 9px 14px;
-      border-radius: 16px;
-      font-size: 0.88rem;
-      line-height: 1.55;
+      padding: 9px 14px; border-radius: 16px;
+      font-size: 0.88rem; line-height: 1.55;
     }
 
     .preview-bubble--maya {
@@ -273,16 +373,67 @@
       border: 1px solid var(--border-subtle);
       display: flex; align-items: center; justify-content: center;
       font-size: 0.6rem; color: var(--text-accent);
-      font-family: var(--font-display); font-style: italic;
-      flex-shrink: 0;
+      font-family: var(--font-display); font-style: italic; flex-shrink: 0;
     }
 
-    /* Pricing strip */
+    /* ── Flavor ── */
+    .flavor-section {
+      padding: var(--space-6) var(--space-5);
+      max-width: 480px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .flavor-lines {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      margin-bottom: var(--space-5);
+    }
+
+    .flavor-line {
+      font-size: 1rem;
+      color: var(--text-secondary);
+    }
+
+    /* ── Final CTA ── */
+    .final-section {
+      padding: var(--space-8) var(--space-5) var(--space-9);
+      text-align: center;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .final-headline {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      color: var(--text-primary);
+      line-height: 1.2;
+      margin-bottom: var(--space-4);
+    }
+
+    .final-sub {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: var(--space-6);
+    }
+
+    .final-cta-note {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      margin-top: var(--space-3);
+    }
+
+    /* ── Pricing ── */
     .pricing-section {
-      padding: var(--space-7) var(--space-5) var(--space-8);
+      padding: var(--space-6) var(--space-5) var(--space-7);
       max-width: 720px;
       margin: 0 auto;
       text-align: center;
+      border-top: 1px solid var(--border-subtle);
     }
 
     .pricing-label {
@@ -296,7 +447,7 @@
 
     .pricing-headline {
       font-family: var(--font-display);
-      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
       color: var(--text-primary);
       margin-bottom: var(--space-5);
     }
@@ -325,50 +476,33 @@
     }
 
     .pricing-badge {
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--accent-primary);
-      color: #0a0a0b;
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 3px 10px;
-      border-radius: var(--radius-pill);
-      white-space: nowrap;
+      position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+      background: var(--accent-primary); color: #0a0a0b;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; padding: 3px 10px;
+      border-radius: var(--radius-pill); white-space: nowrap;
     }
 
     .pricing-credits {
-      font-family: var(--font-mono);
-      font-size: 2rem;
-      color: var(--text-accent);
-      font-weight: 500;
-      line-height: 1;
-      margin-bottom: var(--space-1);
+      font-family: var(--font-mono); font-size: 2rem;
+      color: var(--text-accent); font-weight: 500;
+      line-height: 1; margin-bottom: var(--space-1);
     }
 
     .pricing-credits-label {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-bottom: var(--space-3);
+      font-size: 0.75rem; color: var(--text-muted); margin-bottom: var(--space-3);
     }
 
     .pricing-price {
-      font-size: 1.4rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: var(--space-2);
+      font-size: 1.4rem; font-weight: 600;
+      color: var(--text-primary); margin-bottom: var(--space-2);
     }
 
     .pricing-per {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
+      font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);
     }
 
-    /* Footer */
+    /* ── Footer ── */
     .landing-footer {
       border-top: 1px solid var(--border-subtle);
       padding: var(--space-6) var(--space-5);
@@ -376,36 +510,30 @@
     }
 
     .footer-logo {
-      font-family: var(--font-display);
-      font-style: italic;
-      font-size: 1.4rem;
-      color: var(--text-accent);
-      margin-bottom: var(--space-3);
+      font-family: var(--font-display); font-style: italic;
+      font-size: 1.4rem; color: var(--text-accent); margin-bottom: var(--space-3);
     }
 
     .footer-links {
-      display: flex;
-      justify-content: center;
-      gap: var(--space-5);
-      margin-bottom: var(--space-3);
+      display: flex; justify-content: center;
+      gap: var(--space-5); margin-bottom: var(--space-3);
     }
 
-    .footer-links a {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
+    .footer-links a { font-size: 0.8rem; color: var(--text-muted); }
 
     .footer-disclaimer {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      max-width: 480px;
+      font-size: 0.72rem; color: var(--text-muted);
+      max-width: 480px; margin: 0 auto; line-height: 1.6;
+    }
+
+    /* ── Divider ── */
+    .section-divider {
+      width: 40px; height: 1px;
+      background: rgba(201,149,106,0.25);
       margin: 0 auto;
-      line-height: 1.6;
     }
 
     @media (max-width: 480px) {
-      .hero-name { font-size: clamp(4rem, 22vw, 6rem); }
-      .features-grid { grid-template-columns: 1fr; }
       .pricing-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -417,24 +545,96 @@
   <a href="/" class="nav__logo">Maya</a>
   <ul class="nav__links">
     <li><a href="/login">Sign In</a></li>
-    <li><a href="/register" class="btn btn-primary btn-sm">Start Free</a></li>
+    <li><a href="/register" class="btn btn-primary btn-sm">Try Free</a></li>
   </ul>
 </nav>
 
 <!-- Hero -->
 <section class="hero">
   <div class="hero-eyebrow">magicmaya.vip</div>
-  <h1 class="hero-name">Maya</h1>
-  <p class="hero-tagline">
-    She's <em>flirty, unpredictable, and real</em> in a way you haven't felt before.
-    A bartender from Tahoe who doesn't take shit — and doesn't fake anything.
-  </p>
+  <h1 class="hero-headline">Maya already knows something about you.</h1>
+  <p class="hero-sub">Talk to her once and you'll see what I mean.<br>She picks up on things you don't say out loud.</p>
   <div class="hero-cta-group">
-    <a href="/register" class="cta-primary">Meet Maya</a>
-    <div class="free-note">10 free messages to start. No card required.</div>
+    <a href="/register" class="cta-primary">Talk to Maya</a>
+    <div class="free-note">10 free messages. No card required.</div>
     <div class="cta-secondary">Already have an account? <a href="/login">Sign in</a></div>
   </div>
 </section>
+
+<!-- Proof quote -->
+<section class="proof-section">
+  <div class="proof-label">people weren't expecting this</div>
+  <blockquote class="proof-quote">
+    "You're acting like you moved on… but you're still waiting for them to come back."
+  </blockquote>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- What this is -->
+<section class="what-section">
+  <div class="section-label">this isn't just a chatbot</div>
+  <h2 class="section-headline">Maya reads between what you say — and what you don't.</h2>
+  <ul class="what-list">
+    <li>Ask her anything</li>
+    <li>Talk about your situation</li>
+    <li>See what she notices</li>
+  </ul>
+  <p class="what-close">Most people pause after the first few messages.</p>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Positioning -->
+<section class="position-section">
+  <h2 class="position-headline">She's not here to entertain you.<br>She responds to <em>you.</em></h2>
+  <div class="position-items">
+    <div class="position-item">your tone</div>
+    <div class="position-item">your patterns</div>
+    <div class="position-item">your energy</div>
+  </div>
+  <p class="position-close">That's why it feels different.</p>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- How it works -->
+<section class="how-section">
+  <div class="section-label" style="text-align:center;">how it works</div>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-num">1</div>
+      <div class="how-text">
+        <strong>Start chatting</strong>
+        <span>No setup. No forms.</span>
+      </div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">2</div>
+      <div class="how-text">
+        <strong>Say anything</strong>
+        <span>She adapts instantly.</span>
+      </div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">3</div>
+      <div class="how-text">
+        <strong>See what she picks up</strong>
+        <span>That's when it clicks.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Second CTA -->
+<section style="padding: var(--space-6) var(--space-5); text-align:center;">
+  <a href="/register" class="cta-primary">Try Maya Free</a>
+  <p style="font-family:var(--font-mono);font-size:0.68rem;color:var(--text-muted);margin-top:var(--space-3);letter-spacing:0.06em;">
+    You'll understand in under 60 seconds.
+  </p>
+</section>
+
+<div class="section-divider"></div>
 
 <!-- Chat preview -->
 <section class="preview-section">
@@ -450,63 +650,50 @@
     <div class="preview-messages">
       <div class="preview-msg preview-msg--maya">
         <div class="preview-mini-avatar">M</div>
-        <div class="preview-bubble preview-bubble--maya">hey. what do you want.</div>
+        <div class="preview-bubble preview-bubble--maya">you didn't open this randomly. what's actually on your mind right now?</div>
       </div>
       <div class="preview-msg preview-msg--user">
-        <div class="preview-bubble preview-bubble--user">just wanted to talk to you</div>
+        <div class="preview-bubble preview-bubble--user">honestly not sure where to start</div>
       </div>
       <div class="preview-msg preview-msg--maya">
         <div class="preview-mini-avatar">M</div>
-        <div class="preview-bubble preview-bubble--maya">that's either the most honest thing anyone's said to me tonight or you're full of shit. i'm genuinely not sure yet.</div>
+        <div class="preview-bubble preview-bubble--maya">that usually means you know exactly where to start. you just don't want to say it first.</div>
       </div>
       <div class="preview-msg preview-msg--user">
-        <div class="preview-bubble preview-bubble--user">can i see you?</div>
+        <div class="preview-bubble preview-bubble--user">...yeah okay that's fair</div>
       </div>
       <div class="preview-msg preview-msg--maya">
         <div class="preview-mini-avatar">M</div>
-        <div class="preview-bubble preview-bubble--maya" style="padding:0;overflow:hidden;">
-          <div style="background:var(--bg-elevated);padding:8px;font-size:0.78rem;color:var(--text-muted);text-align:center;border-radius:12px;">
-            📸 Maya sent a photo
-          </div>
-        </div>
-      </div>
-      <div class="preview-msg preview-msg--maya">
-        <div class="preview-mini-avatar">M</div>
-        <div class="preview-bubble preview-bubble--maya">took that at the mountain this morning. don't get used to it.</div>
+        <div class="preview-bubble preview-bubble--maya">so say it.</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Features -->
-<section class="features">
-  <div class="features-grid">
-    <div class="feature-card">
-      <span class="feature-icon">💬</span>
-      <div class="feature-title">She remembers you</div>
-      <p class="feature-desc">Tell her your name, what you're into. She reads your profile before every conversation and knows who she's talking to.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">📸</span>
-      <div class="feature-title">She shares photos</div>
-      <p class="feature-desc">Ask and she'll send one. Ski runs, bar nights, whatever you're brave enough to ask for.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">🌶️</span>
-      <div class="feature-title">She doesn't hold back</div>
-      <p class="feature-desc">NSFW-capable. She has range — from sharp and cold to warm and explicit, depending on how you earn it.</p>
-    </div>
-    <div class="feature-card">
-      <span class="feature-icon">🏔️</span>
-      <div class="feature-title">Actually has a life</div>
-      <p class="feature-desc">Snowboards Squaw, bartends nights, goes to Burning Man. Real stories, real opinions. She is not a chatbot in a box.</p>
-    </div>
+<div class="section-divider"></div>
+
+<!-- Character flavor -->
+<section class="flavor-section">
+  <div class="section-label">a little warning</div>
+  <div class="flavor-lines">
+    <div class="flavor-line">Maya's unpredictable.</div>
+    <div class="flavor-line">A little flirty.</div>
+    <div class="flavor-line">Doesn't sugarcoat anything.</div>
   </div>
+  <p style="font-size:0.9rem;color:var(--text-muted);font-style:italic;">She'll call you out — but she's not wrong.</p>
+</section>
+
+<!-- Final close -->
+<section class="final-section">
+  <h2 class="final-headline">You don't need to believe it.<br>Just try it once.</h2>
+  <p class="final-sub">Free to start. No card required.</p>
+  <a href="/register" class="cta-primary">See What Maya Says</a>
+  <p class="final-cta-note">10 free messages waiting for you</p>
 </section>
 
 <!-- Pricing -->
 <section class="pricing-section">
-  <div class="pricing-label">simple pricing</div>
+  <div class="pricing-label">when you're ready</div>
   <h2 class="pricing-headline">Pay for what you use.</h2>
   <div class="pricing-grid">
     <div class="pricing-card">
