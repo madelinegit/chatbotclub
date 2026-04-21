@@ -324,29 +324,31 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
     Take a simple idea, expand it into a full Maya image prompt via LLM,
     then generate the image. Returns the expanded prompt + image URL.
     """
-    _check(secret)
-    body = await request.json()
-    idea = body.get("idea", "").strip()
-    expanded = body.get("expanded_prompt", "").strip()
-
-    from app.services.social_service import _generate_image
-
-    if not expanded and not idea:
-        raise HTTPException(status_code=400, detail="idea or expanded_prompt required.")
-    if not expanded:
-        raise HTTPException(status_code=400, detail="expanded_prompt required.")
-
-    model_type = body.get("model_type", "lora")
-    character  = body.get("character", "mayaleja")
-
     try:
+        _check(secret)
+        body = await request.json()
+        idea = body.get("idea", "").strip()
+        expanded = body.get("expanded_prompt", "").strip()
+
+        from app.services.social_service import _generate_image
+
+        if not expanded and not idea:
+            raise HTTPException(status_code=400, detail="idea or expanded_prompt required.")
+        if not expanded:
+            raise HTTPException(status_code=400, detail="expanded_prompt required.")
+
+        model_type = body.get("model_type", "lora")
+        character  = body.get("character", "mayaleja")
+
         image_url, img_error = _generate_image(expanded, model_type=model_type, character=character)
+
+        if img_error and not image_url:
+            raise HTTPException(status_code=500, detail=img_error)
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
-        raise HTTPException(status_code=500, detail=f"Unhandled error in _generate_image: {type(e).__name__}: {e}\n{traceback.format_exc()}")
-
-    if img_error and not image_url:
-        raise HTTPException(status_code=500, detail=img_error)
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e} | {traceback.format_exc()}")
 
     return {
         "expanded_prompt": expanded,
