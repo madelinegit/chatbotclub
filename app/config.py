@@ -17,11 +17,14 @@ MODELSLAB_LORA_MODEL      = os.getenv("MODELSLAB_LORA_MODEL")   # HuggingFace re
 MODELSLAB_FLUX_BASE       = os.getenv("MODELSLAB_FLUX_BASE", "flux")  # Flux base model for LoRA inference
 
 # Replicate — Flux LoRA inference
-REPLICATE_API_TOKEN       = os.getenv("REPLICATE_API_TOKEN")
-# Full model version string from Replicate training output
-REPLICATE_LORA_VERSION    = os.getenv("REPLICATE_LORA_VERSION", "69503441154494c241cd3253a7050366677e1ee36c265be9fc22f7dd5f68ab7d")
-# Trigger word for the active LoRA
-REPLICATE_TRIGGER_WORD    = os.getenv("REPLICATE_TRIGGER_WORD", "mayaleja")
+REPLICATE_API_TOKEN              = os.getenv("REPLICATE_API_TOKEN")
+REPLICATE_LORA_VERSION_MAYA      = os.getenv("REPLICATE_LORA_VERSION_MAYA")
+REPLICATE_LORA_VERSION_MAYALEJA  = os.getenv("REPLICATE_LORA_VERSION_MAYALEJA")
+REPLICATE_TRIGGER_WORD_MAYA      = os.getenv("REPLICATE_TRIGGER_WORD_MAYA", "mayaselfie")
+REPLICATE_TRIGGER_WORD_MAYALEJA  = os.getenv("REPLICATE_TRIGGER_WORD_MAYALEJA", "mayaleja")
+# Legacy fallback
+REPLICATE_LORA_VERSION           = os.getenv("REPLICATE_LORA_VERSION")
+REPLICATE_TRIGGER_WORD           = os.getenv("REPLICATE_TRIGGER_WORD", "mayaleja")
 
 # Supabase
 SUPABASE_URL        = os.getenv("SUPABASE_URL")
