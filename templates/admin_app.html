@@ -284,21 +284,6 @@
     .nav-btn.active { color: var(--accent); }
     .nav-btn:active { opacity: .7; }
 
-    /* ── Add to home screen banner ── */
-    #a2hs-bar {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 20px;
-      background: rgba(96,165,250,.08);
-      border-bottom: 1px solid rgba(96,165,250,.15);
-      font-size: 13px;
-    }
-    #a2hs-bar.hidden { display: none; }
-    #a2hs-bar .a2hs-text { flex: 1; color: #60a5fa; line-height: 1.4; }
-    #a2hs-dismiss {
-      background: none; border: 1px solid rgba(96,165,250,.3);
-      color: #60a5fa; border-radius: 8px;
-      padding: 5px 10px; font-size: 12px; cursor: pointer; white-space: nowrap;
-    }
 
     /* ── X button ── */
     .btn-x { background: #e7e7e7; color: #000; border: none; }
@@ -358,10 +343,7 @@
     <button id="refresh-btn" onclick="refresh()">↺ Refresh</button>
   </div>
 
-  <div id="a2hs-bar" class="hidden">
-    <span class="a2hs-text">Tap <strong>⬆ Share</strong> then <strong>"Add to Home Screen"</strong> to install this app</span>
-    <button class="a2hs-dismiss" onclick="dismissA2HS()">Got it</button>
-  </div>
+
 
   <div id="notify-bar" class="hidden">
     <span class="nb-text">Enable push notifications</span>
@@ -605,7 +587,6 @@
     loadStats()
     loadPosts()
     checkNotifyBar()
-    checkA2HS()
   }
 
   function showLogin() {
@@ -1323,21 +1304,6 @@
     }
   }
 
-  // ── Add to Home Screen ───────────────────────────────────────────────────────
-
-  function checkA2HS() {
-    // Show on iOS Safari whenever NOT already installed as PWA
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
-    const isStandalone = window.navigator.standalone === true
-    if (isIOS && !isStandalone) {
-      document.getElementById('a2hs-bar').classList.remove('hidden')
-    }
-  }
-
-  function dismissA2HS() {
-    // Only hide for this session, not permanently
-    document.getElementById('a2hs-bar').classList.add('hidden')
-  }
 
   // ── Image fullscreen ─────────────────────────────────────────────────────────
 

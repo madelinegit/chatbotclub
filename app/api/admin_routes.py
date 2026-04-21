@@ -163,6 +163,14 @@ def post_now(post_id: int, secret: str = Query(...), platform: str = Query("thre
     return {"status": "posted", "platform": platform}
 
 
+@router.post("/posts/{post_id}/archive")
+def archive_post(post_id: int, secret: str = Query(...)):
+    _check(secret)
+    from app.db.crud import archive_social_post
+    archive_social_post(post_id)
+    return {"status": "archived"}
+
+
 @router.post("/upload-image")
 async def upload_image(secret: str = Query(...), file: UploadFile = File(...)):
     """Upload an image file to Cloudinary and return the public URL."""

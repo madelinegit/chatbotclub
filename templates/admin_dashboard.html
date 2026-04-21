@@ -710,6 +710,7 @@
               <button class="btn-post" style="background:#e7e7e7;color:#000;" onclick="saveAndPost(${p.id}, 'x')">Post to X</button>
               ${p.image_url ? `<button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="saveAndPost(${p.id}, 'instagram')">Post to Instagram</button>` : ''}
               ${p.image_url ? `<button class="btn-approve" onclick="openVideoModal(${p.id}, '${esc(p.image_url)}', ${JSON.stringify(p.caption).replace(/"/g,'&quot;')})">🎬 Make Video</button>` : ''}
+              <button class="btn-reject" onclick="archivePost(${p.id})">Archive</button>
               <button class="btn-reject" onclick="deletePost(${p.id})">Delete</button>
             </div>
           </div>
@@ -730,6 +731,7 @@
               <button class="btn-post" style="background:#e7e7e7;color:#000;" onclick="saveAndPost(${p.id}, 'x')">Post to X</button>
               ${p.image_url ? `<button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="saveAndPost(${p.id}, 'instagram')">Post to Instagram</button>` : ''}
               ${p.image_url ? `<button class="btn-approve" onclick="openVideoModal(${p.id}, '${esc(p.image_url)}', ${JSON.stringify(p.caption).replace(/"/g,'&quot;')})">🎬 Make Video</button>` : ''}
+              <button class="btn-reject" onclick="archivePost(${p.id})">Archive</button>
               <button class="btn-reject" onclick="deletePost(${p.id})">Delete</button>
             </div>
           </div>
@@ -798,6 +800,14 @@
     await fetch(`/admin/posts/${id}/reject?secret=${SECRET}`, { method: 'POST' })
     toast('Rejected.', '')
     loadPosts('pending')
+  }
+
+  async function archivePost(id) {
+    const res = await fetch(`/admin/posts/${id}/archive?secret=${SECRET}`, { method: 'POST' })
+    if (res.ok) {
+      document.getElementById(`pc-${id}`)?.remove()
+      toast('Archived.', '')
+    } else toast('Archive failed.', 'red')
   }
 
   async function deletePost(id) {
