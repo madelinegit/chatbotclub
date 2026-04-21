@@ -272,10 +272,15 @@
   <!-- Image Generator -->
   <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:24px;">
     <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Image Generator</div>
-    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px;">
-      <textarea id="image-idea-input" rows="2" placeholder="mayalejapoolside, golden hour, looking back at camera"
-        style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;font-size:14px;font-family:inherit;resize:none;outline:none;"
-      >mayaleja</textarea>
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;">
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+        <textarea id="image-idea-input" rows="2" placeholder="mayaleja solo poolside, golden hour, looking back at camera"
+          style="width:100%;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;font-size:14px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;"
+        >mayaleja solo </textarea>
+        <textarea id="image-neg-input" rows="2" placeholder="negative prompt…"
+          style="width:100%;background:#111113;color:#888;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:10px 12px;font-size:12px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;"
+        >bad hands, extra fingers, deformed hands, hands in foreground, hands reaching toward camera, ugly hands, mutated hands, poorly drawn hands</textarea>
+      </div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         <select id="image-model-type" onchange="onDesktopModelChange(this.value)" style="background:#111113;color:#ccc;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:13px;outline:none;">
           <option value="lora_mayaleja" selected>Mayaleja (LoRA)</option>
@@ -293,6 +298,8 @@
       <div style="font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Expanded prompt — edit before generating</div>
       <textarea id="image-prompt-edit" rows="5"
         style="width:100%;background:#111113;color:#ccc;border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px;font-size:12px;font-family:monospace;resize:vertical;outline:none;box-sizing:border-box;line-height:1.5;"></textarea>
+      <textarea id="image-neg-edit" rows="2" placeholder="negative prompt…"
+        style="width:100%;background:#111113;color:#888;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:8px 10px;font-size:12px;font-family:monospace;resize:vertical;outline:none;box-sizing:border-box;margin-top:6px;"></textarea>
       <div style="display:flex;gap:8px;margin-top:8px;">
         <button class="btn-gen" onclick="generateImageFromPrompt()" id="image-confirm-btn">Generate Image</button>
         <button class="btn-reject" onclick="document.getElementById('image-prompt-preview').style.display='none'">Cancel</button>
@@ -1140,13 +1147,13 @@
     _lastCharacter = m === 'lora_maya' ? 'maya' : 'mayaleja'
     const el = document.getElementById('image-idea-input')
     if (m === 'lora_mayaleja') {
-      if (!el.value.startsWith('mayaleja')) el.value = 'mayaleja ' + el.value.replace(/^(mayaselfie|mayaleja)\s*/, '')
-      el.placeholder = 'mayaleja poolside, golden hour, looking back at camera'
+      el.value = 'mayaleja solo ' + el.value.replace(/^(mayaselfie|mayaleja)\s*(solo\s*)?/, '')
+      el.placeholder = 'mayaleja solo poolside, golden hour, looking back at camera'
     } else if (m === 'lora_maya') {
-      if (!el.value.startsWith('mayaselfie')) el.value = 'mayaselfie ' + el.value.replace(/^(mayaselfie|mayaleja)\s*/, '')
-      el.placeholder = 'mayaselfie at the summit bar, warm light'
+      el.value = 'mayaselfie solo ' + el.value.replace(/^(mayaselfie|mayaleja)\s*(solo\s*)?/, '')
+      el.placeholder = 'mayaselfie solo at the summit bar, warm light'
     } else {
-      el.value = el.value.replace(/^(mayaselfie|mayaleja)\s*/, '')
+      el.value = el.value.replace(/^(mayaselfie|mayaleja)\s*(solo\s*)?/, '')
       el.placeholder = "Describe the shot… e.g. 'Maya at the bar after a long shift'"
     }
   }
@@ -1165,6 +1172,7 @@
     if (_lastModelType === 'lora') {
       btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Generating…'
       document.getElementById('image-prompt-edit').value = idea
+      document.getElementById('image-neg-edit').value = document.getElementById('image-neg-input').value
       try {
         await generateImageFromPrompt()
       } finally {
@@ -1206,7 +1214,7 @@
       const res = await safeFetch(`/admin/write/image?secret=${SECRET}`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ expanded_prompt: prompt, model_type: _lastModelType, character: _lastCharacter }),
+        body:    JSON.stringify({ expanded_prompt: prompt, negative_prompt: document.getElementById('image-neg-edit').value.trim(), model_type: _lastModelType, character: _lastCharacter }),
         signal:  controller.signal,
       })
       clearTimeout(timeout)

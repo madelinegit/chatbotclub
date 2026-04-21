@@ -320,7 +320,7 @@ def _upload_to_cloudinary(url: str, resource_type: str = "image") -> str:
     return url
 
 
-def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: float = 0.8, character: str = "mayaleja") -> tuple[str | None, str | None]:
+def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: float = 0.8, character: str = "mayaleja", negative_prompt: str = "") -> tuple[str | None, str | None]:
     """
     Flux LoRA inference via Replicate.
     character: 'mayaleja' (default) or 'maya'
@@ -346,9 +346,10 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
     full_prompt = f"{trigger_word} solo {clean}"
     inp = {
         "prompt": full_prompt,
-        "negative_prompt": "bad hands, extra fingers, deformed hands, hands in foreground, hands reaching toward camera, ugly hands, mutated hands, poorly drawn hands",
         "disable_safety_checker": True,
     }
+    if negative_prompt:
+        inp["negative_prompt"] = negative_prompt
     if image_url:
         inp["image"]           = image_url
         inp["prompt_strength"] = prompt_strength
@@ -401,10 +402,10 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
         return None, f"Replicate error: {type(e).__name__}: {e}"
 
 
-def _generate_image(prompt: str, model_type: str = "scene", character: str = "mayaleja") -> tuple[str | None, str | None]:
+def _generate_image(prompt: str, model_type: str = "scene", character: str = "mayaleja", negative_prompt: str = "") -> tuple[str | None, str | None]:
     """Returns (image_url, error_message). One of them will be None."""
     if model_type == "lora":
-        return _generate_image_lora(prompt, character=character)
+        return _generate_image_lora(prompt, character=character, negative_prompt=negative_prompt)
 
     if model_type == "portrait":
         model = MODELSLAB_PORTRAIT_MODEL

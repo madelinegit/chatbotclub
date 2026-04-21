@@ -335,10 +335,11 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
         if not expanded:
             raise HTTPException(status_code=400, detail="expanded_prompt required.")
 
-        model_type = body.get("model_type", "lora")
-        character  = body.get("character", "mayaleja")
+        model_type      = body.get("model_type", "lora")
+        character       = body.get("character", "mayaleja")
+        negative_prompt = body.get("negative_prompt", "")
 
-        image_url, img_error = _generate_image(expanded, model_type=model_type, character=character)
+        image_url, img_error = _generate_image(expanded, model_type=model_type, character=character, negative_prompt=negative_prompt)
 
         if img_error and not image_url:
             raise HTTPException(status_code=500, detail=img_error)
