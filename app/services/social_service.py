@@ -346,6 +346,7 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
     full_prompt = f"{trigger_word} solo {clean}"
     inp = {
         "prompt": full_prompt,
+        "negative_prompt": "bad hands, extra fingers, deformed hands, hands in foreground, hands reaching toward camera, ugly hands, mutated hands, poorly drawn hands",
         "disable_safety_checker": True,
     }
     if image_url:
