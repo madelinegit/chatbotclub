@@ -85,7 +85,7 @@ def init_db() -> None:
             image_url    TEXT,
             image_prompt TEXT,
             status       TEXT NOT NULL DEFAULT 'pending'
-                         CHECK(status IN ('pending', 'approved', 'rejected', 'posted', 'failed')),
+                         CHECK(status IN ('pending', 'approved', 'rejected', 'posted', 'failed', 'archived')),
             post_id      TEXT,
             scheduled_at TIMESTAMPTZ,
             posted_at    TIMESTAMPTZ,
@@ -157,6 +157,13 @@ def init_db() -> None:
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT")
     cur.execute("ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS hashtags TEXT")
     cur.execute("ALTER TABLE social_posts ADD COLUMN IF NOT EXISTS target_platform TEXT DEFAULT 'threads'")
+
+    # Drop and recreate status check constraint to include 'archived'
+    cur.execute("ALTER TABLE social_posts DROP CONSTRAINT IF EXISTS social_posts_status_check")
+    cur.execute("""
+        ALTER TABLE social_posts ADD CONSTRAINT social_posts_status_check
+        CHECK(status IN ('pending', 'approved', 'rejected', 'posted', 'failed', 'archived'))
+    """)
 
     conn.commit()
     cur.close()
