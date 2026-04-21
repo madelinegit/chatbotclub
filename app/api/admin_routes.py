@@ -478,10 +478,11 @@ async def admin_expand_activity(secret: str = Query(...), request: Request = Non
 
     trigger = "mayaleja" if character == "mayaleja" else "mayaselfie"
     user_msg = (
-        f"Write a detailed Flux image generation prompt for a photo of a woman {activity}. "
-        f"Be specific about the setting, action, body position, lighting, camera angle, and mood. "
-        f"Do NOT describe her face or body — the LoRA handles that. "
-        f"Output only the prompt text, starting with '{trigger} solo', no explanation."
+        f"Write a Flux image prompt for a photo of a woman associated with {activity}. "
+        f"Focus on the SETTING and ENVIRONMENT — where she is, what's around her, lighting, mood, camera angle. "
+        f"Avoid describing intense physical action or complex body poses — describe the scene she's in, not what her body is doing. "
+        f"Do NOT describe her face or body appearance — the LoRA handles that. "
+        f"Output only the prompt text, starting with '{trigger} solo', no explanation, no quotes."
     )
 
     try:
