@@ -566,3 +566,32 @@ def get_recent_comment_replies(limit: int = 50) -> list:
     cur.close()
     conn.close()
     return [dict(r) for r in rows]
+
+
+# ── App tokens ────────────────────────────────────────────────────────────────
+
+def get_app_token(key: str) -> dict | None:
+    """Return {'value': str, 'updated_at': datetime} or None."""
+    conn = get_connection()
+    cur  = _cursor(conn)
+    cur.execute("SELECT value, updated_at FROM app_tokens WHERE key = %s", (key,))
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return dict(row) if row else None
+
+
+def set_app_token(key: str, value: str) -> None:
+    conn = get_connection()
+    cur  = _cursor(conn)
+    cur.execute(
+        """
+        INSERT INTO app_tokens (key, value, updated_at)
+        VALUES (%s, %s, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+        """,
+        (key, value),
+    )
+    conn.commit()
+    cur.close()
+    conn.close()

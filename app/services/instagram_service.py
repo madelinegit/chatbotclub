@@ -8,22 +8,81 @@ Get one from: developers.facebook.com → Graph API Explorer
 Required scopes: instagram_basic, instagram_content_publish, pages_show_list
 """
 import requests
+from datetime import datetime, timezone, timedelta
 from app.config import INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_USER_ID
-from app.db.crud import mark_post_posted, mark_post_failed
+from app.db.crud import mark_post_posted, mark_post_failed, get_app_token, set_app_token
 
 GRAPH_API = "https://graph.facebook.com/v19.0"
+_TOKEN_KEY = "instagram_access_token"
+_REFRESH_AFTER_DAYS = 50  # refresh before the 60-day expiry
+
+
+def get_current_instagram_token() -> str | None:
+    """Return the best available Instagram token (DB > env var)."""
+    row = get_app_token(_TOKEN_KEY)
+    if row and row.get("value"):
+        return row["value"]
+    return INSTAGRAM_ACCESS_TOKEN
+
+
+def refresh_instagram_token(token: str = None) -> str | None:
+    """
+    Exchange a long-lived token for a fresh 60-day token and persist it.
+    Uses the provided token or the current best token if omitted.
+    Returns the new token string, or None on failure.
+    """
+    token = token or get_current_instagram_token()
+    if not token:
+        print("INSTAGRAM REFRESH: no token available to refresh")
+        return None
+    try:
+        r = requests.get(
+            "https://graph.facebook.com/refresh_access_token",
+            params={"grant_type": "ig_refresh_token", "access_token": token},
+            timeout=15,
+        )
+        if not r.ok:
+            print(f"INSTAGRAM REFRESH ERROR: {r.status_code} {r.text[:300]}")
+            return None
+        new_token = r.json().get("access_token")
+        if new_token:
+            set_app_token(_TOKEN_KEY, new_token)
+            print("INSTAGRAM REFRESH: token refreshed and stored in DB")
+            return new_token
+        print(f"INSTAGRAM REFRESH: unexpected response: {r.text[:200]}")
+        return None
+    except Exception as e:
+        print(f"INSTAGRAM REFRESH EXCEPTION: {e}")
+        return None
+
+
+def maybe_refresh_instagram_token() -> None:
+    """Refresh the token if it hasn't been refreshed in _REFRESH_AFTER_DAYS days."""
+    row = get_app_token(_TOKEN_KEY)
+    if not row:
+        return
+    updated_at = row.get("updated_at")
+    if not updated_at:
+        return
+    if updated_at.tzinfo is None:
+        updated_at = updated_at.replace(tzinfo=timezone.utc)
+    age_days = (datetime.now(timezone.utc) - updated_at).days
+    if age_days >= _REFRESH_AFTER_DAYS:
+        print(f"INSTAGRAM: token is {age_days} days old — auto-refreshing")
+        refresh_instagram_token(row["value"])
 
 
 def _get_ig_user_id() -> str | None:
     """Get the Instagram Business/Creator Account ID linked to the access token."""
-    if not INSTAGRAM_ACCESS_TOKEN:
-        print("INSTAGRAM: INSTAGRAM_ACCESS_TOKEN env var not set")
+    token = get_current_instagram_token()
+    if not token:
+        print("INSTAGRAM: no access token available")
         return None
     try:
         r = requests.get(
             f"{GRAPH_API}/me/accounts",
             params={
-                "access_token": INSTAGRAM_ACCESS_TOKEN,
+                "access_token": token,
                 "fields": "id,name,access_token,instagram_business_account",
             },
             timeout=10,
@@ -71,7 +130,9 @@ def post_carousel_to_instagram(post_id: int, caption: str, image_urls: list, has
     Publish a carousel (multi-image) post to Instagram.
     image_urls: list of 2–10 publicly accessible image URLs.
     """
-    if not INSTAGRAM_ACCESS_TOKEN:
+    maybe_refresh_instagram_token()
+    token = get_current_instagram_token()
+    if not token:
         mark_post_failed(post_id)
         return False
     if not image_urls or len(image_urls) < 2:
@@ -97,7 +158,7 @@ def post_carousel_to_instagram(post_id: int, caption: str, image_urls: list, has
                 params={
                     "image_url":     url,
                     "is_carousel_item": "true",
-                    "access_token":  INSTAGRAM_ACCESS_TOKEN,
+                    "access_token":  token,
                 },
                 timeout=30,
             )
@@ -118,7 +179,7 @@ def post_carousel_to_instagram(post_id: int, caption: str, image_urls: list, has
                 "media_type":   "CAROUSEL",
                 "caption":      ig_caption,
                 "children":     ",".join(child_ids),
-                "access_token": INSTAGRAM_ACCESS_TOKEN,
+                "access_token": token,
             },
             timeout=30,
         )
@@ -131,7 +192,7 @@ def post_carousel_to_instagram(post_id: int, caption: str, image_urls: list, has
         # Step 3 — publish
         r = requests.post(
             f"{GRAPH_API}/{ig_user_id}/media_publish",
-            params={"creation_id": carousel_id, "access_token": INSTAGRAM_ACCESS_TOKEN},
+            params={"creation_id": carousel_id, "access_token": token},
             timeout=30,
         )
         r.raise_for_status()
@@ -148,7 +209,9 @@ def post_carousel_to_instagram(post_id: int, caption: str, image_urls: list, has
 
 def post_reel_to_instagram(post_id: int, caption: str, video_url: str, hashtags: str = None) -> bool:
     """Publish a Reel to Instagram from a video URL (e.g. from Kling)."""
-    if not INSTAGRAM_ACCESS_TOKEN:
+    maybe_refresh_instagram_token()
+    token = get_current_instagram_token()
+    if not token:
         mark_post_failed(post_id)
         return False
     if not video_url:
@@ -173,7 +236,7 @@ def post_reel_to_instagram(post_id: int, caption: str, video_url: str, hashtags:
                 "media_type":  "REELS",
                 "video_url":   video_url,
                 "caption":     ig_caption,
-                "access_token": INSTAGRAM_ACCESS_TOKEN,
+                "access_token": token,
             },
             timeout=30,
         )
@@ -189,7 +252,7 @@ def post_reel_to_instagram(post_id: int, caption: str, video_url: str, hashtags:
             time.sleep(10)
             status_r = requests.get(
                 f"{GRAPH_API}/{creation_id}",
-                params={"fields": "status_code", "access_token": INSTAGRAM_ACCESS_TOKEN},
+                params={"fields": "status_code", "access_token": token},
                 timeout=15,
             )
             status = status_r.json().get("status_code")
@@ -202,7 +265,7 @@ def post_reel_to_instagram(post_id: int, caption: str, video_url: str, hashtags:
 
         r = requests.post(
             f"{GRAPH_API}/{ig_user_id}/media_publish",
-            params={"creation_id": creation_id, "access_token": INSTAGRAM_ACCESS_TOKEN},
+            params={"creation_id": creation_id, "access_token": token},
             timeout=30,
         )
         r.raise_for_status()
@@ -223,8 +286,10 @@ def post_to_instagram(post_id: int, caption: str, image_url: str = None, hashtag
     Returns (success, error_message). error_message is empty string on success.
     Instagram Graph API always requires an image — text-only is not supported.
     """
-    if not INSTAGRAM_ACCESS_TOKEN:
-        msg = "INSTAGRAM_ACCESS_TOKEN not set in Railway env vars"
+    maybe_refresh_instagram_token()
+    token = get_current_instagram_token()
+    if not token:
+        msg = "No Instagram access token — set INSTAGRAM_ACCESS_TOKEN in Railway env vars"
         print(f"INSTAGRAM: {msg}")
         mark_post_failed(post_id)
         return False, msg
@@ -254,7 +319,7 @@ def post_to_instagram(post_id: int, caption: str, image_url: str = None, hashtag
             params={
                 "image_url":    image_url,
                 "caption":      ig_caption,
-                "access_token": INSTAGRAM_ACCESS_TOKEN,
+                "access_token": token,
             },
             timeout=30,
         )
@@ -276,7 +341,7 @@ def post_to_instagram(post_id: int, caption: str, image_url: str = None, hashtag
             time.sleep(3)
             status_r = requests.get(
                 f"{GRAPH_API}/{creation_id}",
-                params={"fields": "status_code", "access_token": INSTAGRAM_ACCESS_TOKEN},
+                params={"fields": "status_code", "access_token": token},
                 timeout=15,
             )
             status = status_r.json().get("status_code")
@@ -291,7 +356,7 @@ def post_to_instagram(post_id: int, caption: str, image_url: str = None, hashtag
         # Step 2 — publish
         r = requests.post(
             f"{GRAPH_API}/{ig_user_id}/media_publish",
-            params={"creation_id": creation_id, "access_token": INSTAGRAM_ACCESS_TOKEN},
+            params={"creation_id": creation_id, "access_token": token},
             timeout=30,
         )
         if not r.ok:

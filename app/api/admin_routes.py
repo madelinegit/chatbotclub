@@ -981,3 +981,27 @@ async def post_reel(secret: str = Query(...), request: Request = None):
     if not ok:
         raise HTTPException(status_code=500, detail="Reel post failed — check logs.")
     return {"ok": True, "post_id": post_id}
+
+
+@router.post("/instagram/token")
+async def set_instagram_token(secret: str = Query(...), request: Request = None):
+    """Seed or replace the stored Instagram long-lived token."""
+    _check(secret)
+    body  = await request.json()
+    token = body.get("token", "").strip()
+    if not token:
+        raise HTTPException(status_code=400, detail="token required.")
+    from app.db.crud import set_app_token
+    set_app_token("instagram_access_token", token)
+    return {"ok": True, "message": "Token saved. It will auto-refresh every 50 days."}
+
+
+@router.post("/instagram/refresh-token")
+async def refresh_instagram_token_endpoint(secret: str = Query(...)):
+    """Manually trigger an Instagram token refresh."""
+    _check(secret)
+    from app.services.instagram_service import refresh_instagram_token
+    new_token = refresh_instagram_token()
+    if not new_token:
+        raise HTTPException(status_code=500, detail="Token refresh failed — check logs.")
+    return {"ok": True, "message": "Token refreshed and stored."}
