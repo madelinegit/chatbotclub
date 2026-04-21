@@ -343,16 +343,16 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
     import re
     clean = re.sub(r'\b(maya|mayaselfie|mayaleja)\b', '', prompt, flags=re.IGNORECASE).strip()
     clean = re.sub(r'\s{2,}', ' ', clean)
-    full_prompt = f"{trigger_word} solo {clean}"
+    full_prompt = f"{trigger_word} solo woman {clean}"
+    default_negative = "man, male, beard, mustache, masculine, boy, guy, male face, stubble"
     inp = {
         "prompt": full_prompt,
+        "negative_prompt": f"{default_negative}, {negative_prompt}".strip(", ") if negative_prompt else default_negative,
         "lora_scale": 1.2,
         "num_inference_steps": 28,
         "guidance_scale": 3.5,
         "disable_safety_checker": True,
     }
-    if negative_prompt:
-        inp["negative_prompt"] = negative_prompt
     if image_url:
         inp["image"]           = image_url
         inp["prompt_strength"] = prompt_strength
