@@ -459,6 +459,54 @@ PLATFORM_GUIDE = {
 }
 
 
+@router.post("/write/expand-activity")
+async def admin_expand_activity(secret: str = Query(...), request: Request = None):
+    """
+    Turn a short activity word into a detailed Flux image prompt.
+    Body: { activity, character ('mayaleja' or 'maya') }
+    Returns: { prompt }
+    """
+    _check(secret)
+    body      = await request.json()
+    activity  = body.get("activity", "").strip()
+    character = body.get("character", "mayaleja")
+    if not activity:
+        raise HTTPException(status_code=400, detail="activity required.")
+
+    from app.config import MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL
+    import requests as req
+
+    trigger = "mayaleja" if character == "mayaleja" else "mayaselfie"
+    user_msg = (
+        f"Write a detailed Flux image generation prompt for a photo of a woman {activity}. "
+        f"Be specific about the setting, action, body position, lighting, camera angle, and mood. "
+        f"Do NOT describe her face or body — the LoRA handles that. "
+        f"Output only the prompt text, starting with '{trigger} solo', no explanation."
+    )
+
+    try:
+        r = req.post(
+            MODELSLAB_API_URL,
+            json={
+                "model": MODELSLAB_MODEL,
+                "messages": [
+                    {"role": "system", "content": "You are an expert Flux image prompt writer. Write concise, vivid, technically correct prompts."},
+                    {"role": "user",   "content": user_msg},
+                ],
+            },
+            headers={"Authorization": f"Bearer {MODELSLAB_API_KEY}", "Content-Type": "application/json"},
+            timeout=30,
+        )
+        r.raise_for_status()
+        d = r.json()
+        prompt = (d.get("choices", [{}])[0].get("message", {}).get("content") or
+                  (d.get("output") or [""])[0]).strip().strip('"')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM error: {e}")
+
+    return {"prompt": prompt}
+
+
 @router.post("/write/caption")
 async def admin_write_caption(secret: str = Query(...), request: Request = None):
     """

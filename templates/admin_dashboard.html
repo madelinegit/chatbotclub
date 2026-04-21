@@ -273,6 +273,15 @@
   <!-- Image Generator -->
   <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:24px;">
     <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Image Generator</div>
+
+    <!-- Activity prompt builder -->
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+      <input id="activity-input" type="text" placeholder="Type an activity… e.g. snowboarding, bartending, doing yoga"
+        style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;font-size:13px;outline:none;"
+        onkeydown="if(event.key==='Enter')buildActivityPrompt()">
+      <button class="btn-approve" id="activity-btn" onclick="buildActivityPrompt()" style="white-space:nowrap;">Build Prompt</button>
+    </div>
+
     <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;">
       <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
         <textarea id="image-idea-input" rows="2" placeholder="mayaleja solo poolside, golden hour, looking back at camera"
@@ -1476,6 +1485,26 @@
       }
     } finally {
       btn.disabled = false; btn.innerHTML = 'Generate Image'
+    }
+  }
+
+  async function buildActivityPrompt() {
+    const activity = document.getElementById('activity-input').value.trim()
+    if (!activity) return
+    const btn = document.getElementById('activity-btn')
+    btn.disabled = true; btn.textContent = '…'
+    const res = await safeFetch(`/admin/write/expand-activity?secret=${SECRET}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ activity, character: _lastCharacter }),
+    })
+    btn.disabled = false; btn.textContent = 'Build Prompt'
+    if (res.ok && res.data?.prompt) {
+      document.getElementById('image-idea-input').value = res.data.prompt
+      document.getElementById('activity-input').value = ''
+      toast('Prompt built — edit if needed then Generate', 'green')
+    } else {
+      toast(res.data?.detail || 'Failed to build prompt', 'red')
     }
   }
 
