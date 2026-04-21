@@ -348,7 +348,7 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
     inp = {
         "prompt": full_prompt,
         "negative_prompt": f"{default_negative}, {negative_prompt}".strip(", ") if negative_prompt else default_negative,
-        "lora_scale": 1.2,
+        "lora_scale": 1.5,
         "num_inference_steps": 28,
         "guidance_scale": 3.5,
         "disable_safety_checker": True,
