@@ -621,6 +621,25 @@
       </div>
     </div>
 
+    <!-- MODEL TESTER -->
+    <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:24px;">
+      <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Model Tester</div>
+      <div style="font-size:12px;color:#666;margin-bottom:16px;">Test any ModelsLab model ID to see if it's accessible on your current plan.</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <input id="test-model-id" type="text" placeholder="Model ID e.g. sao10k-l3.3-euryale-70b"
+          style="background:#111;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 14px;color:#e0ddd8;font-size:13px;width:100%;box-sizing:border-box;">
+        <input id="test-model-msg" type="text" value="say hi in one sentence"
+          style="background:#111;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 14px;color:#e0ddd8;font-size:13px;width:100%;box-sizing:border-box;">
+        <button onclick="testModel()" style="background:#c9956a;color:#0a0a0b;font-weight:700;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;font-size:13px;align-self:flex-start;">
+          Test Model
+        </button>
+      </div>
+      <div id="test-model-result" style="margin-top:16px;display:none;">
+        <div id="test-model-status" style="font-size:13px;font-weight:700;margin-bottom:8px;"></div>
+        <pre id="test-model-raw" style="background:#111;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:14px;font-size:11px;color:#aaa;overflow-x:auto;white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto;"></pre>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -1205,6 +1224,33 @@
   }
 
   // ── Local Context ──────────────────────────────────────────────────────────
+
+  async function testModel() {
+    const modelId = document.getElementById('test-model-id').value.trim()
+    const message = document.getElementById('test-model-msg').value.trim()
+    if (!modelId) { alert('Enter a model ID.'); return }
+    const resultEl  = document.getElementById('test-model-result')
+    const statusEl  = document.getElementById('test-model-status')
+    const rawEl     = document.getElementById('test-model-raw')
+    resultEl.style.display = 'block'
+    statusEl.textContent   = 'Testing…'
+    statusEl.style.color   = '#888'
+    rawEl.textContent      = ''
+    const r    = await fetch(`/admin/test-model?secret=${SECRET}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ model_id: modelId, message }),
+    })
+    const data = await r.json()
+    if (data.accessible) {
+      statusEl.textContent = '✓ Accessible — model responded'
+      statusEl.style.color = '#4caf50'
+    } else {
+      statusEl.textContent = `✗ Not accessible (HTTP ${data.status_code || 'error'})`
+      statusEl.style.color = '#f44336'
+    }
+    rawEl.textContent = JSON.stringify(data, null, 2)
+  }
 
   async function loadContext() {
     document.getElementById('context-display').textContent = 'Fetching...'

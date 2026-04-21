@@ -1013,3 +1013,42 @@ async def refresh_instagram_token_endpoint(secret: str = Query(...)):
     if not new_token:
         raise HTTPException(status_code=500, detail="Token refresh failed — check logs.")
     return {"ok": True, "message": "Token refreshed and stored."}
+
+
+@router.post("/test-model")
+async def test_model(secret: str = Query(...), request: Request = None):
+    """
+    Test any ModelsLab model ID with a single message.
+    Body: { "model_id": "sao10k-l3.3-euryale-70b", "message": "say hi" }
+    Returns the raw response so you can see if the model is accessible.
+    """
+    _check(secret)
+    import requests as req
+    body       = await request.json()
+    model_id   = body.get("model_id", "").strip()
+    message    = body.get("message", "say hi in one sentence").strip()
+    if not model_id:
+        raise HTTPException(status_code=400, detail="model_id required.")
+
+    from app.config import MODELSLAB_API_KEY, MODELSLAB_API_URL
+    payload = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user",   "content": message},
+        ],
+    }
+    headers = {
+        "Authorization": f"Bearer {MODELSLAB_API_KEY}",
+        "Content-Type":  "application/json",
+    }
+    try:
+        r = req.post(MODELSLAB_API_URL, json=payload, headers=headers, timeout=30)
+        return {
+            "model_id":    model_id,
+            "status_code": r.status_code,
+            "accessible":  r.status_code == 200,
+            "response":    r.json() if r.headers.get("content-type", "").startswith("application/json") else r.text[:500],
+        }
+    except Exception as e:
+        return {"model_id": model_id, "accessible": False, "error": str(e)}
