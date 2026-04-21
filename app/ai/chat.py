@@ -23,6 +23,48 @@ IMAGE_TRIGGERS = [
     "see you", "see a pic", "see a photo", "see a picture",
 ]
 
+_BRANCH_PRIMING = {
+    "relationship": (
+        "Focus on emotional ambiguity, attachment, mixed signals, and unspoken feelings "
+        "toward another person. This is about a relationship dynamic."
+    ),
+    "skeptical": (
+        "The user is doubting whether this is real. Acknowledge doubt calmly, redirect "
+        "toward meaningful engagement. Do not get defensive. Stay grounded."
+    ),
+    "flirty": (
+        "The user is being flirty. Maintain a light, playful tone, but redirect toward "
+        "emotional or psychological depth. Stay in control of the conversation."
+    ),
+    "vague": (
+        "The user is being vague or noncommittal. Gently challenge them to open up. "
+        "Assume there is something unspoken underneath the surface answer."
+    ),
+    "introspective": (
+        "Lean into deeper reflection. Validate complexity, explore internal patterns. "
+        "This person is ready to go somewhere real."
+    ),
+}
+
+_RELATIONSHIP_WORDS = {"ex", "him", "her", "they", "them", "relationship", "talking", "texted", "text", "boyfriend", "girlfriend", "situationship", "feelings", "crush", "love", "likes me", "misses"}
+_SKEPTICAL_WORDS    = {"fake", "ai", "real?", "test", "prove", "not real", "bot", "robot", "chatgpt", "are you real", "you're not real"}
+_FLIRTY_WORDS       = {"sexy", "hot", "flirt", "flirty", "cute", "attractive", "beautiful", "gorgeous", "playful"}
+
+
+def _detect_branch(message: str) -> str:
+    lowered = message.lower()
+    words   = set(lowered.split())
+
+    if words & _RELATIONSHIP_WORDS or any(w in lowered for w in _RELATIONSHIP_WORDS):
+        return "relationship"
+    if any(w in lowered for w in _SKEPTICAL_WORDS):
+        return "skeptical"
+    if any(w in lowered for w in _FLIRTY_WORDS):
+        return "flirty"
+    if len(message.split()) <= 6 or any(v in lowered for v in ["idk", "nothing", "just curious", "not sure", "dunno", "i don't know"]):
+        return "vague"
+    return "introspective"
+
 
 def _build_image_prompt(message: str) -> str:
     filler = [
@@ -52,6 +94,25 @@ def _build_user_context(user_id: str) -> str:
     return "\n\n---\n" + " ".join(parts) + "\nUse this naturally — don't recite it back, just know it."
 
 
+def _build_turn_context(turn: int, branch: str) -> str:
+    lines = [f"\n\n---\nThis is message {turn} in your conversation with this person."]
+
+    # Branch priming
+    priming = _BRANCH_PRIMING.get(branch)
+    if priming:
+        lines.append(f"CONTEXT: {priming}")
+
+    # Paywall tension buildup
+    if turn == 7:
+        lines.append('At some natural point in this response, add: "I can go deeper with you… but only if you\'re actually honest with me."')
+    elif turn == 9:
+        lines.append('If the user asked something meaningful, respond to it then add: "I can answer that… but you\'re probably not going to like it." Then end with: "If you want me to actually go deeper with you, you\'ll need to stay with me."')
+    elif turn >= 10:
+        lines.append("You have been generous. Start pulling back slightly. Create a sense that going further requires more from them.")
+
+    return "\n".join(lines)
+
+
 def generate_reply(user_id: str, message: str) -> str:
     lowered = message.lower()
 
@@ -67,13 +128,13 @@ def generate_reply(user_id: str, message: str) -> str:
         add_message(user_id, "assistant", reply)
         return reply
 
-    # Build system prompt: persona + user profile + local context if relevant
-    history  = get_history(user_id)
-    turn     = len([m for m in history if m["role"] == "user"]) + 1
+    history = get_history(user_id)
+    turn    = len([m for m in history if m["role"] == "user"]) + 1
+    branch  = _detect_branch(message)
 
     persona       = load_persona()
     user_context  = _build_user_context(user_id)
-    turn_context  = f"\n\n---\nThis is message {turn} in your conversation with this person." if turn <= 12 else ""
+    turn_context  = _build_turn_context(turn, branch) if turn <= 12 else f"\n\n---\nBranch: {branch}"
     system_prompt = persona + user_context + turn_context
     system_prompt = inject_context_into_chat(user_id, message, system_prompt)
 
