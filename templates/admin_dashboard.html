@@ -1219,7 +1219,7 @@
     document.getElementById('image-result').style.display = 'none'
 
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 90000)
+    const timeout = setTimeout(() => controller.abort(), 150000)
 
     try {
       const res = await safeFetch(`/admin/write/image?secret=${SECRET}`, {

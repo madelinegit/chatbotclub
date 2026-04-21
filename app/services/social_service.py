@@ -377,23 +377,27 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
             raw = output[0] if output else None
             return (_upload_to_cloudinary(raw) if raw else None), None
 
-        # Poll once if still processing
+        # Poll until done (up to 3 minutes)
         pred_id = data.get("id")
         if pred_id:
             import time
-            time.sleep(30)
-            r2 = requests.get(
-                f"https://api.replicate.com/v1/predictions/{pred_id}",
-                headers={"Authorization": f"Bearer {REPLICATE_API_TOKEN}"},
-                timeout=15,
-            )
-            data2 = r2.json()
-            print(f"REPLICATE LORA poll: status={data2.get('status')}")
-            if data2.get("status") == "succeeded":
-                output = data2.get("output", [])
-                raw = output[0] if output else None
-                return (_upload_to_cloudinary(raw) if raw else None), None
-            return None, f"Replicate {data2.get('status')}: {data2.get('error')}"
+            for attempt in range(8):
+                time.sleep(15)
+                r2 = requests.get(
+                    f"https://api.replicate.com/v1/predictions/{pred_id}",
+                    headers={"Authorization": f"Bearer {REPLICATE_API_TOKEN}"},
+                    timeout=15,
+                )
+                data2 = r2.json()
+                status2 = data2.get("status")
+                print(f"REPLICATE LORA poll {attempt+1}: status={status2}")
+                if status2 == "succeeded":
+                    output = data2.get("output", [])
+                    raw = output[0] if output else None
+                    return (_upload_to_cloudinary(raw) if raw else None), None
+                if status2 == "failed":
+                    return None, f"Replicate failed: {data2.get('error')}"
+            return None, "Replicate timed out after 2 minutes — try again"
 
         return None, f"Replicate unexpected response: {data}"
     except requests.exceptions.Timeout:
