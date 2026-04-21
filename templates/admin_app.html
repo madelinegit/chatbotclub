@@ -691,6 +691,7 @@
           ${editing ? `<button class="btn btn-save" onclick="mSave(${p.id})">Save</button>` : ''}
           ${p.image_url ? `<button class="btn btn-save" style="background:rgba(201,149,106,.15);color:var(--accent);" onclick="mMakeVideo('${p.image_url}',${JSON.stringify(p.caption).replace(/"/g,'&quot;')})">🎬 Video</button>` : ''}
           <button class="btn btn-save" style="background:rgba(255,255,255,.06);" onclick="mDuplicate(${p.id})">⧉ Dupe</button>
+          <button class="btn btn-save" style="background:rgba(255,255,255,.06);font-size:11px;" onclick="mArchive(${p.id})">Archive</button>
           <button class="btn btn-del" onclick="mDelete(${p.id})">✕</button>
         </div>
       </div>`
@@ -773,6 +774,12 @@
       const d = await r.json()
       toast(`Failed: ${d.detail}`, 'red')
     }
+  }
+
+  async function mArchive(id) {
+    const r = await mSafeFetch(`/admin/posts/${id}/archive?secret=${encodeURIComponent(SECRET)}`, { method: 'POST' })
+    if (r.ok) { document.getElementById(`mpc-${id}`)?.remove(); toast('Archived.', '') }
+    else toast('Archive failed.', 'red')
   }
 
   async function mDelete(id) {
