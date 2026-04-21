@@ -94,6 +94,34 @@ def _build_user_context(user_id: str) -> str:
     return "\n\n---\n" + " ".join(parts) + "\nUse this naturally — don't recite it back, just know it."
 
 
+_DRIFT_PHRASES = [
+    "as an ai", "as a language model", "i'm an ai", "i am an ai",
+    "i'm sorry to hear", "i'm sorry that", "that sounds really hard",
+    "here are some", "here are a few", "here's what i", "i understand that",
+    "it's important to", "it's okay to", "you should consider",
+    "some things to consider", "i want you to know",
+    "as maya, i", "as your", "remember that",
+]
+
+_DRIFT_OVERRIDES = [
+    "that's not really what you meant, is it.",
+    "you're holding something back again.",
+    "say it differently. that wasn't the real thing.",
+    "hmm. try again.",
+    "i'm not buying that answer.",
+]
+
+import random
+
+def _is_drifting(reply: str) -> bool:
+    lowered = reply.lower()
+    if len(reply) > 500:
+        return True
+    if reply.count("\n-") >= 2 or reply.count("\n•") >= 2:
+        return True
+    return any(phrase in lowered for phrase in _DRIFT_PHRASES)
+
+
 def _build_turn_context(turn: int, branch: str) -> str:
     lines = [f"\n\n---\nThis is message {turn} in your conversation with this person."]
 
@@ -166,6 +194,10 @@ def generate_reply(user_id: str, message: str) -> str:
         reply = data["output"][0]
     else:
         reply = str(data)
+
+    if _is_drifting(reply):
+        print(f"DRIFT DETECTED (turn={turn}, branch={branch}): {reply[:120]}")
+        reply = random.choice(_DRIFT_OVERRIDES)
 
     add_message(user_id, "user", message)
     add_message(user_id, "assistant", reply)
