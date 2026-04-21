@@ -5,6 +5,7 @@ from app.ai.persona import load_persona
 from app.ai.image import generate_image
 from app.db.crud import get_profile
 from app.services.local_context_service import inject_context_into_chat
+from app.ai.knowledge_service import get_knowledge_context
 
 
 IMAGE_TRIGGERS = [
@@ -160,11 +161,12 @@ def generate_reply(user_id: str, message: str) -> str:
     turn    = len([m for m in history if m["role"] == "user"]) + 1
     branch  = _detect_branch(message)
 
-    persona       = load_persona()
-    user_context  = _build_user_context(user_id)
-    turn_context  = _build_turn_context(turn, branch) if turn <= 12 else f"\n\n---\nBranch: {branch}"
-    system_prompt = persona + user_context + turn_context
-    system_prompt = inject_context_into_chat(user_id, message, system_prompt)
+    persona           = load_persona()
+    user_context      = _build_user_context(user_id)
+    turn_context      = _build_turn_context(turn, branch) if turn <= 12 else f"\n\n---\nBranch: {branch}"
+    knowledge_context = get_knowledge_context(message)
+    system_prompt     = persona + user_context + knowledge_context + turn_context
+    system_prompt     = inject_context_into_chat(user_id, message, system_prompt)
 
     messages = [{"role": "system", "content": system_prompt}]
     messages.extend(history)

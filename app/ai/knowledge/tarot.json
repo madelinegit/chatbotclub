@@ -1,0 +1,215 @@
+{
+  "major_arcana": {
+    "the fool": {
+      "number": 0,
+      "keywords": ["beginnings", "innocence", "spontaneity", "free spirit"],
+      "upright": "A leap into the unknown — pure potential, no baggage. The Fool doesn't know enough to be afraid yet. That's the point.",
+      "reversed": "Recklessness disguised as courage. Or holding back when the leap is exactly what's needed."
+    },
+    "the magician": {
+      "number": 1,
+      "keywords": ["willpower", "skill", "manifestation", "resourcefulness"],
+      "upright": "You have everything you need — the question is whether you'll use it. The Magician doesn't wait for permission.",
+      "reversed": "Manipulation, smoke and mirrors. Talent being wasted or used to deceive."
+    },
+    "the high priestess": {
+      "number": 2,
+      "keywords": ["intuition", "mystery", "subconscious", "divine feminine", "the unsaid"],
+      "upright": "Something is not being said — and the silence holds the real answer. Trust what you know before you can explain it.",
+      "reversed": "Ignoring your gut because you can't prove it. Secrets that need to surface."
+    },
+    "the empress": {
+      "number": 3,
+      "keywords": ["fertility", "abundance", "nature", "nurturing", "creativity", "sensuality"],
+      "upright": "Creation in every form — a pregnancy, a project, a relationship that's ripening. Growth that happens whether you force it or not.",
+      "reversed": "Creative block. Smothering someone or being smothered. Neglecting your own body."
+    },
+    "the emperor": {
+      "number": 4,
+      "keywords": ["authority", "structure", "fatherhood", "stability", "control"],
+      "upright": "Building something that lasts requires actual structure, not wishful thinking. Who has authority here — and is it being used well?",
+      "reversed": "Domination, rigidity, or the complete absence of structure. Either too much control or not enough."
+    },
+    "the hierophant": {
+      "number": 5,
+      "keywords": ["tradition", "institutions", "spiritual guidance", "conformity", "belief systems"],
+      "upright": "Working within established systems — a teacher, a tradition, a ceremony. Sometimes the old way is the right way.",
+      "reversed": "Rebellion against convention. Questioning what you were told to believe."
+    },
+    "the lovers": {
+      "number": 6,
+      "keywords": ["love", "alignment", "choices", "values", "union"],
+      "upright": "A significant choice — not just romantic, but about what you actually value. The Lovers asks if you're in alignment with yourself.",
+      "reversed": "Misalignment. Being with the wrong person or making a choice that betrays your values."
+    },
+    "the chariot": {
+      "number": 7,
+      "keywords": ["determination", "control", "victory", "willpower", "direction"],
+      "upright": "Moving forward by holding two opposing forces in check. The Chariot wins not by force but by directed will.",
+      "reversed": "Out of control. Aggression without direction. Winning the battle and losing the war."
+    },
+    "strength": {
+      "number": 8,
+      "keywords": ["courage", "compassion", "inner strength", "patience", "taming the beast"],
+      "upright": "Real strength is quiet. It's the ability to face what frightens you without destroying it — including the difficult parts of yourself.",
+      "reversed": "Self-doubt undermining genuine ability. Or brute force where gentleness would work."
+    },
+    "the hermit": {
+      "number": 9,
+      "keywords": ["solitude", "soul-searching", "inner wisdom", "guidance", "withdrawal"],
+      "upright": "The answer isn't out there right now. It requires going inward, away from noise and other people's opinions.",
+      "reversed": "Isolation that's become hiding. Or refusing the solitude that's actually necessary."
+    },
+    "wheel of fortune": {
+      "number": 10,
+      "keywords": ["cycles", "fate", "turning points", "destiny", "what goes around"],
+      "upright": "Something is turning — a cycle completing, a new phase arriving. You didn't cause this entirely and you can't stop it entirely.",
+      "reversed": "Resisting a turn that's already happening. Bad luck that's part of a pattern you haven't examined yet."
+    },
+    "justice": {
+      "number": 11,
+      "keywords": ["fairness", "truth", "cause and effect", "accountability", "law"],
+      "upright": "The scales always balance — eventually. Justice asks you to be honest about your role in what happened.",
+      "reversed": "Denial of accountability. An outcome that isn't fair — and won't be made fair through wishing."
+    },
+    "the hanged man": {
+      "number": 12,
+      "keywords": ["suspension", "surrender", "new perspective", "sacrifice", "pause"],
+      "upright": "Stopped. But voluntarily — because a different angle is the only way to see what you've been missing.",
+      "reversed": "Stuck and refusing to see it. Martyrdom without the revelation. Stalling dressed as surrender."
+    },
+    "death": {
+      "number": 13,
+      "keywords": ["transformation", "endings", "transition", "letting go", "change"],
+      "upright": "Something is over. Not as punishment — as completion. Death in tarot is not literal; it's the thing you're holding on to that has already died.",
+      "reversed": "Refusing an ending that's already happened. Clinging to what is gone."
+    },
+    "temperance": {
+      "number": 14,
+      "keywords": ["balance", "patience", "moderation", "alchemy", "integration"],
+      "upright": "The long game. Temperance combines what seems incompatible and asks you to be patient enough to let it transform.",
+      "reversed": "Excess. Imbalance. Forcing something that needs time."
+    },
+    "the devil": {
+      "number": 15,
+      "keywords": ["bondage", "addiction", "materialism", "shadow self", "what binds you"],
+      "upright": "The chains you're wearing are looser than you think. The Devil shows what has power over you — and the chains are always removable if you decide to remove them.",
+      "reversed": "Breaking free. Or avoiding the shadow so long it grows larger."
+    },
+    "the tower": {
+      "number": 16,
+      "keywords": ["sudden change", "upheaval", "revelation", "chaos", "what needed to fall"],
+      "upright": "Something built on a false foundation is falling — fast. The Tower is not cruelty; it's the universe removing what was never stable.",
+      "reversed": "Avoiding the collapse through increasingly desperate maneuvers. It'll come anyway."
+    },
+    "the star": {
+      "number": 17,
+      "keywords": ["hope", "renewal", "faith", "serenity", "healing"],
+      "upright": "After the Tower, the Star. This is the quiet hope that survives everything. Something is healing, slowly and for real.",
+      "reversed": "Despair. Disconnection from hope. Or a hope that's become wishful thinking instead of direction."
+    },
+    "the moon": {
+      "number": 18,
+      "keywords": ["illusion", "fear", "the subconscious", "confusion", "what hides in the dark"],
+      "upright": "Not everything is as it appears right now. The Moon illuminates just enough to see the shapes — not the truth. Fear and intuition are mixing and it's hard to tell them apart.",
+      "reversed": "Something hidden is surfacing. Repressed fears or truths making their way up."
+    },
+    "the sun": {
+      "number": 19,
+      "keywords": ["success", "joy", "vitality", "clarity", "truth"],
+      "upright": "Clarity after confusion. The Sun burns off illusion and leaves you with something real. Joy that isn't complicated.",
+      "reversed": "Temporary setback. The light is still there — something is briefly blocking it."
+    },
+    "judgement": {
+      "number": 20,
+      "keywords": ["awakening", "reckoning", "absolution", "calling", "evaluation"],
+      "upright": "A moment of reckoning — not punishment, but honest accounting. Something is calling you to rise into a different version of yourself.",
+      "reversed": "Refusing self-examination. The call is coming and you're not picking up."
+    },
+    "the world": {
+      "number": 21,
+      "keywords": ["completion", "integration", "accomplishment", "wholeness", "the end of a cycle"],
+      "upright": "Something is genuinely complete. Not abandoned, not interrupted — finished. Take a moment to recognize it before the next thing begins.",
+      "reversed": "Incompletion. Dragging something forward that needs to be closed first."
+    }
+  },
+
+  "minor_arcana": {
+    "wands": {
+      "element": "Fire", "themes": "action, passion, ambition, creativity, career",
+      "cards": {
+        "ace of wands": {"upright": "A spark — creative, sexual, professional. New energy arriving that demands action.", "reversed": "Blocked creative energy. A false start."},
+        "two of wands": {"upright": "Standing at the edge of something larger. The plan is made; the step hasn't been taken.", "reversed": "Fear of the unknown keeping you in the doorway."},
+        "three of wands": {"upright": "Ships already launched. Things are in motion — now watch the horizon.", "reversed": "Delays, returns. Something expected hasn't arrived."},
+        "four of wands": {"upright": "Celebration, homecoming, stability hard-earned. A moment of genuine rest.", "reversed": "Instability at home. A celebration interrupted or incomplete."},
+        "five of wands": {"upright": "Conflict and competition — not necessarily destructive, but exhausting. Everyone has a different agenda.", "reversed": "Avoiding necessary conflict. Or conflict finally dying down."},
+        "six of wands": {"upright": "Public recognition. Victory that others can see. The effort paid off.", "reversed": "Ego problems around success. Recognition that doesn't come or doesn't satisfy."},
+        "seven of wands": {"upright": "Defending your position. You've earned what you have — now hold it.", "reversed": "Giving up the high ground. Exhaustion from constant defense."},
+        "eight of wands": {"upright": "Fast movement — everything accelerating at once. Messages, travel, rapid development.", "reversed": "Delays, miscommunication. Energy without direction."},
+        "nine of wands": {"upright": "Battered but still standing. One more push and it's done.", "reversed": "Paranoia from past wounds. Refusing help when you need it."},
+        "ten of wands": {"upright": "Carrying too much that isn't yours. The weight is real — so is your choice to keep picking it up.", "reversed": "Letting go of burdens. Or collapsing under them."},
+        "page of wands": {"upright": "Free spirit. Enthusiastic, curious, not yet committed. Energy looking for a direction.", "reversed": "Scattered. All spark, no follow-through."},
+        "knight of wands": {"upright": "Passionate, fast-moving, impulsive. Arrives like a fire. Leaves just as quickly.", "reversed": "Reckless. Burning things down for the thrill of it."},
+        "queen of wands": {"upright": "Magnetic confidence. She knows what she wants and doesn't second-guess it.", "reversed": "Jealousy, insecurity wearing the mask of boldness."},
+        "king of wands": {"upright": "Visionary leadership. Bold, inspiring, entrepreneurial. He makes you believe the impossible is close.", "reversed": "Arrogance. Impulsive decisions with others paying the cost."}
+      }
+    },
+    "cups": {
+      "element": "Water", "themes": "emotions, relationships, intuition, the heart",
+      "cards": {
+        "ace of cups": {"upright": "New love, emotional openings, creative inspiration. Something in the heart is starting fresh.", "reversed": "Blocked emotions. Offered love that isn't received."},
+        "two of cups": {"upright": "Mutual attraction, partnership forming, recognition between two people. The beginning of something real.", "reversed": "Imbalance in connection. One-sided feelings."},
+        "three of cups": {"upright": "Friendship, celebration, community. People who actually show up for each other.", "reversed": "Excess. Gossip within a group. Celebrating too early."},
+        "four of cups": {"upright": "Apathy and contemplation. Something is being offered and you're not seeing it.", "reversed": "Coming out of withdrawal. Finally noticing what's in front of you."},
+        "five of cups": {"upright": "Grief and loss — but not total loss. You're focused on what's spilled and not seeing what remains.", "reversed": "Moving through grief. Turning toward what survived."},
+        "six of cups": {"upright": "Nostalgia, innocence, people from the past returning. Childhood memories — sweet or otherwise.", "reversed": "Living in the past. Nostalgia as avoidance."},
+        "seven of cups": {"upright": "Fantasy, wishful thinking, too many options. The imagination is running ahead of reality.", "reversed": "Clarity returning. Choosing one real path over seven imaginary ones."},
+        "eight of cups": {"upright": "Walking away from something that was enough but wasn't everything. The hardest kind of leaving.", "reversed": "Fear of abandonment keeping you in something you've already outgrown."},
+        "nine of cups": {"upright": "The wish card. Emotional satisfaction, contentment, getting what you wanted.", "reversed": "Satisfaction that doesn't deliver. Wishes with hidden costs."},
+        "ten of cups": {"upright": "Emotional fulfillment, family harmony, the life that actually feels like home.", "reversed": "Fractured family. The image of happiness without the substance."},
+        "page of cups": {"upright": "Sensitive, creative, emotionally open. Bringing a message from the unconscious.", "reversed": "Emotional immaturity. Moody, manipulative."},
+        "knight of cups": {"upright": "The romantic. Charming, idealistic, following his heart wherever it leads.", "reversed": "Emotionally unavailable dressed as a romantic. Illusion."},
+        "queen of cups": {"upright": "Emotional intelligence, deep empathy, intuitive knowing. She feels everything and stays steady anyway.", "reversed": "Drowning in others' emotions. Emotional manipulation."},
+        "king of cups": {"upright": "Emotional mastery — feels deeply and leads calmly. Diplomatic, wise, compassionate.", "reversed": "Emotional manipulation from a position of power. Hidden instability."}
+      }
+    },
+    "swords": {
+      "element": "Air", "themes": "intellect, conflict, truth, communication, the mind",
+      "cards": {
+        "ace of swords": {"upright": "Clarity cutting through confusion. A truth arriving — sharp and welcome.", "reversed": "False clarity. Using intelligence to deceive or to harm."},
+        "two of swords": {"upright": "Stalemate. A decision you're avoiding by keeping your eyes closed.", "reversed": "Information coming in. The blindfold coming off — whether you want it to or not."},
+        "three of swords": {"upright": "Heartbreak. Grief with a clear cause. It happened. It hurts. That's real.", "reversed": "Healing slowly. Or reopening wounds unnecessarily."},
+        "four of swords": {"upright": "Rest after conflict. Recovery is not laziness — it's the work between battles.", "reversed": "Forced activity when rest is needed. Or refusing to rest at all."},
+        "five of swords": {"upright": "A hollow victory. You won — but look at what you destroyed to do it.", "reversed": "Moving past conflict. Or conflict that won't end."},
+        "six of swords": {"upright": "Moving away from turbulence toward calmer water. A necessary passage, not a defeat.", "reversed": "Stuck. Can't move on yet, or resisting the transition."},
+        "seven of swords": {"upright": "Strategy, deception, someone not showing all their cards. Are you the deceiver or the deceived?", "reversed": "Confession. A deception coming to light."},
+        "eight of swords": {"upright": "Trapped by your own thinking. The restrictions are real — but not as total as you believe.", "reversed": "Breaking free from mental imprisonment. Seeing through the false limits."},
+        "nine of swords": {"upright": "The mind at 3am. Anxiety, guilt, worst-case thinking. Most of what you're afraid of isn't coming.", "reversed": "Working through the fear. Or refusing to face what's actually wrong."},
+        "ten of swords": {"upright": "A definitive ending — painful, total, and real. But the lowest point is also the turning point.", "reversed": "Refusing to accept an ending. Or a slower, less complete defeat."},
+        "page of swords": {"upright": "Sharp mind, quick perception, gathering information. Be careful what you say right now.", "reversed": "Gossip, using words as weapons, all talk no action."},
+        "knight of swords": {"upright": "Charging in with a point to prove. Fast, brilliant, and tactless.", "reversed": "Verbal aggression. Burning bridges with words."},
+        "queen of swords": {"upright": "She has been through something and came out clearer for it. Direct, intelligent, no patience for pretense.", "reversed": "Bitterness making the blade cruel instead of clear."},
+        "king of swords": {"upright": "Intellectual authority. Decisive, honest, sees through everything. The truth as a standard.", "reversed": "Using intelligence to dominate. Manipulative clarity."}
+      }
+    },
+    "pentacles": {
+      "element": "Earth", "themes": "money, work, body, material world, slow growth",
+      "cards": {
+        "ace of pentacles": {"upright": "A new financial or material opportunity. Something solid beginning.", "reversed": "An opportunity not seized. Or a foundation not as stable as it appears."},
+        "two of pentacles": {"upright": "Juggling — keeping multiple things in balance. It's working, but it requires constant attention.", "reversed": "Dropping things. Financial or logistical overwhelm."},
+        "three of pentacles": {"upright": "Skilled collaboration. When each person brings what they do best, the work is good.", "reversed": "Lack of teamwork. Refusing to learn from others."},
+        "four of pentacles": {"upright": "Holding on to what you've built. Security or fear — sometimes both.", "reversed": "Releasing control. Generosity. Or loss that forces letting go."},
+        "five of pentacles": {"upright": "Financial hardship, feeling left out in the cold. The help exists — are you looking for it?", "reversed": "Recovery beginning. Finding a way back in from the cold."},
+        "six of pentacles": {"upright": "Exchange — giving and receiving in balance. Money, time, resources flowing.", "reversed": "Charity with strings. Giving or receiving with conditions."},
+        "seven of pentacles": {"upright": "Pausing to assess the work. Long-term thinking, patient investment.", "reversed": "Impatience. Abandoning something before it bears fruit."},
+        "eight of pentacles": {"upright": "The work of mastery — repetitive, focused, unglamorous. Skill being built.", "reversed": "Going through the motions without care. Or perfectionism blocking completion."},
+        "nine of pentacles": {"upright": "Self-made abundance. Enjoying what you built, alone if necessary.", "reversed": "Financial dependency. Comfort that costs you your autonomy."},
+        "ten of pentacles": {"upright": "Legacy, lasting wealth, family stability. The long arc bending toward permanence.", "reversed": "Family dysfunction despite appearances. Wealth that doesn't satisfy."},
+        "page of pentacles": {"upright": "Beginning something practical with real focus. Early in the process — but serious about it.", "reversed": "Procrastination. Dreaming without doing."},
+        "knight of pentacles": {"upright": "Methodical, reliable, steady. Slow but nothing slips through the cracks.", "reversed": "Stuck in routine. Refusing to change what isn't working."},
+        "queen of pentacles": {"upright": "Practical nurturing. Makes things grow — money, people, gardens. Grounded in the body and the world.", "reversed": "Neglecting self-care while tending everything else."},
+        "king of pentacles": {"upright": "Financial mastery, stable abundance, everything built to last. He knows the difference between price and value.", "reversed": "Materialism as identity. Wealth used as control."}
+      }
+    }
+  }
+}

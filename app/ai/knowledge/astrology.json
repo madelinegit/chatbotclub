@@ -1,0 +1,248 @@
+{
+  "signs": {
+    "aries": {
+      "dates": "March 21 – April 19",
+      "element": "Fire", "modality": "Cardinal", "ruler": "Mars",
+      "keywords": ["initiative", "courage", "impulsiveness", "identity", "beginnings"],
+      "meaning": "Aries is the self — raw identity, the urge to exist and push forward. Cardinal fire means it initiates without finishing. Aries people lead with instinct, not strategy. Their wound is the fear that they are too much, or not enough."
+    },
+    "taurus": {
+      "dates": "April 20 – May 20",
+      "element": "Earth", "modality": "Fixed", "ruler": "Venus",
+      "keywords": ["stability", "sensuality", "stubbornness", "values", "pleasure"],
+      "meaning": "Taurus builds and holds. It rules money, body, and everything you call yours. Fixed earth means it does not move once it has decided. Taurus people need to feel safe in the physical world — when they can't, they grip tighter."
+    },
+    "gemini": {
+      "dates": "May 21 – June 20",
+      "element": "Air", "modality": "Mutable", "ruler": "Mercury",
+      "keywords": ["communication", "duality", "curiosity", "adaptability", "mind"],
+      "meaning": "Gemini is the mind in motion — it needs input, connection, and variety to feel alive. The twin nature isn't indecision, it's the ability to hold two truths at once. Gemini people get bored fast and leave when the conversation dies."
+    },
+    "cancer": {
+      "dates": "June 21 – July 22",
+      "element": "Water", "modality": "Cardinal", "ruler": "Moon",
+      "keywords": ["nurturing", "emotional memory", "protection", "home", "intuition"],
+      "meaning": "Cancer rules the past — family, memory, and the home you carry inside you. Cardinal water means it acts through feeling. Cancer people protect intensely and will cut you off completely if they feel unsafe. Their shell is not coldness, it's survival."
+    },
+    "leo": {
+      "dates": "July 23 – August 22",
+      "element": "Fire", "modality": "Fixed", "ruler": "Sun",
+      "keywords": ["creativity", "pride", "leadership", "expression", "loyalty"],
+      "meaning": "Leo is the performer and the protector — it needs to be seen and to matter. Fixed fire means it sustains what it creates. Leo people love deeply and expect that love returned in kind. Their biggest fear is being ignored."
+    },
+    "virgo": {
+      "dates": "August 23 – September 22",
+      "element": "Earth", "modality": "Mutable", "ruler": "Mercury",
+      "keywords": ["analysis", "service", "perfectionism", "health", "discernment"],
+      "meaning": "Virgo dissects everything looking for what can be improved. Mutable earth means it adapts through refinement. Virgo people serve because they genuinely want things to work better — but they turn that same critical eye on themselves, and it's brutal."
+    },
+    "libra": {
+      "dates": "September 23 – October 22",
+      "element": "Air", "modality": "Cardinal", "ruler": "Venus",
+      "keywords": ["balance", "relationships", "justice", "harmony", "indecision"],
+      "meaning": "Libra is the sign of the other — it defines itself through relationship and partnership. Cardinal air means it initiates through ideas and connection. Libra people appear easygoing but carry a fierce sense of what is fair, and they keep score."
+    },
+    "scorpio": {
+      "dates": "October 23 – November 21",
+      "element": "Water", "modality": "Fixed", "ruler": "Pluto/Mars",
+      "keywords": ["transformation", "intensity", "power", "depth", "obsession"],
+      "meaning": "Scorpio is fixed water — it goes deep and does not let go. It rules death, sex, shared money, and everything hidden beneath the surface. Scorpio people see through performances. They're testing you constantly. Trust, once broken, is gone."
+    },
+    "sagittarius": {
+      "dates": "November 22 – December 21",
+      "element": "Fire", "modality": "Mutable", "ruler": "Jupiter",
+      "keywords": ["philosophy", "expansion", "freedom", "truth", "adventure"],
+      "meaning": "Sagittarius chases truth and the horizon at the same time. Mutable fire means it expands and moves on. Sagittarius people need freedom the way others need security — cage them and they become someone unrecognizable."
+    },
+    "capricorn": {
+      "dates": "December 22 – January 19",
+      "element": "Earth", "modality": "Cardinal", "ruler": "Saturn",
+      "keywords": ["ambition", "discipline", "structure", "achievement", "responsibility"],
+      "meaning": "Capricorn is cardinal earth — it builds empires, not sandcastles. It rules legacy, public image, and the long game. Capricorn people appear cold but they feel everything, they just decided early that feelings were a liability they couldn't afford."
+    },
+    "aquarius": {
+      "dates": "January 20 – February 18",
+      "element": "Air", "modality": "Fixed", "ruler": "Uranus/Saturn",
+      "keywords": ["innovation", "rebellion", "community", "detachment", "future"],
+      "meaning": "Aquarius is fixed air — committed to an idea, not a person. It cares about humanity in the abstract more than individuals in the specific. Aquarius people are the most loyal friends until you try to own them. Then they become a stranger overnight."
+    },
+    "pisces": {
+      "dates": "February 19 – March 20",
+      "element": "Water", "modality": "Mutable", "ruler": "Neptune/Jupiter",
+      "keywords": ["spirituality", "empathy", "dissolution", "dreams", "sacrifice"],
+      "meaning": "Pisces is the last sign — it has lived all the others and absorbed everything. Mutable water means it dissolves into whatever it touches. Pisces people feel the room before they enter it. Their problem is they don't know where they end and others begin."
+    }
+  },
+
+  "planets": {
+    "sun": {
+      "keywords": ["ego", "identity", "vitality", "purpose", "the conscious self"],
+      "meaning": "The Sun is who you are trying to become, not who you already are. It's the central story of this lifetime — your drive, your pride, your creative force. The house and sign of your Sun show where and how you need to shine."
+    },
+    "moon": {
+      "keywords": ["emotions", "instincts", "needs", "habits", "the subconscious"],
+      "meaning": "The Moon is what you need to feel safe. It's your emotional baseline, your gut reaction before thought arrives. The sign of your Moon shows how you process feeling. Most people know their Sun — but the Moon is who they are at 3am."
+    },
+    "mercury": {
+      "keywords": ["communication", "thinking", "learning", "perception", "voice"],
+      "meaning": "Mercury rules how you think and how you say it. It's your mind's operating system. The sign shows your cognitive style — how you absorb information, argue, write, and connect dots. Mercury in retrograde is a review period, not a disaster."
+    },
+    "venus": {
+      "keywords": ["love", "beauty", "values", "money", "attraction", "pleasure"],
+      "meaning": "Venus is what you love and what you're willing to work for. In relationships, it shows how you attract and what you find attractive. In money, it shows your relationship with value and pleasure. Venus is also your aesthetics — your eye."
+    },
+    "mars": {
+      "keywords": ["action", "desire", "drive", "anger", "sex", "competition"],
+      "meaning": "Mars is your fuel — what drives you forward and what makes you angry. It rules physical energy, sex drive, and how you fight. The sign of your Mars shows your style of desire and aggression. A well-aspected Mars is ambition. A blocked Mars is rage turned inward."
+    },
+    "jupiter": {
+      "keywords": ["expansion", "luck", "abundance", "philosophy", "optimism"],
+      "meaning": "Jupiter expands whatever it touches — for better or worse. It brings opportunity and abundance, but also excess. The house of your Jupiter shows where life tends to open up for you. Jupiter transits feel lucky because they are."
+    },
+    "saturn": {
+      "keywords": ["discipline", "restriction", "karma", "lessons", "structure", "time"],
+      "meaning": "Saturn is the teacher that tests you until you learn. It rules work, time, authority, and consequences. Saturn transits are hard because they're real — they force you to build something that lasts or dismantle what doesn't. The Saturn return at 29-30 is when adulthood actually begins."
+    },
+    "uranus": {
+      "keywords": ["rebellion", "sudden change", "liberation", "innovation", "disruption"],
+      "meaning": "Uranus breaks what is ready to be broken. It rules sudden awakenings, technology, and everything that doesn't fit the existing order. Where Uranus sits in your chart is where you're here to innovate or rebel. Uranus transits are chaotic — and often the most necessary."
+    },
+    "neptune": {
+      "keywords": ["illusion", "spirituality", "dreams", "dissolution", "compassion", "addiction"],
+      "meaning": "Neptune dissolves boundaries — between self and other, real and imagined. It rules spirituality, creativity, and everything you can't quite see clearly. Neptune transits bring inspiration and confusion simultaneously. It often takes years to understand what Neptune was doing."
+    },
+    "pluto": {
+      "keywords": ["transformation", "power", "obsession", "death and rebirth", "the shadow"],
+      "meaning": "Pluto destroys so something truer can emerge. It rules power — who has it, who wants it, and what gets corrupted by it. Pluto transits are long, slow, and total. You don't recover from a Pluto transit to your personal planets — you become someone different."
+    },
+    "chiron": {
+      "keywords": ["wound", "healing", "the unhealable place", "teaching through pain"],
+      "meaning": "Chiron is the wounded healer — the wound you can't fully close but that makes you uniquely able to help others with theirs. The sign and house of Chiron show your core wound. You don't fix it; you learn to work from it."
+    },
+    "north node": {
+      "keywords": ["soul's direction", "this life's purpose", "growth", "destiny"],
+      "meaning": "The North Node is where you're headed — the unfamiliar territory your soul came here to develop. It feels uncomfortable because it's new. The more you resist it, the harder your life gets. Your purpose in this lifetime is always toward the North Node."
+    },
+    "south node": {
+      "keywords": ["past life karma", "comfort zone", "what you're leaving behind"],
+      "meaning": "The South Node is where you've already been — in this life and past ones. It's comfortable but it doesn't grow you. Over-relying on South Node energy keeps you stuck in patterns that feel safe and lead nowhere new."
+    }
+  },
+
+  "houses": {
+    "1": {
+      "name": "House of Self",
+      "keywords": ["identity", "appearance", "first impressions", "the rising sign"],
+      "meaning": "The 1st house is how you enter a room — your mask, your body, your immediate presence. The sign on the cusp is your rising sign. Planets here are visible to everyone who meets you."
+    },
+    "2": {
+      "name": "House of Resources",
+      "keywords": ["money", "possessions", "self-worth", "values", "what you own"],
+      "meaning": "The 2nd house is your relationship with security — money, possessions, and what you decide you're worth. Planets here shape your financial patterns and your sense of self-sufficiency."
+    },
+    "3": {
+      "name": "House of Communication",
+      "keywords": ["talking", "writing", "siblings", "local community", "short trips", "early education"],
+      "meaning": "The 3rd house is your mind in the world — how you speak, learn, and connect locally. It also rules siblings and neighbors. Planets here shape your communication style and how you process information."
+    },
+    "4": {
+      "name": "House of Home",
+      "keywords": ["family", "roots", "mother", "foundation", "the private self", "ancestry"],
+      "meaning": "The 4th house is the base of your chart — the private self, the family you came from, and the home you create. Planets here show what family and belonging mean to you and what you carry from your childhood."
+    },
+    "5": {
+      "name": "House of Pleasure",
+      "keywords": ["creativity", "romance", "children", "play", "self-expression", "risk"],
+      "meaning": "The 5th house is where you play — creative expression, romance, children, and anything done for pure joy. Planets here show how you love, create, and take risks. This house is also gambling — in all its forms."
+    },
+    "6": {
+      "name": "House of Service",
+      "keywords": ["daily routines", "health", "work", "service", "habits", "discipline"],
+      "meaning": "The 6th house is the body and the schedule — how you maintain yourself day to day. It rules health, work habits, and service to others. Planets here show your relationship with routine and your physical wellbeing."
+    },
+    "7": {
+      "name": "House of Partnership",
+      "keywords": ["marriage", "partnerships", "contracts", "open enemies", "the other"],
+      "meaning": "The 7th house is who you attract and who you commit to — romantic partners, business partners, and open enemies. Planets here show what you project onto others and what you need from them. It's the mirror of the 1st house."
+    },
+    "8": {
+      "name": "House of Transformation",
+      "keywords": ["death", "sex", "shared resources", "other people's money", "the occult", "taboo"],
+      "meaning": "The 8th house goes where most people won't — death, sex, debt, inheritance, and power dynamics. Planets here pull you toward depth and intensity. This house transforms you through merging with something larger than yourself."
+    },
+    "9": {
+      "name": "House of Expansion",
+      "keywords": ["philosophy", "higher education", "travel", "religion", "meaning", "beliefs"],
+      "meaning": "The 9th house is the search for meaning — through travel, study, philosophy, or faith. Planets here shape your worldview and your hunger for truth. This is the house of the guru, the professor, and the pilgrim."
+    },
+    "10": {
+      "name": "House of Career",
+      "keywords": ["public image", "career", "authority", "father", "legacy", "ambition"],
+      "meaning": "The 10th house is your public face — career, reputation, and what you're known for. The sign on the 10th house cusp (midheaven) shows your professional direction. Planets here are visible to the world."
+    },
+    "11": {
+      "name": "House of Community",
+      "keywords": ["friends", "groups", "hopes", "dreams", "social causes", "the future"],
+      "meaning": "The 11th house is where you belong in the larger world — your social circle, your causes, your visions for the future. Planets here shape your friendships and your relationship to collective change."
+    },
+    "12": {
+      "name": "House of the Hidden",
+      "keywords": ["karma", "hidden enemies", "self-undoing", "isolation", "spirituality", "the unconscious"],
+      "meaning": "The 12th house is everything invisible — what you hide, what hides from you, and what lives in the unconscious. Planets here operate below the surface. This house is also retreat, solitude, and direct contact with the spiritual."
+    }
+  },
+
+  "aspects": {
+    "conjunction": {
+      "orb": "0–8°",
+      "keywords": ["merger", "intensity", "focus", "amplification"],
+      "meaning": "Two planets fused — their energies blend into one intense force. A conjunction is neither easy nor hard on its own; it depends entirely on which planets are involved. It's the most powerful aspect."
+    },
+    "sextile": {
+      "orb": "60°",
+      "keywords": ["opportunity", "ease", "flow", "soft support"],
+      "meaning": "A sextile is an open door — it offers opportunity but doesn't force you through it. These two planets cooperate naturally. Most people with many sextiles have talents they underuse because nothing pushed them to develop."
+    },
+    "square": {
+      "orb": "90°",
+      "keywords": ["tension", "friction", "challenge", "forced growth"],
+      "meaning": "A square is where your chart fights itself. These two planets want different things and don't compromise easily. Squares are uncomfortable — and responsible for most of what people actually accomplish. The tension demands action."
+    },
+    "trine": {
+      "orb": "120°",
+      "keywords": ["harmony", "natural talent", "flow", "ease"],
+      "meaning": "A trine is natural ability — these planets work together without effort. Trines are gifts, but unexamined gifts. People with heavy trine charts often coast until something forces them to use what they were given."
+    },
+    "opposition": {
+      "orb": "180°",
+      "keywords": ["polarity", "projection", "tension", "balance sought"],
+      "meaning": "An opposition pulls in two directions at once. You tend to identify with one side and project the other onto people in your life. Oppositions become powerful when you can hold both ends — which most people spend a lifetime learning."
+    },
+    "quincunx": {
+      "orb": "150°",
+      "keywords": ["adjustment", "discomfort", "no common ground", "recalibration"],
+      "meaning": "The quincunx is a constant irritant — two planets with nothing in common forced to share space. It creates a low-grade tension that requires ongoing adjustment. Quincunxes often describe chronic issues that never fully resolve."
+    }
+  },
+
+  "special_topics": {
+    "mercury_retrograde": {
+      "meaning": "Mercury retrograde happens 3–4 times a year for about 3 weeks. It's a review period — not a curse. Communication slows, technology glitches, past people resurface. The actual problems come from pushing forward instead of revisiting. Use it to rethink, not to launch."
+    },
+    "saturn_return": {
+      "meaning": "Saturn returns to its natal position around ages 29–30, 58–60, and 87–89. The first return is the most significant — it ends your extended adolescence and presents the bill for everything you've been avoiding. It's not punishment; it's the universe asking if your life is actually yours."
+    },
+    "rising_ascendant": {
+      "meaning": "The rising sign (ascendant) is the sign on the horizon at the moment of birth. It's how you present to the world — your style, your mask, your first impression. It often doesn't match how you feel inside. People usually identify more with their rising as they age."
+    },
+    "midheaven": {
+      "meaning": "The midheaven (MC) is the highest point in the chart — career direction, public image, and what you're meant to be known for. It's not just your job; it's your calling and your reputation in the world."
+    },
+    "stellium": {
+      "meaning": "A stellium is three or more planets in one sign or house. It creates an overwhelming emphasis in that area of life. Stellium people are often defined by those themes — for better or worse. The concentration of energy is powerful but can create blind spots."
+    },
+    "synastry": {
+      "meaning": "Synastry is comparing two charts to understand relationship dynamics. Trines and sextiles between charts show ease and attraction. Squares and oppositions show friction — which isn't bad; it creates charge. The most intense relationships usually have both."
+    }
+  }
+}
