@@ -595,6 +595,33 @@ def generate_post_now(secret: str = Query(...), platform: str = Query("threads")
     return result
 
 
+@router.post("/generate-batch")
+def generate_batch(secret: str = Query(...)):
+    """
+    Generate one pending post for each platform (X, Threads, Instagram).
+    Called by the daily scheduler at 9AM and 5PM PT.
+    """
+    _check(secret)
+    from app.services.social_service import generate_post_for_queue
+    from app.services.local_context_service import get_local_context
+    context = get_local_context()
+    results = {}
+    errors  = {}
+
+    for platform in ("x", "threads", "instagram"):
+        try:
+            result = generate_post_for_queue(local_context=context, platform=platform)
+            if result:
+                results[platform] = result
+            else:
+                errors[platform] = "generation returned nothing"
+        except Exception as e:
+            errors[platform] = str(e)
+            print(f"BATCH GENERATE [{platform}] ERROR: {e}")
+
+    return {"generated": results, "errors": errors, "count": len(results)}
+
+
 # ── Stats API ─────────────────────────────────────────────────────────────────
 
 @router.get("/stats")
