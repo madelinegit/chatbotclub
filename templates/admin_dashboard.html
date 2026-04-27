@@ -1633,7 +1633,7 @@
     const res = await safeFetch(`/admin/write/caption?secret=${SECRET}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ platform: _capPlatform, hint: hint || null, scene_prompt: scene }),
+      body: JSON.stringify({ platform: _capPlatform, hint: hint || null, scene_prompt: scene, image_url: _lastImageUrl || null }),
     })
     btn.disabled = false; btn.textContent = '✦ Generate'
     if (res.ok && res.data?.caption) {
@@ -1995,19 +1995,23 @@
 
   async function uploadAndQueue() {
     const fileInput = document.getElementById('uq-file')
-    if (!fileInput.files?.length) { toast('Choose an image first.', 'red'); return }
     const caption  = document.getElementById('uq-caption').value.trim()
     if (!caption) { toast('Add a caption first.', 'red'); return }
     const platform = document.getElementById('uq-platform').value
     const btn      = document.getElementById('uq-btn')
-    btn.textContent = 'Uploading…'
+    btn.textContent = 'Saving…'
     btn.disabled = true
     try {
-      const form = new FormData()
-      form.append('file', fileInput.files[0])
-      const up = await fetch(`/admin/upload-image?secret=${SECRET}`, { method: 'POST', body: form })
-      if (!up.ok) { toast('Upload failed.', 'red'); return }
-      const { url: imageUrl } = await up.json()
+      let imageUrl = null
+      if (fileInput.files?.length) {
+        btn.textContent = 'Uploading…'
+        const form = new FormData()
+        form.append('file', fileInput.files[0])
+        const up = await fetch(`/admin/upload-image?secret=${SECRET}`, { method: 'POST', body: form })
+        if (!up.ok) { toast('Upload failed.', 'red'); return }
+        const data = await up.json()
+        imageUrl = data.url
+      }
       const r = await fetch(`/admin/write/queue?secret=${SECRET}`, {
         method: 'POST', headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ caption, image_url: imageUrl, target_platform: platform }),

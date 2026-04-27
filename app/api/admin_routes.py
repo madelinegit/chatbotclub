@@ -534,13 +534,50 @@ async def admin_write_caption(secret: str = Query(...), request: Request = None)
     platform     = body.get("platform", "instagram")
     hint         = (body.get("hint") or "").strip() or None
     scene_prompt = (body.get("scene_prompt") or "").strip() or None
+    image_url    = (body.get("image_url") or "").strip() or None
 
-    from app.config import MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL
     from app.ai.persona import load_persona
     import requests as req
 
-    guide = PLATFORM_GUIDE.get(platform, PLATFORM_GUIDE["instagram"])
+    guide   = PLATFORM_GUIDE.get(platform, PLATFORM_GUIDE["instagram"])
+    persona = load_persona()
+    system  = persona + "\n\nWrite only the caption. No explanation, no quotes around it."
 
+    # Use Claude vision when an image URL is available
+    from app.config import ANTHROPIC_API_KEY
+    if image_url and ANTHROPIC_API_KEY:
+        try:
+            context = f" The user also provided this context: {hint}" if hint else ""
+            vision_prompt = (
+                f"Look at this image and write a caption for it as Maya posting to {platform}.{context}\n\n"
+                f"{guide}\n\nWrite only the caption. No explanation, no quotes."
+            )
+            r = req.post(
+                "https://api.anthropic.com/v1/messages",
+                json={
+                    "model": "claude-haiku-4-5-20251001",
+                    "max_tokens": 300,
+                    "system": system,
+                    "messages": [{"role": "user", "content": [
+                        {"type": "image", "source": {"type": "url", "url": image_url}},
+                        {"type": "text",  "text": vision_prompt},
+                    ]}],
+                },
+                headers={
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                timeout=30,
+            )
+            r.raise_for_status()
+            caption = r.json()["content"][0]["text"].strip()
+            return {"caption": caption}
+        except Exception as e:
+            print(f"VISION CAPTION ERROR: {e}")
+            # fall through to text-only
+
+    from app.config import MODELSLAB_API_KEY, MODELSLAB_API_URL, MODELSLAB_MODEL
     if hint:
         user_msg = f"Rewrite this caption optimised for {guide}\n\nOriginal:\n{hint}"
     elif scene_prompt:
@@ -548,14 +585,13 @@ async def admin_write_caption(secret: str = Query(...), request: Request = None)
     else:
         user_msg = f"Write a short caption for {guide}"
 
-    persona = load_persona()
     try:
         r = req.post(
             MODELSLAB_API_URL,
             json={
                 "model": MODELSLAB_MODEL,
                 "messages": [
-                    {"role": "system", "content": persona + "\n\nWrite only the caption. No explanation, no quotes around it."},
+                    {"role": "system", "content": system},
                     {"role": "user",   "content": user_msg},
                 ],
             },
