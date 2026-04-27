@@ -346,10 +346,9 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
 
         from app.services.social_service import _generate_image
 
-        if not expanded and not idea:
+        model_type_check = body.get("model_type", "lora")
+        if not expanded and not idea and model_type_check != "lora":
             raise HTTPException(status_code=400, detail="idea or expanded_prompt required.")
-        if not expanded:
-            raise HTTPException(status_code=400, detail="expanded_prompt required.")
 
         model_type      = body.get("model_type", "lora")
         character       = body.get("character", "mayaleja")

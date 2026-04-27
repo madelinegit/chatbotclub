@@ -193,9 +193,35 @@
     margin-right: 6px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+  /* Crop modal */
+  #crop-modal { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px; }
+  #crop-modal.open { display:flex; }
+  #crop-container { max-width:90vw;max-height:70vh;overflow:hidden; }
+  #crop-container img { max-width:90vw;max-height:70vh;display:block; }
+  .crop-ratio-btns { display:flex;gap:8px;flex-wrap:wrap;justify-content:center; }
+  .crop-ratio-btn { background:#2a2a2e;color:#ccc;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer; }
+  .crop-ratio-btn.active { background:#c9a96e;color:#000; }
   </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
 </head>
 <body>
+
+<!-- ── Crop Modal ─────────────────────────────────────────────────────────── -->
+<div id="crop-modal">
+  <div id="crop-container"><img id="crop-img" src=""></div>
+  <div class="crop-ratio-btns">
+    <button class="crop-ratio-btn active" onclick="setCropRatio(NaN)">Free</button>
+    <button class="crop-ratio-btn" onclick="setCropRatio(1)">1:1</button>
+    <button class="crop-ratio-btn" onclick="setCropRatio(4/5)">4:5</button>
+    <button class="crop-ratio-btn" onclick="setCropRatio(16/9)">16:9</button>
+    <button class="crop-ratio-btn" onclick="setCropRatio(9/16)">9:16</button>
+  </div>
+  <div style="display:flex;gap:12px;">
+    <button class="btn-gen" onclick="applyCrop()">Apply Crop</button>
+    <button class="btn-reject" onclick="closeCrop()">Cancel</button>
+  </div>
+</div>
+
 
 <div class="topbar">
   <div class="topbar-logo">Maya Admin</div>
@@ -335,8 +361,9 @@
 
     <!-- Result area -->
     <div id="image-result" style="display:none;margin-top:12px;">
-      <img id="image-preview" src="" style="width:100%;max-width:480px;height:auto;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:block;margin-bottom:12px;"
+      <img id="image-preview" src="" style="width:100%;max-width:480px;height:auto;border-radius:10px;border:1px solid rgba(255,255,255,0.08);display:block;margin-bottom:8px;"
         onerror="this.style.display='none';document.getElementById('image-broken').style.display='block'">
+      <button onclick="openCrop('generated')" style="background:#2a2a2e;color:#ccc;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;margin-bottom:12px;">✂ Crop Image</button>
       <div id="image-broken" style="display:none;padding:16px;background:#1a1a1e;border-radius:8px;color:#888;font-size:13px;margin-bottom:12px;">
         Image is still rendering — copy the URL below and check back in 1-2 minutes.
       </div>
@@ -377,7 +404,8 @@
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
       <div style="flex:1;min-width:200px;">
         <input type="file" id="uq-file" accept="image/*" onchange="uqPreview()" style="margin-bottom:8px;width:100%;">
-        <img id="uq-thumb" src="" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;display:none;">
+        <img id="uq-thumb" src="" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;display:none;margin-bottom:6px;">
+        <button id="uq-crop-btn" onclick="openCrop('uq')" style="display:none;width:100%;background:#2a2a2e;color:#ccc;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:7px;font-size:12px;cursor:pointer;">✂ Crop Image</button>
       </div>
       <div style="flex:2;min-width:200px;display:flex;flex-direction:column;gap:8px;">
         <textarea id="uq-caption" rows="3" placeholder="Caption for this post…"
@@ -1045,15 +1073,26 @@
     else toast('Schedule failed.', 'red')
   }
 
+  const _postingIds = new Set()
+
   async function saveAndPost(id, platform) {
-    const caption   = document.getElementById(`caption-${id}`).value.trim()
-    const image_url = document.getElementById(`img-${id}`).value.trim() || null
-    await fetch(`/admin/posts/${id}?secret=${SECRET}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ caption, image_url }),
-    })
-    await postNow(id, platform)
+    const key = `${id}-${platform}`
+    if (_postingIds.has(key)) { toast(`Already posting to ${platform}…`, ''); return }
+    _postingIds.add(key)
+    // Disable all post buttons for this post
+    document.querySelectorAll(`[onclick*="saveAndPost(${id},"]`).forEach(b => { b.disabled = true; b._origText = b.textContent; b.textContent = 'Posting…' })
+    try {
+      const caption   = document.getElementById(`caption-${id}`).value.trim()
+      const image_url = document.getElementById(`img-${id}`).value.trim() || null
+      await fetch(`/admin/posts/${id}?secret=${SECRET}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caption, image_url }),
+      })
+      await postNow(id, platform)
+    } finally {
+      _postingIds.delete(key)
+      document.querySelectorAll(`[onclick*="saveAndPost(${id},"]`).forEach(b => { b.disabled = false; b.textContent = b._origText || b.textContent })
+    }
   }
 
   async function removeImage(id) {
@@ -1527,8 +1566,7 @@
   }
 
   async function generateImageFromPrompt() {
-    const prompt = document.getElementById('image-prompt-edit').value.trim()
-    if (!prompt) return
+    const prompt = document.getElementById('image-prompt-edit').value.trim() || ''
     const btn = document.getElementById('image-confirm-btn')
     btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Generating…'
     document.getElementById('image-result').style.display = 'none'
@@ -1669,27 +1707,29 @@
     else toast('Failed to queue.', 'red')
   }
 
+  let _postingImage = false
+
   async function postImageNow(platform) {
+    if (_postingImage) { toast('Already posting — please wait.', ''); return }
     const caption   = document.getElementById('image-caption-input').value.trim()
     const image_url = _lastImageUrl
     if (!caption) { toast('Add a caption first.', 'red'); return }
-
-    // Queue it first, then post
-    const qRes = await fetch(`/admin/write/queue?secret=${SECRET}`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ caption, image_url }),
-    })
-    if (!qRes.ok) { toast('Failed to save post.', 'red'); return }
-    const { id } = await qRes.json()
-
-    const pRes = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}&platform=${platform}`, {
-      method: 'POST',
-    })
-    if (pRes.ok) toast(`Posted to ${platform}!`, 'green')
-    else {
-      const d = await pRes.json()
-      toast(d.detail || `Failed to post to ${platform}.`, 'red')
+    _postingImage = true
+    const btns = document.querySelectorAll('#image-result .btn-post')
+    btns.forEach(b => { b.disabled = true; b._orig = b.textContent; b.textContent = 'Posting…' })
+    try {
+      const qRes = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caption, image_url }),
+      })
+      if (!qRes.ok) { toast('Failed to save post.', 'red'); return }
+      const { id } = await qRes.json()
+      const pRes = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}&platform=${platform}`, { method: 'POST' })
+      if (pRes.ok) toast(`Posted to ${platform}!`, 'green')
+      else { const d = await pRes.json(); toast(d.detail || `Failed to post to ${platform}.`, 'red') }
+    } finally {
+      _postingImage = false
+      btns.forEach(b => { b.disabled = false; b.textContent = b._orig || b.textContent })
     }
   }
 
@@ -1970,19 +2010,30 @@
     }
   }
 
+  let _postingI2i = false
+
   async function i2iPostNow(platform) {
+    if (_postingI2i) { toast('Already posting — please wait.', ''); return }
     const caption  = document.getElementById('i2i-caption').value.trim()
     const imageUrl = document.getElementById('i2i-url').value
     if (!caption) { toast('Add a caption first.', 'red'); return }
-    const r = await fetch(`/admin/write/queue?secret=${SECRET}`, {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ caption, image_url: imageUrl, target_platform: platform }),
-    })
-    if (!r.ok) { toast('Queue failed.', 'red'); return }
-    const { id } = await r.json()
-    const r2 = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}&platform=${platform}`, { method: 'POST' })
-    if (r2.ok) toast(`Posted to ${platform}!`, 'green')
-    else { const d = await r2.json(); toast(`Failed: ${d.detail}`, 'red') }
+    _postingI2i = true
+    const btns = document.querySelectorAll('#i2i-result .btn-post')
+    btns.forEach(b => { b.disabled = true; b._orig = b.textContent; b.textContent = 'Posting…' })
+    try {
+      const r = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ caption, image_url: imageUrl, target_platform: platform }),
+      })
+      if (!r.ok) { toast('Queue failed.', 'red'); return }
+      const { id } = await r.json()
+      const r2 = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}&platform=${platform}`, { method: 'POST' })
+      if (r2.ok) toast(`Posted to ${platform}!`, 'green')
+      else { const d = await r2.json(); toast(`Failed: ${d.detail}`, 'red') }
+    } finally {
+      _postingI2i = false
+      btns.forEach(b => { b.disabled = false; b.textContent = b._orig || b.textContent })
+    }
   }
 
   function uqPreview() {
@@ -1991,6 +2042,84 @@
     const thumb = document.getElementById('uq-thumb')
     thumb.src = URL.createObjectURL(file)
     thumb.style.display = 'block'
+    document.getElementById('uq-crop-btn').style.display = 'block'
+  }
+
+  // ── Crop ─────────────────────────────────────────────────────────────────────
+  let _cropper       = null
+  let _cropSection   = null  // 'uq' | 'generated'
+  let _cropBlob      = null  // result blob after crop applied
+
+  function openCrop(section) {
+    _cropSection = section
+    const modal = document.getElementById('crop-modal')
+    const img   = document.getElementById('crop-img')
+
+    if (section === 'uq') {
+      const file = document.getElementById('uq-file').files[0]
+      if (!file) { toast('No image selected.', 'red'); return }
+      img.src = URL.createObjectURL(file)
+    } else if (section === 'generated') {
+      const url = _lastImageUrl
+      if (!url) { toast('No image generated yet.', 'red'); return }
+      img.src = url
+    }
+
+    modal.classList.add('open')
+    img.onload = () => {
+      if (_cropper) { _cropper.destroy(); _cropper = null }
+      _cropper = new Cropper(img, { viewMode: 1, autoCropArea: 1, movable: true, zoomable: true })
+    }
+    // Reset ratio buttons
+    document.querySelectorAll('.crop-ratio-btn').forEach(b => b.classList.remove('active'))
+    document.querySelector('.crop-ratio-btn').classList.add('active')
+  }
+
+  function setCropRatio(ratio) {
+    if (_cropper) _cropper.setAspectRatio(ratio)
+    document.querySelectorAll('.crop-ratio-btn').forEach(b => b.classList.remove('active'))
+    event.target.classList.add('active')
+  }
+
+  function closeCrop() {
+    document.getElementById('crop-modal').classList.remove('open')
+    if (_cropper) { _cropper.destroy(); _cropper = null }
+  }
+
+  async function applyCrop() {
+    if (!_cropper) return
+    const canvas = _cropper.getCroppedCanvas({ maxWidth: 2048, maxHeight: 2048 })
+    canvas.toBlob(async blob => {
+      _cropBlob = blob
+      const objectUrl = URL.createObjectURL(blob)
+
+      if (_cropSection === 'uq') {
+        // Replace preview thumbnail
+        document.getElementById('uq-thumb').src = objectUrl
+        // Patch the file input's file list so uploadAndQueue sends the cropped blob
+        const dt = new DataTransfer()
+        dt.items.add(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }))
+        document.getElementById('uq-file').files = dt.files
+      } else if (_cropSection === 'generated') {
+        // Upload cropped version to Cloudinary, replace _lastImageUrl
+        const form = new FormData()
+        form.append('file', new File([blob], 'cropped.jpg', { type: 'image/jpeg' }))
+        const btn = document.querySelector('#crop-modal .btn-gen')
+        btn.textContent = 'Uploading…'; btn.disabled = true
+        try {
+          const up = await fetch(`/admin/upload-image?secret=${SECRET}`, { method: 'POST', body: form })
+          if (!up.ok) { toast('Upload failed.', 'red'); return }
+          const { url } = await up.json()
+          _lastImageUrl = url
+          document.getElementById('image-preview').src = url
+          document.getElementById('image-url-display').value = url
+          toast('Cropped image saved.', 'green')
+        } finally {
+          btn.textContent = 'Apply Crop'; btn.disabled = false
+        }
+      }
+      closeCrop()
+    }, 'image/jpeg', 0.92)
   }
 
   async function uploadAndQueue() {
@@ -2198,5 +2327,6 @@
   loadPosts('all', document.getElementById('filter-all'))
   loadStats()
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 </body>
 </html>
