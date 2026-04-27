@@ -4,7 +4,8 @@
       "Bash(pip install:*)",
       "Bash(python -c ':*)",
       "WebFetch(domain:docs.railway.com)",
-      "WebFetch(domain:station.railway.com)"
+      "WebFetch(domain:station.railway.com)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
