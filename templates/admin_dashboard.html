@@ -370,6 +370,30 @@
     <div id="image-status" style="font-size:13px;color:#6ac97a;margin-top:8px;display:none;"></div>
   </div>
 
+  <!-- Upload & Queue an Existing Photo -->
+  <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:24px;">
+    <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Upload a Photo &amp; Queue</div>
+    <div style="font-size:12px;color:#555;margin-bottom:14px;">Upload any image from your phone or computer and queue it as a pending post — no edits.</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+      <div style="flex:1;min-width:200px;">
+        <input type="file" id="uq-file" accept="image/*" onchange="uqPreview()" style="margin-bottom:8px;width:100%;">
+        <img id="uq-thumb" src="" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px;display:none;">
+      </div>
+      <div style="flex:2;min-width:200px;display:flex;flex-direction:column;gap:8px;">
+        <textarea id="uq-caption" rows="3" placeholder="Caption for this post…"
+          style="width:100%;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;font-size:13px;font-family:inherit;resize:none;outline:none;"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="uq-platform" style="flex:1;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px 10px;font-size:13px;outline:none;">
+            <option value="instagram">Instagram</option>
+            <option value="threads">Threads</option>
+            <option value="x">X</option>
+          </select>
+          <button class="btn-gen" id="uq-btn" onclick="uploadAndQueue()" style="white-space:nowrap;">Queue as Post</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Insert Maya into Scene (img2img) -->
   <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:24px;">
     <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Insert Maya into a Scene</div>
@@ -398,7 +422,13 @@
       </div>
       <textarea id="i2i-caption" rows="2" placeholder="Caption for this post…"
         style="width:100%;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;resize:none;outline:none;margin-bottom:8px;"></textarea>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <select id="i2i-queue-platform" style="background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:7px 10px;font-size:13px;outline:none;">
+          <option value="instagram">Instagram</option>
+          <option value="threads">Threads</option>
+          <option value="x">X</option>
+        </select>
+        <button class="btn-approve" style="background:#2a6496;" onclick="i2iQueueForReview()">Queue for Review</button>
         <button class="btn-post" onclick="i2iPostNow('threads')">Post to Threads</button>
         <button class="btn-post" style="background:#e7e7e7;color:#000;" onclick="i2iPostNow('x')">Post to X</button>
         <button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="i2iPostNow('instagram')">Post to Instagram</button>
@@ -1953,6 +1983,62 @@
     const r2 = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}&platform=${platform}`, { method: 'POST' })
     if (r2.ok) toast(`Posted to ${platform}!`, 'green')
     else { const d = await r2.json(); toast(`Failed: ${d.detail}`, 'red') }
+  }
+
+  function uqPreview() {
+    const file = document.getElementById('uq-file').files[0]
+    if (!file) return
+    const thumb = document.getElementById('uq-thumb')
+    thumb.src = URL.createObjectURL(file)
+    thumb.style.display = 'block'
+  }
+
+  async function uploadAndQueue() {
+    const fileInput = document.getElementById('uq-file')
+    if (!fileInput.files?.length) { toast('Choose an image first.', 'red'); return }
+    const caption  = document.getElementById('uq-caption').value.trim()
+    if (!caption) { toast('Add a caption first.', 'red'); return }
+    const platform = document.getElementById('uq-platform').value
+    const btn      = document.getElementById('uq-btn')
+    btn.textContent = 'Uploading…'
+    btn.disabled = true
+    try {
+      const form = new FormData()
+      form.append('file', fileInput.files[0])
+      const up = await fetch(`/admin/upload-image?secret=${SECRET}`, { method: 'POST', body: form })
+      if (!up.ok) { toast('Upload failed.', 'red'); return }
+      const { url: imageUrl } = await up.json()
+      const r = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ caption, image_url: imageUrl, target_platform: platform }),
+      })
+      if (r.ok) {
+        toast(`Queued for ${platform} — pending review.`, 'green')
+        document.getElementById('uq-caption').value = ''
+        document.getElementById('uq-file').value = ''
+        document.getElementById('uq-thumb').style.display = 'none'
+      } else {
+        toast('Queue failed.', 'red')
+      }
+    } catch (e) {
+      toast('Error: ' + e.message, 'red')
+    } finally {
+      btn.textContent = 'Queue as Post'
+      btn.disabled = false
+    }
+  }
+
+  async function i2iQueueForReview() {
+    const caption  = document.getElementById('i2i-caption').value.trim()
+    const imageUrl = document.getElementById('i2i-url').value
+    const platform = document.getElementById('i2i-queue-platform').value
+    if (!caption) { toast('Add a caption first.', 'red'); return }
+    const r = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption, image_url: imageUrl, target_platform: platform }),
+    })
+    if (r.ok) toast(`Queued for ${platform} — pending review.`, 'green')
+    else toast('Queue failed.', 'red')
   }
 
   function i2iMakeVideo() {
