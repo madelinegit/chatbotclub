@@ -397,6 +397,23 @@
     <div id="image-status" style="font-size:13px;color:#6ac97a;margin-top:8px;display:none;"></div>
   </div>
 
+  <!-- Text-Only Post -->
+  <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:24px;">
+    <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Text Post</div>
+    <div style="font-size:12px;color:#555;margin-bottom:14px;">Write any caption and queue or post it directly — no image needed.</div>
+    <textarea id="text-post-body" rows="4" placeholder="Write your post here…"
+      style="width:100%;background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;font-size:14px;font-family:inherit;resize:vertical;outline:none;box-sizing:border-box;margin-bottom:10px;"></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <select id="text-post-platform" style="background:#111113;color:#e0ddd8;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px 10px;font-size:13px;outline:none;">
+        <option value="threads">Threads</option>
+        <option value="x">X</option>
+        <option value="instagram">Instagram</option>
+      </select>
+      <button class="btn-approve" style="background:#2a6496;" onclick="queueTextPost()">Queue for Review</button>
+      <button class="btn-post" id="text-post-btn" onclick="postTextNow()">Post Now</button>
+    </div>
+  </div>
+
   <!-- Upload & Queue an Existing Photo -->
   <div style="background:#1a1a1e;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:20px;margin-bottom:24px;">
     <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Upload a Photo &amp; Queue</div>
@@ -2033,6 +2050,43 @@
     } finally {
       _postingI2i = false
       btns.forEach(b => { b.disabled = false; b.textContent = b._orig || b.textContent })
+    }
+  }
+
+  async function queueTextPost() {
+    const caption  = document.getElementById('text-post-body').value.trim()
+    if (!caption) { toast('Write something first.', 'red'); return }
+    const platform = document.getElementById('text-post-platform').value
+    const r = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ caption, target_platform: platform }),
+    })
+    if (r.ok) { toast(`Queued for ${platform} — pending review.`, 'green'); document.getElementById('text-post-body').value = '' }
+    else toast('Queue failed.', 'red')
+  }
+
+  let _postingText = false
+  async function postTextNow() {
+    if (_postingText) { toast('Already posting — please wait.', ''); return }
+    const caption  = document.getElementById('text-post-body').value.trim()
+    if (!caption) { toast('Write something first.', 'red'); return }
+    const platform = document.getElementById('text-post-platform').value
+    _postingText = true
+    const btn = document.getElementById('text-post-btn')
+    btn.disabled = true; btn.textContent = 'Posting…'
+    try {
+      const qr = await fetch(`/admin/write/queue?secret=${SECRET}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ caption, target_platform: platform }),
+      })
+      if (!qr.ok) { toast('Failed to save.', 'red'); return }
+      const { id } = await qr.json()
+      const pr = await fetch(`/admin/posts/${id}/post-now?secret=${SECRET}&platform=${platform}`, { method: 'POST' })
+      if (pr.ok) { toast(`Posted to ${platform}!`, 'green'); document.getElementById('text-post-body').value = '' }
+      else { const d = await pr.json(); toast(d.detail || 'Post failed.', 'red') }
+    } finally {
+      _postingText = false
+      btn.disabled = false; btn.textContent = 'Post Now'
     }
   }
 
