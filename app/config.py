@@ -65,7 +65,7 @@ INSTAGRAM_USER_ID = os.getenv("INSTAGRAM_USER_ID")
 # Cloudinary (free image hosting for text card uploads)
 CLOUDINARY_URL        = os.getenv("CLOUDINARY_URL")
 
-# Anthropic (Claude vision for image-aware captions)
+# Anthropic (Haiku for caption/text post generation)
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 
 # Email notifications (Gmail SMTP)
