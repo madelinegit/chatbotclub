@@ -320,7 +320,7 @@ def _upload_to_cloudinary(url: str, resource_type: str = "image") -> str:
     return url
 
 
-def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: float = 0.8, character: str = "mayaleja", negative_prompt: str = "") -> tuple[str | None, str | None]:
+def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: float = 0.8, character: str = "mayaleja", negative_prompt: str = "", lora_scale: float = 1.0) -> tuple[str | None, str | None]:
     """
     Flux LoRA inference via Replicate.
     character: 'mayaleja' (default) or 'maya'
@@ -344,11 +344,16 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
     clean = re.sub(r'\b(maya|mayaselfie|mayaleja)\b', '', prompt, flags=re.IGNORECASE).strip()
     clean = re.sub(r'\s{2,}', ' ', clean)
     full_prompt = f"{trigger_word} solo {clean}"
-    default_negative = "man, male, beard, mustache, masculine, boy, guy, male face, stubble"
+    default_negative = (
+        "man, male, beard, mustache, masculine, boy, guy, male face, stubble, "
+        "bad hands, extra fingers, missing fingers, fused fingers, too many fingers, "
+        "mutated hands, deformed hands, malformed hands, ugly hands, cloned hands, "
+        "long fingers, short fingers, extra limbs, missing limbs, deformed limbs"
+    )
     inp = {
         "prompt": full_prompt,
         "negative_prompt": f"{default_negative}, {negative_prompt}".strip(", ") if negative_prompt else default_negative,
-        "lora_scale": 1.0,
+        "lora_scale": lora_scale,
         "num_inference_steps": 28,
         "guidance_scale": 3.5,
         "disable_safety_checker": True,
@@ -409,10 +414,10 @@ def _generate_image_lora(prompt: str, image_url: str = None, prompt_strength: fl
         return None, f"Replicate error: {type(e).__name__}: {e}"
 
 
-def _generate_image(prompt: str, model_type: str = "scene", character: str = "mayaleja", negative_prompt: str = "") -> tuple[str | None, str | None]:
+def _generate_image(prompt: str, model_type: str = "scene", character: str = "mayaleja", negative_prompt: str = "", lora_scale: float = 1.0) -> tuple[str | None, str | None]:
     """Returns (image_url, error_message). One of them will be None."""
     if model_type == "lora":
-        return _generate_image_lora(prompt, character=character, negative_prompt=negative_prompt)
+        return _generate_image_lora(prompt, character=character, negative_prompt=negative_prompt, lora_scale=lora_scale)
 
     if model_type == "portrait":
         model = MODELSLAB_PORTRAIT_MODEL

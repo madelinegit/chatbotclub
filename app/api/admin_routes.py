@@ -354,8 +354,14 @@ async def admin_write_image(secret: str = Query(...), request: Request = None):
         model_type      = body.get("model_type", "lora")
         character       = body.get("character", "mayaleja")
         negative_prompt = body.get("negative_prompt", "")
+        lora_scale      = float(body.get("lora_scale", 1.0))
+        nudity_ok       = body.get("nudity_ok", False)
 
-        image_url, img_error = _generate_image(expanded, model_type=model_type, character=character, negative_prompt=negative_prompt)
+        if not nudity_ok:
+            nudity_neg = "nude, naked, nudity, nsfw, exposed breasts, exposed genitals, topless"
+            negative_prompt = f"{negative_prompt}, {nudity_neg}".strip(", ") if negative_prompt else nudity_neg
+
+        image_url, img_error = _generate_image(expanded, model_type=model_type, character=character, negative_prompt=negative_prompt, lora_scale=lora_scale)
 
         if img_error and not image_url:
             raise HTTPException(status_code=500, detail=img_error)

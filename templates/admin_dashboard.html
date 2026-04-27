@@ -292,7 +292,7 @@
           style="width:100%;background:#111113;color:#bbb;border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 12px;font-size:12px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;"
         >man, male, beard, mustache, masculine, stubble, bad hands, extra fingers, deformed hands, hands in foreground, ugly hands, mutated hands</textarea>
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;flex-direction:column;gap:6px;min-width:160px;">
         <select id="image-model-type" onchange="onDesktopModelChange(this.value)" style="background:#111113;color:#ccc;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;font-size:13px;outline:none;">
           <option value="lora_mayaleja" selected>Mayaleja (LoRA)</option>
           <option value="lora_maya">Maya (LoRA)</option>
@@ -300,6 +300,22 @@
           <option value="scene">Scene model</option>
           <option value="explicit">Explicit model</option>
         </select>
+
+        <!-- LoRA scale slider -->
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:#666;white-space:nowrap;">LoRA scale</span>
+          <input type="range" id="lora-scale-slider" min="0.5" max="1.5" step="0.1" value="1.0"
+            oninput="document.getElementById('lora-scale-val').textContent=parseFloat(this.value).toFixed(1)"
+            style="flex:1;accent-color:#c9956a;">
+          <span id="lora-scale-val" style="font-size:12px;color:#c9956a;font-family:monospace;min-width:24px;">1.0</span>
+        </div>
+
+        <!-- Nudity toggle -->
+        <button id="nudity-toggle" onclick="toggleNudity()"
+          style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:#888;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;text-align:left;">
+          🔒 Nudity: off
+        </button>
+
         <button class="btn-gen" onclick="generateImage()" id="image-gen-btn" style="padding:10px 20px;">Generate</button>
       </div>
     </div>
@@ -1412,6 +1428,15 @@
   let _lastImagePrompt = null
   let _lastModelType = 'lora'
   let _lastCharacter = 'mayaleja'
+  let _nudityOk = false
+
+  function toggleNudity() {
+    _nudityOk = !_nudityOk
+    const btn = document.getElementById('nudity-toggle')
+    btn.textContent = _nudityOk ? '🔓 Nudity: on' : '🔒 Nudity: off'
+    btn.style.color = _nudityOk ? '#c9956a' : '#888'
+    btn.style.borderColor = _nudityOk ? 'rgba(201,149,106,0.4)' : 'rgba(255,255,255,0.12)'
+  }
 
   function onDesktopModelChange(m) {
     _lastModelType = m.startsWith('lora') ? 'lora' : m
@@ -1485,7 +1510,7 @@
       const res = await safeFetch(`/admin/write/image?secret=${SECRET}`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ expanded_prompt: prompt, negative_prompt: document.getElementById('image-neg-edit').value.trim(), model_type: _lastModelType, character: _lastCharacter }),
+        body:    JSON.stringify({ expanded_prompt: prompt, negative_prompt: document.getElementById('image-neg-edit').value.trim(), model_type: _lastModelType, character: _lastCharacter, lora_scale: parseFloat(document.getElementById('lora-scale-slider').value), nudity_ok: _nudityOk }),
         signal:  controller.signal,
       })
       clearTimeout(timeout)
