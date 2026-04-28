@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.requests import Request
 
 from app.db.database import init_db
@@ -127,3 +127,27 @@ def terms_page(request: Request):
 @app.get("/privacy", response_class=HTMLResponse)
 def privacy_page(request: Request):
     return templates.TemplateResponse(request, "privacy.html", {})
+
+
+@app.get("/auth/callback", response_class=HTMLResponse)
+def root_auth_callback(code: str = None, error: str = None, error_description: str = None):
+    """Catch Supabase email confirmation redirects at the root level."""
+    if error:
+        return HTMLResponse(f"""
+        <html><head><title>Link Expired</title>
+        <style>body{{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0e0e11;color:#e0ddd8;}}
+        .box{{text-align:center;padding:40px;}}.btn{{display:inline-block;margin-top:20px;padding:12px 28px;background:#c9a96e;color:#000;border-radius:8px;text-decoration:none;font-weight:600;}}</style>
+        </head><body><div class="box"><h2>Link expired or invalid</h2>
+        <p style="color:#888">{error_description or error}</p>
+        <a class="btn" href="/">Go to Maya</a></div></body></html>
+        """, status_code=400)
+    return HTMLResponse("""
+    <html><head><title>Email Confirmed</title>
+    <style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#0e0e11;color:#e0ddd8;}
+    .box{text-align:center;padding:40px;max-width:400px;}.btn{display:inline-block;margin-top:20px;padding:12px 28px;background:#c9a96e;color:#000;border-radius:8px;text-decoration:none;font-weight:600;}</style>
+    </head><body><div class="box">
+    <h2>You're confirmed.</h2>
+    <p style="color:#888">Your email has been verified. You can now sign in.</p>
+    <a class="btn" href="/">Talk to Maya</a>
+    </div></body></html>
+    """)
