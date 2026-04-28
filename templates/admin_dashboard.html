@@ -208,16 +208,17 @@
 
 <!-- ── Crop Modal ─────────────────────────────────────────────────────────── -->
 <div id="crop-modal">
-  <div id="crop-container"><img id="crop-img" src=""></div>
-  <div class="crop-ratio-btns">
-    <button class="crop-ratio-btn active" onclick="setCropRatio(NaN)">Free</button>
-    <button class="crop-ratio-btn" onclick="setCropRatio(1)">1:1</button>
-    <button class="crop-ratio-btn" onclick="setCropRatio(4/5)">4:5</button>
-    <button class="crop-ratio-btn" onclick="setCropRatio(16/9)">16:9</button>
-    <button class="crop-ratio-btn" onclick="setCropRatio(9/16)">9:16</button>
+  <div id="crop-loading" style="color:#ccc;font-size:14px;display:none;">Loading image…</div>
+  <div id="crop-container" style="display:none;"><img id="crop-img" crossorigin="anonymous" src=""></div>
+  <div class="crop-ratio-btns" id="crop-controls" style="display:none;">
+    <button class="crop-ratio-btn active" onclick="setCropRatio(NaN, this)">Free</button>
+    <button class="crop-ratio-btn" onclick="setCropRatio(1, this)">1:1</button>
+    <button class="crop-ratio-btn" onclick="setCropRatio(4/5, this)">4:5</button>
+    <button class="crop-ratio-btn" onclick="setCropRatio(16/9, this)">16:9</button>
+    <button class="crop-ratio-btn" onclick="setCropRatio(9/16, this)">9:16</button>
   </div>
-  <div style="display:flex;gap:12px;">
-    <button class="btn-gen" onclick="applyCrop()">Apply Crop</button>
+  <div id="crop-actions" style="display:none;gap:12px;display:none;">
+    <button id="crop-apply-btn" class="btn-gen" onclick="applyCrop()">Apply Crop</button>
     <button class="btn-reject" onclick="closeCrop()">Cancel</button>
   </div>
 </div>
@@ -409,7 +410,7 @@
         <option value="x">X</option>
         <option value="instagram">Instagram</option>
       </select>
-      <button class="btn-approve" style="background:#2a6496;" onclick="queueTextPost()">Queue for Review</button>
+      <button class="btn-approve" style="background:#2a6496;" onclick="queueTextPost(this)">Queue for Review</button>
       <button class="btn-post" id="text-post-btn" onclick="postTextNow()">Post Now</button>
     </div>
   </div>
@@ -460,7 +461,8 @@
       </div>
     </div>
     <div id="i2i-result" style="display:none;">
-      <img id="i2i-output" src="" style="width:100%;max-width:480px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);margin-bottom:10px;">
+      <img id="i2i-output" src="" style="width:100%;max-width:480px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);margin-bottom:8px;">
+      <button onclick="openCrop('generated')" style="background:#2a2a2e;color:#ccc;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;margin-bottom:10px;">✂ Crop Image</button>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
         <input id="i2i-url" type="text" readonly style="flex:1;background:#111113;color:#6ac97a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:7px 10px;font-size:12px;font-family:monospace;outline:none;">
         <button class="btn-approve" onclick="navigator.clipboard.writeText(document.getElementById('i2i-url').value).then(()=>toast('Copied!','green'))">Copy URL</button>
@@ -473,7 +475,7 @@
           <option value="threads">Threads</option>
           <option value="x">X</option>
         </select>
-        <button class="btn-approve" style="background:#2a6496;" onclick="i2iQueueForReview()">Queue for Review</button>
+        <button class="btn-approve" style="background:#2a6496;" onclick="i2iQueueForReview(this)">Queue for Review</button>
         <button class="btn-post" onclick="i2iPostNow('threads')">Post to Threads</button>
         <button class="btn-post" style="background:#e7e7e7;color:#000;" onclick="i2iPostNow('x')">Post to X</button>
         <button class="btn-post" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);" onclick="i2iPostNow('instagram')">Post to Instagram</button>
@@ -882,6 +884,26 @@
 <script>
   const SECRET = new URLSearchParams(window.location.search).get('secret') || ''
   if (!SECRET) window.location.href = '/admin'
+
+  // ── Button feedback helpers ───────────────────────────────────────────────
+  function btnLoad(btn, text = 'Working…') {
+    if (!btn) return
+    btn._origHTML = btn.innerHTML
+    btn.disabled = true
+    btn.innerHTML = `<span class="spinner"></span>${text}`
+  }
+  function btnDone(btn) {
+    if (!btn) return
+    btn.disabled = false
+    btn.innerHTML = btn._origHTML || btn.textContent
+  }
+  function btnSuccess(btn, text = 'Done!', resetMs = 2000) {
+    if (!btn) return
+    btn.disabled = false
+    const orig = btn._origHTML || btn.innerHTML
+    btn.innerHTML = `<span style="color:#6ac97a;">✓</span> ${text}`
+    setTimeout(() => { btn.innerHTML = orig; btn._origHTML = null }, resetMs)
+  }
 
   function showPage(name, el) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
@@ -2053,16 +2075,17 @@
     }
   }
 
-  async function queueTextPost() {
+  async function queueTextPost(btn) {
     const caption  = document.getElementById('text-post-body').value.trim()
     if (!caption) { toast('Write something first.', 'red'); return }
     const platform = document.getElementById('text-post-platform').value
+    btnLoad(btn, 'Saving…')
     const r = await fetch(`/admin/write/queue?secret=${SECRET}`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ caption, target_platform: platform }),
     })
-    if (r.ok) { toast(`Queued for ${platform} — pending review.`, 'green'); document.getElementById('text-post-body').value = '' }
-    else toast('Queue failed.', 'red')
+    if (r.ok) { btnSuccess(btn, 'Queued!'); document.getElementById('text-post-body').value = '' }
+    else { btnDone(btn); toast('Queue failed.', 'red') }
   }
 
   let _postingText = false
@@ -2100,80 +2123,122 @@
   }
 
   // ── Crop ─────────────────────────────────────────────────────────────────────
-  let _cropper       = null
-  let _cropSection   = null  // 'uq' | 'generated'
-  let _cropBlob      = null  // result blob after crop applied
+  let _cropper     = null
+  let _cropSection = null   // 'uq' | 'generated'
+
+  function _showCropUI(show) {
+    document.getElementById('crop-loading').style.display   = show ? 'none'  : 'none'
+    document.getElementById('crop-container').style.display = show ? 'block' : 'none'
+    document.getElementById('crop-controls').style.display  = show ? 'flex'  : 'none'
+    document.getElementById('crop-actions').style.display   = show ? 'flex'  : 'none'
+  }
 
   function openCrop(section) {
     _cropSection = section
-    const modal = document.getElementById('crop-modal')
-    const img   = document.getElementById('crop-img')
+    const img = document.getElementById('crop-img')
 
-    if (section === 'uq') {
-      const file = document.getElementById('uq-file').files[0]
-      if (!file) { toast('No image selected.', 'red'); return }
-      img.src = URL.createObjectURL(file)
-    } else if (section === 'generated') {
-      const url = _lastImageUrl
-      if (!url) { toast('No image generated yet.', 'red'); return }
-      img.src = url
-    }
+    // Destroy any previous instance
+    if (_cropper) { _cropper.destroy(); _cropper = null }
+    _showCropUI(false)
+    document.getElementById('crop-loading').style.display = 'block'
+    document.getElementById('crop-modal').classList.add('open')
 
-    modal.classList.add('open')
-    img.onload = () => {
-      if (_cropper) { _cropper.destroy(); _cropper = null }
-      _cropper = new Cropper(img, { viewMode: 1, autoCropArea: 1, movable: true, zoomable: true })
-    }
     // Reset ratio buttons
     document.querySelectorAll('.crop-ratio-btn').forEach(b => b.classList.remove('active'))
     document.querySelector('.crop-ratio-btn').classList.add('active')
+
+    const initCropper = () => {
+      document.getElementById('crop-loading').style.display = 'none'
+      _showCropUI(true)
+      _cropper = new Cropper(img, {
+        viewMode: 1,
+        autoCropArea: 0.9,
+        movable: true,
+        zoomable: true,
+        responsive: true,
+      })
+    }
+
+    if (section === 'uq') {
+      const file = document.getElementById('uq-file').files[0]
+      if (!file) { toast('No image selected.', 'red'); closeCrop(); return }
+      // Local file — use object URL, no CORS issue
+      img.removeAttribute('crossorigin')
+      img.onload = initCropper
+      img.src = URL.createObjectURL(file)
+    } else if (section === 'generated') {
+      const srcUrl = _lastImageUrl || document.getElementById('i2i-url')?.value
+      if (!srcUrl) { toast('No image to crop.', 'red'); closeCrop(); return }
+      if (!_lastImageUrl) _lastImageUrl = srcUrl
+      // Remote URL — fetch as blob to avoid CORS taint on canvas
+      fetch(srcUrl)
+        .then(r => r.blob())
+        .then(blob => {
+          img.removeAttribute('crossorigin')
+          img.onload = initCropper
+          img.src = URL.createObjectURL(blob)
+        })
+        .catch(() => {
+          // Fallback: try direct with crossOrigin (works if server sends CORS headers)
+          img.crossOrigin = 'anonymous'
+          img.onload = initCropper
+          img.onerror = () => toast('Could not load image for cropping.', 'red')
+          img.src = _lastImageUrl + ((_lastImageUrl.includes('?')) ? '&' : '?') + 't=' + Date.now()
+        })
+    }
   }
 
-  function setCropRatio(ratio) {
-    if (_cropper) _cropper.setAspectRatio(ratio)
+  function setCropRatio(ratio, btn) {
+    if (_cropper) _cropper.setAspectRatio(isNaN(ratio) ? NaN : ratio)
     document.querySelectorAll('.crop-ratio-btn').forEach(b => b.classList.remove('active'))
-    event.target.classList.add('active')
+    if (btn) btn.classList.add('active')
   }
 
   function closeCrop() {
     document.getElementById('crop-modal').classList.remove('open')
     if (_cropper) { _cropper.destroy(); _cropper = null }
+    _showCropUI(false)
+    document.getElementById('crop-loading').style.display = 'none'
   }
 
   async function applyCrop() {
     if (!_cropper) return
-    const canvas = _cropper.getCroppedCanvas({ maxWidth: 2048, maxHeight: 2048 })
-    canvas.toBlob(async blob => {
-      _cropBlob = blob
+    const applyBtn = document.getElementById('crop-apply-btn')
+    applyBtn.disabled = true; applyBtn.textContent = 'Saving…'
+
+    try {
+      const canvas = _cropper.getCroppedCanvas({ maxWidth: 2048, maxHeight: 2048 })
+      if (!canvas) { toast('Crop failed — try again.', 'red'); return }
+
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92))
       const objectUrl = URL.createObjectURL(blob)
 
       if (_cropSection === 'uq') {
-        // Replace preview thumbnail
         document.getElementById('uq-thumb').src = objectUrl
-        // Patch the file input's file list so uploadAndQueue sends the cropped blob
         const dt = new DataTransfer()
         dt.items.add(new File([blob], 'cropped.jpg', { type: 'image/jpeg' }))
         document.getElementById('uq-file').files = dt.files
+        toast('Cropped — ready to queue.', 'green')
+        closeCrop()
       } else if (_cropSection === 'generated') {
-        // Upload cropped version to Cloudinary, replace _lastImageUrl
+        applyBtn.textContent = 'Uploading…'
         const form = new FormData()
         form.append('file', new File([blob], 'cropped.jpg', { type: 'image/jpeg' }))
-        const btn = document.querySelector('#crop-modal .btn-gen')
-        btn.textContent = 'Uploading…'; btn.disabled = true
-        try {
-          const up = await fetch(`/admin/upload-image?secret=${SECRET}`, { method: 'POST', body: form })
-          if (!up.ok) { toast('Upload failed.', 'red'); return }
-          const { url } = await up.json()
-          _lastImageUrl = url
-          document.getElementById('image-preview').src = url
-          document.getElementById('image-url-display').value = url
-          toast('Cropped image saved.', 'green')
-        } finally {
-          btn.textContent = 'Apply Crop'; btn.disabled = false
-        }
+        const up = await fetch(`/admin/upload-image?secret=${SECRET}`, { method: 'POST', body: form })
+        if (!up.ok) { toast('Upload failed.', 'red'); return }
+        const { url } = await up.json()
+        _lastImageUrl = url
+        document.getElementById('image-preview').src = url
+        document.getElementById('image-url-display').value = url
+        // Also update i2i result if it's showing
+        const i2iOut = document.getElementById('i2i-output')
+        if (i2iOut && i2iOut.src) { i2iOut.src = url; document.getElementById('i2i-url').value = url }
+        toast('Cropped image saved.', 'green')
+        closeCrop()
       }
-      closeCrop()
-    }, 'image/jpeg', 0.92)
+    } finally {
+      applyBtn.disabled = false; applyBtn.textContent = 'Apply Crop'
+    }
   }
 
   async function uploadAndQueue() {
@@ -2215,17 +2280,18 @@
     }
   }
 
-  async function i2iQueueForReview() {
+  async function i2iQueueForReview(btn) {
     const caption  = document.getElementById('i2i-caption').value.trim()
     const imageUrl = document.getElementById('i2i-url').value
     const platform = document.getElementById('i2i-queue-platform').value
     if (!caption) { toast('Add a caption first.', 'red'); return }
+    btnLoad(btn, 'Saving…')
     const r = await fetch(`/admin/write/queue?secret=${SECRET}`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ caption, image_url: imageUrl, target_platform: platform }),
     })
-    if (r.ok) toast(`Queued for ${platform} — pending review.`, 'green')
-    else toast('Queue failed.', 'red')
+    if (r.ok) btnSuccess(btn, 'Queued!')
+    else { btnDone(btn); toast('Queue failed.', 'red') }
   }
 
   function i2iMakeVideo() {
